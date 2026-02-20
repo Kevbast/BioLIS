@@ -16,5 +16,9 @@ namespace BioLab.Models
 
         [Column("ContainerColor")]
         public string ContainerColor { get; set; }
+
+        //--------NAVEGACIÓN INVERSA (Relaciones)-----------
+        // Exámenes que usan este tipo de muestra
+        public virtual ICollection<LabTest> LabTests { get; set; } = new List<LabTest>();
     }
 }

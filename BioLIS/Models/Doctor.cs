@@ -19,5 +19,9 @@ namespace BioLab.Models // Cambia "BioLab" por el nombre de tu proyecto
 
         [Column("Email")]
         public string Email { get; set; }
+
+        //--------NAVEGACIÓN INVERSA (Relaciones)-----------
+        //Órdenes creadas por este doctor
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

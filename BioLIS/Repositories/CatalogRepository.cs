@@ -147,25 +147,110 @@ namespace BioLIS.Repositories
             await this.context.SaveChangesAsync();
             return true;
         }
+        //5.Eliminar Doctor
+        public async Task<(bool Success, string Message)> DeleteDoctorAsync(int id)
+        {
+            var validation = await this.helper.CanDeleteAsync("Doctors", id);
+
+            if (!validation.CanDelete)
+                return (false, validation.Message);
+
+            var doctor = await this.context.Doctors.FindAsync(id);
+            if (doctor == null)
+                return (false, "Doctor no encontrado.");
+
+            this.context.Doctors.Remove(doctor);
+            await this.context.SaveChangesAsync();
+
+            return (true, "Doctor eliminado exitosamente.");
+        }
 
 
         #endregion
 
-        #region TIPOS DE MUESTRA Y EXÁMENES (Para los combos/selects)
-
+        #region TIPOS DE MUESTRA (SAMPLE TYPES)
+        // 1.Obtener todas los tipos de muestra 
         public async Task<List<SampleType>> GetSampleTypesAsync()
         {
-            return await this.context.SampleTypes.ToListAsync();
+            return await this.context.SampleTypes.OrderBy(st => st.SampleName).ToListAsync();
+        }
+        //2.Obtener tipo de muestra por ID
+        public async Task<SampleType?> GetSampleTypeByIdAsync(int id)
+        {
+            return await this.context.SampleTypes
+                .FirstOrDefaultAsync(st => st.SampleID == id);
+        }
+        //3.Crear tipo de muestra
+        public async Task<SampleType> CreateSampleTypeAsync(string sampleName, string? containerColor = null)
+        {
+            int newId = await helper.GetNextIdAsync("SampleTypes");
+
+            SampleType sampleType = new SampleType
+            {
+                SampleID = newId,
+                SampleName = sampleName,
+                ContainerColor = containerColor
+            };
+
+            this.context.SampleTypes.Add(sampleType);
+            await this.context.SaveChangesAsync();
+
+            return sampleType;
+        }
+        //4.Actualizar tipo de muestra
+        public async Task<bool> UpdateSampleTypeAsync(SampleType sampleType)
+        {
+            var existing = await this.context.SampleTypes.FindAsync(sampleType.SampleID);
+            if (existing == null)
+                return false;
+
+            existing.SampleName = sampleType.SampleName;
+            existing.ContainerColor = sampleType.ContainerColor;
+
+            await this.context.SaveChangesAsync();
+            return true;
+        }
+        //5.Eliminar tipo de muestra
+        public async Task<(bool Success, string Message)> DeleteSampleTypeAsync(int id)
+        {
+            var validation = await this.helper.CanDeleteAsync("SampleTypes", id);
+
+            if (!validation.CanDelete)
+                return (false, validation.Message);
+
+            var sampleType = await this.context.SampleTypes.FindAsync(id);
+            if (sampleType == null)
+                return (false, "Tipo de muestra no encontrado.");
+
+            this.context.SampleTypes.Remove(sampleType);
+            await this.context.SaveChangesAsync();
+
+            return (true, "Tipo de muestra eliminado exitosamente.");
         }
 
+        #endregion
+
+
+        #region EXÁMENES DE LABORATORIO (LAB TESTS)
+        //1.OBTENER LOS EXAMENES
         public async Task<List<LabTest>> GetLabTestsAsync()
         {
             // Usamos Include para traer también el color del tubo asociado
             return await this.context.LabTests
                                      .Include(t => t.SampleType)
+                                     .OrderBy(t => t.TestName)
                                      .ToListAsync();
+        }
+        //2.Obtener examen por ID
+        public async Task<LabTest?> GetLabTestByIdAsync(int id)
+        {
+            return await this.context.LabTests
+                .Include(t => t.SampleType)
+                .Include(t => t.ReferenceRanges)
+                .FirstOrDefaultAsync(t => t.TestID == id);
         }
 
         #endregion
+
     }
 }

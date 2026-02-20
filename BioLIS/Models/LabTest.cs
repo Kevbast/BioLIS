@@ -23,5 +23,11 @@ namespace BioLab.Models
 
         [ForeignKey("SampleID")]
         public SampleType SampleType { get; set; }
+
+        //---------NAVEGACIÓN INVERSA (Relaciones)------------
+        // Rangos de referencia para este examen
+        public virtual ICollection<ReferenceRange> ReferenceRanges { get; set; } = new List<ReferenceRange>();
+        //Resultados de pruebas que usan este examen
+        public virtual ICollection<TestResult> TestResults { get; set; } = new List<TestResult>();
     }
 }

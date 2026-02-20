@@ -28,5 +28,28 @@ namespace BioLab.Models
 
         [Column("PhotoFilename")]
         public string? PhotoFilename { get; set; }
+
+
+        //--------NAVEGACIÓN INVERSA (Relaciones)-----------
+        /// Órdenes del paciente
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
+
+        //Edad calculada automáticamente
+        [NotMapped]
+        public int Age
+        {
+            get
+            {
+                var today = DateTime.Today;
+                var age = today.Year - BirthDate.Year;
+                if (BirthDate.Date > today.AddYears(-age)) age--;
+                return age;
+            }
+        }
+
+        //Nombre completo
+        [NotMapped]
+        public string FullName => $"{FirstName} {LastName}";
     }
 }

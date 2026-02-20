@@ -28,5 +28,9 @@ namespace BioLab.Models
 
         [Column("OrderNumber")]
         public string OrderNumber { get; set; }
+
+        //-----NAVEGACIÓN INVERSA (Relaciones)----------
+        // Resultados de pruebas de esta orden
+        public virtual ICollection<TestResult> TestResults { get; set; } = new List<TestResult>();
     }
 }
