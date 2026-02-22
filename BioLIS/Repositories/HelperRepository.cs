@@ -163,9 +163,8 @@ namespace BioLIS.Repositories
 
         #region MÉTODOS DE ID Y NUMERACIÓN
 
-        /// <summary>
-        /// Obtener el siguiente ID disponible para una tabla
-        /// </summary>
+        /// 
+        /// Obtengo el siguiente ID disponible para una tabla
         /// <param name="tableName">Nombre de la tabla: Patients, Doctors, Orders, etc.</param>
         /// <returns>Siguiente ID libre</returns>
         public async Task<int> GetNextIdAsync(string tableName)

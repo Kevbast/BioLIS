@@ -17,7 +17,17 @@ namespace BioLIS.Repositories
         }
 
 #region PACIENTES
-
+        //1.Obtener todos los pacientes
+        public async Task<List<Patient>> GetPatientsAsync()
+        {
+            return await this.context.Patients.ToListAsync();
+        }
+        //2.Obtener paciente por ID
+        public async Task<Patient?> GetPatientByIdAsync(int id)
+        {
+            return await this.context.Patients.FindAsync(id);
+        }
+        //3.Nuevo paciente(revisar si hay que cambiarlo más adelante)------
         public async Task CreatePatientAsync(string nombre, string apellido,
                                              string genero, DateTime fechaNac,
                                              string email, string foto)
@@ -38,16 +48,6 @@ namespace BioLIS.Repositories
 
             this.context.Patients.Add(paciente);
             await this.context.SaveChangesAsync();
-        }
-
-        public async Task<List<Patient>> GetPatientsAsync()
-        {
-            return await this.context.Patients.ToListAsync();
-        }
-
-        public async Task<Patient?> GetPatientByIdAsync(int id)
-        {
-            return await this.context.Patients.FindAsync(id);
         }
 
         // 4. ACTUALIZAR PACIENTE 
@@ -102,9 +102,9 @@ namespace BioLIS.Repositories
         }
 
 
-        #endregion
+#endregion
 
-        #region DOCTORES 
+#region DOCTORES 
         //1.Obtener doctores
         public async Task<List<Doctor>> GetDoctorsAsync()
         {
@@ -166,18 +166,21 @@ namespace BioLIS.Repositories
         }
 
 
-        #endregion
+#endregion
 
-        #region TIPOS DE MUESTRA (SAMPLE TYPES)
+#region TIPOS DE MUESTRA (SAMPLE TYPES)
         // 1.Obtener todas los tipos de muestra 
         public async Task<List<SampleType>> GetSampleTypesAsync()
         {
-            return await this.context.SampleTypes.OrderBy(st => st.SampleName).ToListAsync();
+            return await this.context.SampleTypes
+                .OrderBy(st => st.SampleName)
+                .ToListAsync();
         }
         //2.Obtener tipo de muestra por ID
         public async Task<SampleType?> GetSampleTypeByIdAsync(int id)
         {
             return await this.context.SampleTypes
+                .Include(st => st.LabTests)
                 .FirstOrDefaultAsync(st => st.SampleID == id);
         }
         //3.Crear tipo de muestra
@@ -228,14 +231,14 @@ namespace BioLIS.Repositories
             return (true, "Tipo de muestra eliminado exitosamente.");
         }
 
-        #endregion
+#endregion
 
 
-        #region EXÁMENES DE LABORATORIO (LAB TESTS)
-        //1.OBTENER LOS EXAMENES
+#region LAB TESTS
+        //1.OBTENER EXAMENES
         public async Task<List<LabTest>> GetLabTestsAsync()
         {
-            // Usamos Include para traer también el color del tubo asociado
+            // Traemos también el color del tubo asociado
             return await this.context.LabTests
                                      .Include(t => t.SampleType)
                                      .OrderBy(t => t.TestName)
@@ -249,8 +252,148 @@ namespace BioLIS.Repositories
                 .Include(t => t.ReferenceRanges)
                 .FirstOrDefaultAsync(t => t.TestID == id);
         }
+        //3.Crear un examen
+        public async Task<LabTest> CreateLabTestAsync(string testName, string? units, int sampleId)
+        {
+            int newId = await helper.GetNextIdAsync("LabTests");
 
-        #endregion
+            LabTest labTest = new LabTest
+            {
+                TestID = newId,
+                TestName = testName,
+                Units = units,
+                SampleID = sampleId
+            };
+
+            this.context.LabTests.Add(labTest);
+            await this.context.SaveChangesAsync();
+
+            return labTest;
+        }
+        //4.Actualizar un examen
+        public async Task<bool> UpdateLabTestAsync(LabTest labTest)
+        {
+            var existing = await this.context.LabTests.FindAsync(labTest.TestID);
+            if (existing == null)
+                return false;
+
+            existing.TestName = labTest.TestName;
+            existing.Units = labTest.Units;
+            existing.SampleID = labTest.SampleID;
+
+            await this.context.SaveChangesAsync();
+            return true;
+        }
+        //5.Borrar un examen
+        public async Task<(bool Success, string Message)> DeleteLabTestAsync(int id)
+        {
+            var validation = await this.helper.CanDeleteAsync("LabTests", id);
+
+            if (!validation.CanDelete)
+                return (false, validation.Message);
+
+            var labTest = await this.context.LabTests.FindAsync(id);
+            if (labTest == null)
+                return (false, "Examen no encontrado.");
+
+            this.context.LabTests.Remove(labTest);
+            await this.context.SaveChangesAsync();
+
+            return (true, "Examen eliminado exitosamente.");
+        }
+        //6.Obtener exámenes por tipo de muestra
+        public async Task<List<LabTest>> GetLabTestsBySampleTypeAsync(int sampleId)
+        {
+            return await this.context.LabTests
+                .Where(t => t.SampleID == sampleId)
+                .OrderBy(t => t.TestName)
+                .ToListAsync();
+        }
+
+#endregion
+
+#region RANGOS DE REFERENCIA
+        //1.Obtener todos los rangos de referencia
+        public async Task<List<ReferenceRange>> GetReferenceRangesAsync()
+        {
+            return await this.context.ReferenceRanges
+                .Include(rr => rr.LabTest)
+                .OrderBy(rr => rr.LabTest.TestName)
+                .ThenBy(rr => rr.Gender)
+                .ThenBy(rr => rr.MinAgeYear)
+                .ToListAsync();
+        }
+        //2.Obtener rango por ID
+        public async Task<ReferenceRange?> GetReferenceRangeByIdAsync(int id)
+        {
+            return await this.context.ReferenceRanges
+                .Include(rr => rr.LabTest)
+                .FirstOrDefaultAsync(rr => rr.RangeID == id);
+        }
+        //3.Obtener rangos de referencia por examen
+        public async Task<List<ReferenceRange>> GetReferenceRangesByTestAsync(int testId)
+        {
+            return await this.context.ReferenceRanges
+                .Where(rr => rr.TestID == testId)
+                .OrderBy(rr => rr.Gender)
+                .ThenBy(rr => rr.MinAgeYear)
+                .ToListAsync();
+        }
+        //4.Crear rango de referencia(no se usará por ahora)
+        public async Task<ReferenceRange> CreateReferenceRangeAsync(
+            int testId, string gender, int minAge, int maxAge, decimal minVal, decimal maxVal)
+        {
+            int newId = await helper.GetNextIdAsync("ReferenceRanges");
+
+            ReferenceRange referenceRange = new ReferenceRange
+            {
+                RangeID = newId,
+                TestID = testId,
+                Gender = gender,
+                MinAgeYear = minAge,
+                MaxAgeYear = maxAge,
+                MinVal = minVal,
+                MaxVal = maxVal
+            };
+
+            this.context.ReferenceRanges.Add(referenceRange);
+            await this.context.SaveChangesAsync();
+
+            return referenceRange;
+        }
+        //5.Actualizar rango de renferencia
+        public async Task<bool> UpdateReferenceRangeAsync(ReferenceRange referenceRange)
+        {
+            var existing = await this.context.ReferenceRanges.FindAsync(referenceRange.RangeID);
+            if (existing == null)
+                return false;
+
+            existing.TestID = referenceRange.TestID;
+            existing.Gender = referenceRange.Gender;
+            existing.MinAgeYear = referenceRange.MinAgeYear;
+            existing.MaxAgeYear = referenceRange.MaxAgeYear;
+            existing.MinVal = referenceRange.MinVal;
+            existing.MaxVal = referenceRange.MaxVal;
+
+            await this.context.SaveChangesAsync();
+            return true;
+        }
+        //6.Eliminar rango
+        public async Task<(bool Success, string Message)> DeleteReferenceRangeAsync(int id)
+        {
+            var referenceRange = await this.context.ReferenceRanges.FindAsync(id);
+            if (referenceRange == null)
+                return (false, "Rango de referencia no encontrado.");
+
+            this.context.ReferenceRanges.Remove(referenceRange);
+            await this.context.SaveChangesAsync();
+
+            return (true, "Rango de referencia eliminado exitosamente.");
+        }
+#endregion
+
+
+
 
     }
 }
