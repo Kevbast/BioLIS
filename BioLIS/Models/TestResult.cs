@@ -24,7 +24,7 @@ namespace BioLab.Models
         public LabTest LabTest { get; set; }
 
         [Column("ResultValue")]
-        public decimal ResultValue { get; set; }
+        public decimal? ResultValue { get; set; }
 
         [Column("IsAbnormal")]
         public bool IsAbnormal { get; set; }
