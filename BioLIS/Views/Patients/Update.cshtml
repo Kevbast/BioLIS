@@ -1,0 +1,62 @@
+﻿@model BioLab.Models.Patient
+
+<div class="container mt-4">
+    <h2>Registrar Nuevo Paciente</h2>
+    <hr />
+
+    <form method="post" enctype="multipart/form-data">
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label>PatientId</label>
+                    <input type="text" name="PatientId" class="form-control" value="@Model.PatientID" readonly  />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label>Nombre</label>
+                    <input type="text" name="FirstName" class="form-control" value="@Model.FirstName" required />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label>Apellidos</label>
+                    <input type="text" name="LastName" class="form-control" value="@Model.LastName" required />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group mb-3">
+                    <label>Género</label>
+                    <select name="Gender" class="form-control" value="@Model.Gender">
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group mb-3">
+                    <label>Fecha Nacimiento</label>
+                    <input type="date" name="BirthDate" class="form-control" value="@Model.BirthDate" required />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group mb-3">
+                    <label>Email</label>
+                    <input type="email" name="Email" class="form-control" value="@Model.Email" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group mb-3">
+            <label>Fotografía del Paciente</label>
+            <input type="file" name="fichero" class="form-control" accept="image/*" value="@Model.PhotoFilename" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Actualizar Paciente</button>
+        <a asp-action="Index" class="btn btn-secondary">Volver</a>
+    </form>
+</div>

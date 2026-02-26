@@ -5,7 +5,7 @@
 }
 
 <h1>Index</h1>
-
+<a asp-asp-controller="Patients" asp-action="Doctores">DOCTORES</a>
 <p>
     <a asp-action="Create">Create New</a>
 </p>
@@ -61,9 +61,9 @@
                 <img src="~/images/pacientes/@item.PhotoFilename" alt="Alternate Text" style="width:100px;height:100px"/>
             </td>
             <td>
-                @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
+                    @Html.ActionLink("Update", "Update", new { patientId = item.PatientID }) |
                 @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
+                    @Html.ActionLink("Delete", "Delete", new { patientId = item.PatientID })
             </td>
         </tr>
 }

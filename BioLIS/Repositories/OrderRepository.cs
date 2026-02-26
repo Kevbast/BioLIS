@@ -433,7 +433,7 @@ namespace BioLIS.Repositories
         }
 
         #endregion
-    }
+    }//final OrderRepository
 
     #region DTOs PARA STORED PROCEDURES
     //DTO para SP_GetOrderDetails

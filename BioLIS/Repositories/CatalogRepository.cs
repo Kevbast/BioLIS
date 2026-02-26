@@ -49,20 +49,22 @@ namespace BioLIS.Repositories
             this.context.Patients.Add(paciente);
             await this.context.SaveChangesAsync();
         }
-
+        //REVISAR LOS UPDATES EN GENERAL
         // 4. ACTUALIZAR PACIENTE 
-        public async Task<bool> UpdateAsync(Patient patient)
+        public async Task<bool> UpdatePatientAsync(int patientId, string nombre, string apellido,
+                                             string genero, DateTime fechaNac,
+                                             string email, string foto)
         {
-            Patient paciente = await this.context.Patients.FindAsync(patient.PatientID);
+            Patient paciente = await this.context.Patients.FindAsync(patientId);
             if (paciente == null)
                 return false;
 
-            paciente.FirstName = patient.FirstName;
-            paciente.LastName = patient.LastName;
-            paciente.Gender = patient.Gender;
-            paciente.BirthDate = patient.BirthDate;
-            paciente.Email = patient.Email;
-            paciente.PhotoFilename = patient.PhotoFilename;
+            paciente.FirstName = nombre;
+            paciente.LastName = apellido;
+            paciente.Gender = genero;
+            paciente.BirthDate = fechaNac;
+            paciente.Email = email;
+            paciente.PhotoFilename = foto;
 
             await this.context.SaveChangesAsync();
             return true;
@@ -81,6 +83,7 @@ namespace BioLIS.Repositories
                 return (false, "Paciente no encontrado.");
 
             this.context.Patients.Remove(patient);
+
             await this.context.SaveChangesAsync();
 
             return (true, "Paciente eliminado exitosamente.");
