@@ -1,4 +1,5 @@
 ﻿using BioLab.Models;
+using BioLIS.Filters;
 using BioLIS.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace BioLIS.Controllers
 {
+    [AuthorizeSession] // Requiere autenticación para todas las acciones
     public class PatientsController : Controller
     {
         private CatalogRepository repo;

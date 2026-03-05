@@ -23,7 +23,7 @@ namespace BioLab.Models // Cambia a BioLIS.Models si es tu namespace
         public string PasswordText { get; set; } = null!;
 
         [Column("Role")]
-        public string Role { get; set; } = null!; // 'Admin', 'Doctor', 'Recepcion'
+        public string Role { get; set; } = null!; // 'Admin', 'Doctor', 'Laboratorio'
 
         [Column("DoctorID")]
         public int? DoctorID { get; set; } // El '?' significa que puede ser NULL (para el Admin)
@@ -52,9 +52,9 @@ namespace BioLab.Models // Cambia a BioLIS.Models si es tu namespace
     {
         public const string Admin = "Admin";
         public const string Doctor = "Doctor";
-        public const string Recepcion = "Recepcion";
+        public const string Laboratorio = "Laboratorio";
 
-        public static List<string> GetAll() => new List<string> { Admin, Doctor, Recepcion };
+        public static List<string> GetAll() => new List<string> { Admin, Doctor, Laboratorio };
     }
 
 }

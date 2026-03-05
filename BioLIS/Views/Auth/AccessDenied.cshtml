@@ -1,0 +1,18 @@
+﻿@{
+    ViewData["Title"] = "Acceso Denegado";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="alert alert-warning" role="alert">
+                <h1 class="display-1">🚫</h1>
+                <h2>Acceso Denegado</h2>
+                <p class="lead">No tienes permisos para acceder a este recurso.</p>
+                <hr />
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Volver al inicio</a>
+                <a asp-controller="Auth" asp-action="Logout" class="btn btn-secondary">Cerrar sesión</a>
+            </div>
+        </div>
+    </div>
+</div>

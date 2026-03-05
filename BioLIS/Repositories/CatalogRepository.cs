@@ -393,7 +393,67 @@ namespace BioLIS.Repositories
 
             return (true, "Rango de referencia eliminado exitosamente.");
         }
-#endregion
+        #endregion
+
+        #region ÓRDENES - MÉTODOS BÁSICOS
+        
+        /// <summary>
+        /// Obtener todas las órdenes con información completa (Include Patient, Doctor)
+        /// </summary>
+        public async Task<List<Order>> GetOrdersAsync()
+        {
+            return await this.context.Orders
+                .Include(o => o.Patient)
+                .Include(o => o.Doctor)
+                .Include(o => o.ApprovedByUser) // ✅ Nueva relación
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Obtener órdenes por estado
+        /// </summary>
+        public async Task<List<Order>> GetOrdersByStatusAsync(string status)
+        {
+            return await this.context.Orders
+                .Include(o => o.Patient)
+                .Include(o => o.Doctor)
+                .Include(o => o.ApprovedByUser)
+                .Where(o => o.Status == status)
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Obtener órdenes de un doctor específico (para filtro por rol)
+        /// </summary>
+        public async Task<List<Order>> GetOrdersByDoctorAsync(int doctorId)
+        {
+            return await this.context.Orders
+                .Include(o => o.Patient)
+                .Include(o => o.Doctor)
+                .Where(o => o.DoctorID == doctorId)
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Obtener doctores que NO tienen usuario asignado
+        /// </summary>
+        public async Task<List<Doctor>> GetDoctorsWithoutUserAsync()
+        {
+            var doctorsWithUser = await this.context.Users
+                .Where(u => u.DoctorID != null)
+                .Select(u => u.DoctorID.Value)
+                .ToListAsync();
+
+            return await this.context.Doctors
+                .Where(d => !doctorsWithUser.Contains(d.DoctorID))
+                .OrderBy(d => d.FullName)
+                .ToListAsync();
+        }
+
+        #endregion
 
 
 

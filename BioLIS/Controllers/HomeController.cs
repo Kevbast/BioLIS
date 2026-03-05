@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using BioLIS.Filters;
 using BioLIS.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BioLIS.Controllers
 {
+    [AuthorizeSession] // Requiere autenticación
     public class HomeController : Controller
     {
         public IActionResult Index()

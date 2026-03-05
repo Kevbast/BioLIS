@@ -432,6 +432,51 @@ namespace BioLIS.Repositories
             };
         }
 
+        /// <summary>
+        /// Cambiar estado de una orden
+        /// </summary>
+        public async Task<bool> ChangeOrderStatusAsync(int orderId, string newStatus, int? approvedBy = null)
+        {
+            var order = await this.context.Orders.FindAsync(orderId);
+            if (order == null)
+                return false;
+
+            order.Status = newStatus;
+
+            if (newStatus == OrderStatus.Completada)
+            {
+                order.CompletedDate = DateTime.Now;
+            }
+
+            if (newStatus == OrderStatus.Aprobada && approvedBy.HasValue)
+            {
+                order.ApprovedBy = approvedBy.Value;
+            }
+
+            await this.context.SaveChangesAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// Actualizar resultado con auditoría (EnteredBy, ModifiedBy, AlertLevel)
+        /// </summary>
+        public async Task<bool> UpdateTestResultWithAuditAsync(
+            int resultId, decimal resultValue, string? alertLevel, int modifiedBy, string? notes = null)
+        {
+            var testResult = await this.context.TestResults.FindAsync(resultId);
+            if (testResult == null)
+                return false;
+
+            testResult.ResultValue = resultValue;
+            testResult.AlertLevel = alertLevel;
+            testResult.Notes = notes;
+            testResult.ModifiedBy = modifiedBy;
+            testResult.ModifiedDate = DateTime.Now;
+
+            await this.context.SaveChangesAsync();
+            return true;
+        }
+
         #endregion
     }//final OrderRepository
 

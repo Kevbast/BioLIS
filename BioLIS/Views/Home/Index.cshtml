@@ -2,7 +2,57 @@
     ViewData["Title"] = "Home Page";
 }
 
+@* Mostrar mensaje de bienvenida o éxito *@
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>✓ Éxito:</strong> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Bienvenido a BioLIS</h1>
+    <p class="lead">Sistema de Información de Laboratorio</p>
+    
+    @if (Context.Session.GetInt32("UserID").HasValue)
+    {
+        <div class="mt-4">
+            <h3>👋 Hola, @Context.Session.GetString("Username")!</h3>
+            <p class="text-muted">Rol: <span class="badge bg-primary">@Context.Session.GetString("Role")</span></p>
+        </div>
+    }
+    
+    <hr class="my-4" />
+    
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">👥 Pacientes</h5>
+                    <p class="card-text">Gestiona la información de los pacientes del laboratorio.</p>
+                    <a asp-controller="Patients" asp-action="Index" class="btn btn-primary">Ir a Pacientes</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">🧪 Pruebas</h5>
+                    <p class="card-text">Administra las pruebas de laboratorio disponibles.</p>
+                    <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">📊 Resultados</h5>
+                    <p class="card-text">Consulta y gestiona los resultados de análisis.</p>
+                    <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
