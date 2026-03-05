@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BioLIS")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d325b378ac700482da0631fc7dcaaeb296562c7b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98ae1aa0a9edcba6935c92d54bf80b8a0f26ac7c")]
 [assembly: System.Reflection.AssemblyProductAttribute("BioLIS")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BioLIS")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
