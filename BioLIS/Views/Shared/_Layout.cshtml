@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/BioLIS.styles.css" asp-append-version="true" />
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
     <header>
@@ -21,24 +23,73 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
+                                <i class="fas fa-home"></i> Dashboard
+                            </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Patients" asp-action="Index">Pacientes</a>
-                        </li>
+                        @* Pacientes: Admin y Laboratorio pueden ver *@
+                        @{
+                            var role = Context.Session.GetString("Role");
+                        }
 
-                        @* Solo visible para Admin *@
-                        @if (Context.Session.GetString("Role") == "Admin")
+                        @if (role == "Admin" || role == "Laboratorio")
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Users" asp-action="Index">👥 Usuarios</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Patients" asp-action="Index">
+                                    <i class="fas fa-users"></i> Pacientes
+                                </a>
                             </li>
                         }
 
+                        @* Médicos: Todos pueden ver (Admin gestiona, otros consultan) *@
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Doctors" asp-action="Index">
+                                <i class="fas fa-user-md"></i> Médicos
+                            </a>
                         </li>
+
+                        @* Órdenes: Todos pueden ver (con diferentes permisos internos) *@
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="#" onclick="alert('Módulo en desarrollo')">
+                                <i class="fas fa-file-medical"></i> Órdenes
+                            </a>
+                        </li>
+
+                        @* Gestión Avanzada: Solo Admin *@
+                        @if (role == "Admin")
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="adminDropdown" role="button" 
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-cog"></i> Administración
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Users" asp-action="Index">
+                                            <i class="fas fa-users-cog"></i> Gestión de Usuarios
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="alert('Catálogos: Módulo en desarrollo')">
+                                            <i class="fas fa-flask"></i> Catálogo de Exámenes
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="alert('Catálogos: Módulo en desarrollo')">
+                                            <i class="fas fa-vial"></i> Tipos de Muestra
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Home" asp-action="Privacy">
+                                            <i class="fas fa-shield-alt"></i> Políticas
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
                     </ul>
                     
                     @* Información del usuario logueado *@

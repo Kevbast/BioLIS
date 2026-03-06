@@ -25,6 +25,10 @@ builder.Services.AddSession(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
+// Helpers
+builder.Services.AddHttpContextAccessor(); // Requerido para HelperPathProvider
+builder.Services.AddTransient<HelperPathProvider>();
+
 // Repositorios
 builder.Services.AddTransient<HelperRepository>();
 builder.Services.AddTransient<CatalogRepository>();

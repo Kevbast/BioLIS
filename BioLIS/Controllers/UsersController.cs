@@ -1,8 +1,10 @@
 using BioLab.Models;
 using BioLIS.Filters;
+using BioLIS.Helpers;
 using BioLIS.Models;
 using BioLIS.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace BioLIS.Controllers
 {
@@ -11,11 +13,13 @@ namespace BioLIS.Controllers
     {
         private readonly AuthRepository authRepo;
         private readonly CatalogRepository catalogRepo;
+        private readonly HelperPathProvider pathHelper;
 
-        public UsersController(AuthRepository authRepo, CatalogRepository catalogRepo)
+        public UsersController(AuthRepository authRepo, CatalogRepository catalogRepo, HelperPathProvider pathHelper)
         {
             this.authRepo = authRepo;
             this.catalogRepo = catalogRepo;
+            this.pathHelper = pathHelper;
         }
 
         // GET: Users
@@ -23,6 +27,10 @@ namespace BioLIS.Controllers
         {
             // Obtener usuarios completos desde la tabla Users
             var users = await this.authRepo.GetAllUsersAsync();
+            
+            // Obtener todos los doctores para poder mostrar sus nombres
+            var allDoctors = await this.catalogRepo.GetDoctorsAsync();
+            ViewBag.Doctors = allDoctors.ToDictionary(d => d.DoctorID, d => d.FullName);
             
             // Convertir UserValidation a User completo para incluir PhotoFilename
             var usersWithDetails = new List<User>();
@@ -41,8 +49,25 @@ namespace BioLIS.Controllers
         // GET: Users/Create
         public async Task<IActionResult> Create()
         {
-            // Cargar lista de doctores para el dropdown
-            ViewBag.Doctors = await this.catalogRepo.GetDoctorsAsync();
+            // Obtener todos los usuarios existentes para filtrar doctores disponibles
+            var existingUsers = await this.authRepo.GetAllUsersAsync();
+            var assignedDoctorIds = existingUsers
+                .Where(u => u.DoctorID.HasValue)
+                .Select(u => u.DoctorID.Value)
+                .ToList();
+
+            // Obtener doctores que NO tienen usuario asignado
+            var allDoctors = await this.catalogRepo.GetDoctorsAsync();
+            var availableDoctors = allDoctors
+                .Where(d => !assignedDoctorIds.Contains(d.DoctorID))
+                .Select(d => new SelectListItem
+                {
+                    Value = d.DoctorID.ToString(),
+                    Text = $"{d.FullName} ({d.LicenseNumber ?? "Sin licencia"})"
+                })
+                .ToList();
+
+            ViewBag.AvailableDoctors = availableDoctors;
             ViewBag.Roles = UserRoles.GetAll();
             return View();
         }
@@ -53,13 +78,28 @@ namespace BioLIS.Controllers
         public async Task<IActionResult> Create(string username, string password, string email, 
                                                  string role, int? doctorId, IFormFile? photoFile)
         {
+            // Validación: Solo usuarios con rol "Doctor" pueden tener DoctorID
+            if (role == "Doctor" && !doctorId.HasValue)
+            {
+                TempData["ErrorMessage"] = "Debe seleccionar un médico para el rol Doctor.";
+                await LoadCreateViewDataAsync();
+                return View();
+            }
+
+            if (role != "Doctor" && doctorId.HasValue)
+            {
+                TempData["ErrorMessage"] = "Solo los usuarios con rol Doctor pueden estar vinculados a un médico.";
+                await LoadCreateViewDataAsync();
+                return View();
+            }
+
             string photoFilename = "default-user.png";
 
             // Subir foto si se proporcionó
             if (photoFile != null)
             {
                 photoFilename = photoFile.FileName;
-                string path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "users", photoFilename);
+                string path = this.pathHelper.MapPath(photoFilename, Folders.Users);
                 
                 using (var stream = new FileStream(path, FileMode.Create))
                 {
@@ -73,16 +113,38 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["Success"] = result.Message;
+                TempData["SuccessMessage"] = result.Message;
                 return RedirectToAction("Index");
             }
             else
             {
-                TempData["Error"] = result.Message;
-                ViewBag.Doctors = await this.catalogRepo.GetDoctorsAsync();
-                ViewBag.Roles = UserRoles.GetAll();
+                TempData["ErrorMessage"] = result.Message;
+                await LoadCreateViewDataAsync();
                 return View();
             }
+        }
+
+        // Método auxiliar para cargar datos del formulario Create
+        private async Task LoadCreateViewDataAsync()
+        {
+            var existingUsers = await this.authRepo.GetAllUsersAsync();
+            var assignedDoctorIds = existingUsers
+                .Where(u => u.DoctorID.HasValue)
+                .Select(u => u.DoctorID.Value)
+                .ToList();
+
+            var allDoctors = await this.catalogRepo.GetDoctorsAsync();
+            var availableDoctors = allDoctors
+                .Where(d => !assignedDoctorIds.Contains(d.DoctorID))
+                .Select(d => new SelectListItem
+                {
+                    Value = d.DoctorID.ToString(),
+                    Text = $"{d.FullName} ({d.LicenseNumber ?? "Sin licencia"})"
+                })
+                .ToList();
+
+            ViewBag.AvailableDoctors = availableDoctors;
+            ViewBag.Roles = UserRoles.GetAll();
         }
 
         // GET: Users/Delete/5
@@ -108,11 +170,11 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["Success"] = result.Message;
+                TempData["SuccessMessage"] = result.Message;
             }
             else
             {
-                TempData["Error"] = result.Message;
+                TempData["ErrorMessage"] = result.Message;
             }
 
             return RedirectToAction("Index");

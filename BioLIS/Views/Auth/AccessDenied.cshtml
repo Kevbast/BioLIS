@@ -1,17 +1,130 @@
 ﻿@{
     ViewData["Title"] = "Acceso Denegado";
+    var username = Context.Session.GetString("Username");
+    var role = Context.Session.GetString("Role");
 }
 
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6 text-center">
-            <div class="alert alert-warning" role="alert">
-                <h1 class="display-1">🚫</h1>
-                <h2>Acceso Denegado</h2>
-                <p class="lead">No tienes permisos para acceder a este recurso.</p>
-                <hr />
-                <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Volver al inicio</a>
-                <a asp-controller="Auth" asp-action="Logout" class="btn btn-secondary">Cerrar sesión</a>
+        <div class="col-md-8">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-ban"></i> Acceso Denegado
+                    </h3>
+                </div>
+                <div class="card-body text-center">
+                    <i class="fas fa-shield-alt text-danger" style="font-size: 80px;"></i>
+                    <h4 class="mt-4">No tienes permisos para acceder a esta página</h4>
+                    <p class="lead text-muted">
+                        Tu usuario <strong>@username</strong> con rol 
+                        @if (role == "Admin")
+                        {
+                            <span class="badge bg-danger"><i class="fas fa-crown"></i> @role</span>
+                        }
+                        else if (role == "Doctor")
+                        {
+                            <span class="badge bg-primary"><i class="fas fa-user-md"></i> @role</span>
+                        }
+                        else if (role == "Laboratorio")
+                        {
+                            <span class="badge bg-success"><i class="fas fa-flask"></i> @role</span>
+                        }
+                        no tiene autorización para realizar esta acción.
+                    </p>
+
+                    <hr class="my-4" />
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>¿Necesitas acceso?</strong> 
+                        <p class="mb-0">Contacta al administrador del sistema para solicitar permisos adicionales.</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-primary me-2">
+                            <i class="fas fa-home"></i> Volver al Inicio
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Regresar
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de permisos por rol -->
+            <div class="card mt-4 shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Permisos por Rol</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Acción</th>
+                                <th class="text-center">
+                                    <i class="fas fa-crown text-danger"></i> Admin
+                                </th>
+                                <th class="text-center">
+                                    <i class="fas fa-user-md text-primary"></i> Doctor
+                                </th>
+                                <th class="text-center">
+                                    <i class="fas fa-flask text-success"></i> Laboratorio
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Ver Dashboard</td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Registrar/Editar Pacientes</td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Eliminar Pacientes</td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Gestionar Médicos</td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Ver Órdenes</td>
+                                <td class="text-center">Todas</td>
+                                <td class="text-center">Solo suyas</td>
+                                <td class="text-center">Todas</td>
+                            </tr>
+                            <tr>
+                                <td>Ingresar Resultados</td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Imprimir Resultados</td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Gestionar Usuarios</td>
+                                <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

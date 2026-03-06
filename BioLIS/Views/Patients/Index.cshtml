@@ -1,71 +1,133 @@
 ﻿@model IEnumerable<BioLab.Models.Patient>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Gestión de Pacientes";
+    var role = Context.Session.GetString("Role");
 }
 
-<h1>Index</h1>
-<a asp-asp-controller="Patients" asp-action="Doctores">DOCTORES</a>
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.PatientID)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.FirstName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.LastName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Gender)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.BirthDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Email)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.PhotoFilename)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.PatientID)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.FirstName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.LastName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Gender)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.BirthDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Email)
-            </td>
-            <td>
-                <img src="~/images/pacientes/@item.PhotoFilename" alt="Alternate Text" style="width:100px;height:100px"/>
-            </td>
-            <td>
-                    @Html.ActionLink("Update", "Update", new { patientId = item.PatientID }) |
-                @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
-                    @Html.ActionLink("Delete", "Delete", new { patientId = item.PatientID })
-            </td>
-        </tr>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-users text-info"></i> Gestión de Pacientes
+        </h2>
+        <a asp-action="Create" class="btn btn-success">
+            <i class="fas fa-user-plus"></i> Registrar Paciente
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle"></i> No hay pacientes registrados.
+            <a asp-action="Create" class="alert-link">Registrar el primero</a>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Foto</th>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
+                                <th>Género</th>
+                                <th>Edad</th>
+                                <th>Email</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var patient in Model)
+                            {
+                                var age = DateTime.Now.Year - patient.BirthDate.Year;
+                                if (DateTime.Now < patient.BirthDate.AddYears(age)) age--;
+
+                                <tr>
+                                    <td>@patient.PatientID</td>
+                                    <td>
+                                        <img src="~/images/pacientes/@patient.PhotoFilename" 
+                                             alt="@patient.FirstName" 
+                                             class="rounded-circle" 
+                                             style="width: 40px; height: 40px; object-fit: cover;" 
+                                             onerror="this.src='/images/pacientes/default.png'" />
+                                    </td>
+                                    <td><strong>@patient.FirstName</strong></td>
+                                    <td><strong>@patient.LastName</strong></td>
+                                    <td>
+                                        @if (patient.Gender == "M")
+                                        {
+                                            <span class="badge bg-primary"><i class="fas fa-mars"></i> Masculino</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger"><i class="fas fa-venus"></i> Femenino</span>
+                                        }
+                                    </td>
+                                    <td>@age años</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(patient.Email))
+                                        {
+                                            <i class="fas fa-envelope text-secondary"></i> @patient.Email
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Sin email</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Update" asp-route-patientId="@patient.PatientID"
+                                               class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (role == "Admin")
+                                            {
+                                                <a asp-action="Delete" asp-route-patientId="@patient.PatientID"
+                                                   class="btn btn-sm btn-danger" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                Total de pacientes: <strong>@Model.Count()</strong>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-ocultar alertas después de 5 segundos
+        setTimeout(function () {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
 }
-    </tbody>
-</table>
+

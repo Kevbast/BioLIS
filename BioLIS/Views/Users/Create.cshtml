@@ -1,0 +1,171 @@
+@{
+    ViewData["Title"] = "Crear Nuevo Usuario";
+    var roles = ViewBag.Roles as List<string> ?? new List<string>();
+    var availableDoctors = ViewBag.AvailableDoctors as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-plus"></i> Crear Nuevo Usuario
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Username -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i class="fas fa-user"></i> Nombre de Usuario *
+                            </label>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   placeholder="Ej: jperez" required />
+                            <small class="form-text text-muted">Será usado para iniciar sesión</small>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock"></i> Contraseña *
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   placeholder="Mínimo 5 caracteres" minlength="5" required />
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope"></i> Email
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   placeholder="usuario@hospital.com" />
+                        </div>
+
+                        <!-- Rol -->
+                        <div class="mb-3">
+                            <label for="role" class="form-label">
+                                <i class="fas fa-user-tag"></i> Rol *
+                            </label>
+                            <select class="form-select" id="role" name="role" required onchange="toggleDoctorField()">
+                                <option value="">-- Seleccione un rol --</option>
+                                @foreach (var role in roles)
+                                {
+                                    <option value="@role">@role</option>
+                                }
+                            </select>
+                            <small class="form-text text-muted">Determina los permisos del usuario</small>
+                        </div>
+
+                        <!-- Doctor Vinculado (Solo visible si role=Doctor) -->
+                        <div class="mb-3" id="doctorField" style="display:none;">
+                            <label for="doctorId" class="form-label">
+                                <i class="fas fa-stethoscope"></i> Médico Vinculado *
+                            </label>
+                            <select class="form-select" id="doctorId" name="doctorId">
+                                <option value="">-- Seleccione un médico --</option>
+                                @foreach (var doctor in availableDoctors)
+                                {
+                                    <option value="@doctor.Value">@doctor.Text</option>
+                                }
+                            </select>
+                            <small class="form-text text-muted">
+                                Solo médicos sin usuario asignado aparecen aquí
+                            </small>
+                        </div>
+
+                        @if (!availableDoctors.Any())
+                        {
+                            <div class="alert alert-warning" id="noDoctorsAlert" style="display:none;">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Sin médicos disponibles:</strong> 
+                                Todos los médicos ya tienen usuario asignado. 
+                                <a asp-controller="Doctors" asp-action="Create" class="alert-link">Registrar nuevo médico</a>
+                            </div>
+                        }
+
+                        <!-- Foto de Usuario -->
+                        <div class="mb-3">
+                            <label for="photoFile" class="form-label">
+                                <i class="fas fa-image"></i> Foto de Perfil
+                            </label>
+                            <input type="file" class="form-control" id="photoFile" name="photoFile" 
+                                   accept="image/*" />
+                            <small class="form-text text-muted">Opcional. Si no se selecciona, se usará la imagen por defecto</small>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Crear Usuario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información sobre roles -->
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Roles del Sistema:</strong>
+                <ul class="mb-0 mt-2">
+                    <li><strong>Admin:</strong> Acceso total al sistema (usuarios, configuración, etc.)</li>
+                    <li><strong>Doctor:</strong> Puede ver y gestionar sus propias órdenes. <em>Requiere médico vinculado</em></li>
+                    <li><strong>Laboratorio:</strong> Registra pacientes, crea órdenes, ingresa resultados</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleDoctorField() {
+            var role = document.getElementById('role').value;
+            var doctorField = document.getElementById('doctorField');
+            var doctorSelect = document.getElementById('doctorId');
+            var noDoctorsAlert = document.getElementById('noDoctorsAlert');
+
+            if (role === 'Doctor') {
+                doctorField.style.display = 'block';
+                doctorSelect.required = true;
+                
+                @if (!availableDoctors.Any())
+                {
+                    <text>
+                    if (noDoctorsAlert) {
+                        noDoctorsAlert.style.display = 'block';
+                    }
+                    </text>
+                }
+            } else {
+                doctorField.style.display = 'none';
+                doctorSelect.required = false;
+                doctorSelect.value = '';
+                
+                if (noDoctorsAlert) {
+                    noDoctorsAlert.style.display = 'none';
+                }
+            }
+        }
+
+        // Auto-ocultar alertas después de 5 segundos
+        setTimeout(function () {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
+}

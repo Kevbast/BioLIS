@@ -1,0 +1,76 @@
+@model BioLab.Models.Doctor
+
+@{
+    ViewData["Title"] = "Registrar Médico";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-md"></i> Registrar Nuevo Médico
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <!-- Nombre Completo -->
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label">
+                                <i class="fas fa-user"></i> Nombre Completo *
+                            </label>
+                            <input asp-for="FullName" class="form-control" placeholder="Ej: Dr. Juan Pérez González" required />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <!-- Número de Licencia -->
+                        <div class="mb-3">
+                            <label asp-for="LicenseNumber" class="form-label">
+                                <i class="fas fa-id-card"></i> Número de Licencia Médica
+                            </label>
+                            <input asp-for="LicenseNumber" class="form-control" placeholder="Ej: MED-12345" />
+                            <span asp-validation-for="LicenseNumber" class="text-danger"></span>
+                            <small class="form-text text-muted">Opcional. Ej: MED-001, CMP-54321</small>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">
+                                <i class="fas fa-envelope"></i> Email
+                            </label>
+                            <input asp-for="Email" type="email" class="form-control" placeholder="doctor@hospital.com" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                            <small class="form-text text-muted">Opcional. Para notificaciones y contacto.</small>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Guardar Médico
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Nota:</strong> 
+                Este médico podrá solicitar órdenes de laboratorio. 
+                Si desea que tenga acceso al sistema, debe crear un usuario vinculado en 
+                <a asp-controller="Users" asp-action="Create" class="alert-link">Gestión de Usuarios</a>.
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

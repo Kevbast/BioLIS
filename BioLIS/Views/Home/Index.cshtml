@@ -1,5 +1,7 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
+    var role = Context.Session.GetString("Role");
+    var username = Context.Session.GetString("Username");
 }
 
 @* Mostrar mensaje de bienvenida o éxito *@
@@ -18,41 +20,184 @@
     @if (Context.Session.GetInt32("UserID").HasValue)
     {
         <div class="mt-4">
-            <h3>👋 Hola, @Context.Session.GetString("Username")!</h3>
-            <p class="text-muted">Rol: <span class="badge bg-primary">@Context.Session.GetString("Role")</span></p>
+            <h3>👋 Hola, @username!</h3>
+            <p class="text-muted">
+                Rol: 
+                @if (role == "Admin")
+                {
+                    <span class="badge bg-danger"><i class="fas fa-crown"></i> Administrador</span>
+                }
+                else if (role == "Doctor")
+                {
+                    <span class="badge bg-primary"><i class="fas fa-user-md"></i> Doctor</span>
+                }
+                else if (role == "Laboratorio")
+                {
+                    <span class="badge bg-success"><i class="fas fa-flask"></i> Laboratorio</span>
+                }
+            </p>
         </div>
     }
     
     <hr class="my-4" />
     
-    <div class="row mt-5">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">👥 Pacientes</h5>
-                    <p class="card-text">Gestiona la información de los pacientes del laboratorio.</p>
-                    <a asp-controller="Patients" asp-action="Index" class="btn btn-primary">Ir a Pacientes</a>
+    <div class="row mt-5 g-4">
+        @* ADMIN: Puede ver TODO *@
+        @if (role == "Admin")
+        {
+            <div class="col-md-3">
+                <div class="card h-100 border-info">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-users text-info"></i> Pacientes</h5>
+                        <p class="card-text">Gestiona la información de los pacientes del laboratorio.</p>
+                        <a asp-controller="Patients" asp-action="Index" class="btn btn-info">Gestionar</a>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">🧪 Pruebas</h5>
-                    <p class="card-text">Administra las pruebas de laboratorio disponibles.</p>
-                    <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+            <div class="col-md-3">
+                <div class="card h-100 border-primary">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-user-md text-primary"></i> Médicos</h5>
+                        <p class="card-text">Gestiona el catálogo de médicos que solicitan estudios.</p>
+                        <a asp-controller="Doctors" asp-action="Index" class="btn btn-primary">Gestionar</a>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">📊 Resultados</h5>
-                    <p class="card-text">Consulta y gestiona los resultados de análisis.</p>
-                    <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+            <div class="col-md-3">
+                <div class="card h-100 border-success">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-file-medical text-success"></i> Órdenes</h5>
+                        <p class="card-text">Crear, ver y gestionar todas las órdenes del laboratorio.</p>
+                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                    </div>
                 </div>
             </div>
-        </div>
+            <div class="col-md-3">
+                <div class="card h-100 border-danger">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-users-cog text-danger"></i> Usuarios</h5>
+                        <p class="card-text">Administra usuarios del sistema y sus permisos.</p>
+                        <a asp-controller="Users" asp-action="Index" class="btn btn-danger">Administrar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-warning">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-flask text-warning"></i> Catálogos</h5>
+                        <p class="card-text">Gestiona exámenes y tipos de muestra.</p>
+                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-chart-bar text-secondary"></i> Reportes</h5>
+                        <p class="card-text">Estadísticas y reportes del sistema.</p>
+                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-dark">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-history text-dark"></i> Auditoría</h5>
+                        <p class="card-text">Historial de cambios y acciones del sistema.</p>
+                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                    </div>
+                </div>
+            </div>
+        }
+        @* LABORATORIO: Operaciones diarias *@
+        else if (role == "Laboratorio")
+        {
+            <div class="col-md-4">
+                <div class="card h-100 border-info">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-users text-info"></i> Pacientes</h5>
+                        <p class="card-text">Registra y edita información de pacientes.</p>
+                        <a asp-controller="Patients" asp-action="Index" class="btn btn-info">Gestionar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-primary">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-user-md text-primary"></i> Médicos</h5>
+                        <p class="card-text">Consulta el listado de médicos registrados.</p>
+                        <a asp-controller="Doctors" asp-action="Index" class="btn btn-primary">Consultar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-success">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-file-medical text-success"></i> Órdenes</h5>
+                        <p class="card-text">Crear órdenes, ingresar y modificar resultados.</p>
+                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-warning">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-microscope text-warning"></i> Resultados Pendientes</h5>
+                        <p class="card-text">Ver y procesar resultados pendientes de análisis.</p>
+                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-print text-secondary"></i> Imprimir Resultados</h5>
+                        <p class="card-text">Generar reportes para pacientes y médicos.</p>
+                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                    </div>
+                </div>
+            </div>
+        }
+        @* DOCTOR: Ver solo sus órdenes *@
+        else if (role == "Doctor")
+        {
+            <div class="col-md-6">
+                <div class="card h-100 border-primary">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-file-medical text-primary"></i> Mis Órdenes</h5>
+                        <p class="card-text">Ver órdenes de laboratorio solicitadas por usted.</p>
+                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-success">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-print text-success"></i> Mis Resultados</h5>
+                        <p class="card-text">Consultar e imprimir resultados de sus pacientes.</p>
+                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="card h-100 border-info">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-user-md text-info"></i> Médicos del Laboratorio</h5>
+                        <p class="card-text">Consulta el directorio de médicos colaboradores.</p>
+                        <a asp-controller="Doctors" asp-action="Index" class="btn btn-info">Ver Directorio</a>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Auto-ocultar alertas después de 5 segundos
+        setTimeout(function () {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
+}
 

@@ -1,0 +1,101 @@
+@model BioLab.Models.Doctor
+
+@{
+    ViewData["Title"] = "Eliminar Médico";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>¿Está seguro que desea eliminar este médico?</strong>
+                        <p class="mb-0 mt-2">Esta acción no se puede deshacer.</p>
+                    </div>
+
+                    <!-- Información del Médico -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong><i class="fas fa-hashtag"></i> ID:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @Model.DoctorID
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong><i class="fas fa-user"></i> Nombre Completo:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @Model.FullName
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong><i class="fas fa-id-card"></i> Licencia:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @if (!string.IsNullOrEmpty(Model.LicenseNumber))
+                            {
+                                <span class="badge bg-info">@Model.LicenseNumber</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Sin licencia registrada</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong><i class="fas fa-envelope"></i> Email:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            @if (!string.IsNullOrEmpty(Model.Email))
+                            {
+                                @Model.Email
+                            }
+                            else
+                            {
+                                <span class="text-muted">Sin email registrado</span>
+                            }
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <!-- Formulario de confirmación -->
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="DoctorID" />
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Sí, Eliminar Médico
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Advertencia adicional -->
+            <div class="alert alert-danger mt-3">
+                <i class="fas fa-ban"></i> 
+                <strong>Restricción:</strong> 
+                No se puede eliminar un médico que tenga órdenes de laboratorio asociadas. 
+                En ese caso, el sistema mostrará un mensaje de error.
+            </div>
+        </div>
+    </div>
+</div>

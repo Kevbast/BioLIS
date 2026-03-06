@@ -1,5 +1,6 @@
 ﻿using BioLab.Models;
 using BioLIS.Filters;
+using BioLIS.Helpers;
 using BioLIS.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -7,16 +8,16 @@ using System.Threading.Tasks;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeSession] // Requiere autenticación para todas las acciones
+    [AuthorizeRole("Admin", "Laboratorio")] // Solo Admin y Laboratorio pueden gestionar pacientes
     public class PatientsController : Controller
     {
         private CatalogRepository repo;
-        private IWebHostEnvironment environment;
+        private HelperPathProvider pathHelper;
 
-        public PatientsController(CatalogRepository repo, IWebHostEnvironment environment)
+        public PatientsController(CatalogRepository repo, HelperPathProvider pathHelper)
         {
             this.repo = repo;
-            this.environment = environment;
+            this.pathHelper = pathHelper;
         }
 
         public async Task<IActionResult> Index()
@@ -42,9 +43,8 @@ namespace BioLIS.Controllers
                 // Generamos un nombre limpio o usamos el original
                 nombreImagen = fichero.FileName;
 
-                // Definimos la ruta: wwwroot/images/pacientes
-                string rootPath = environment.WebRootPath;
-                string path = Path.Combine(rootPath, "images", "pacientes", nombreImagen);
+                // Usamos HelperPathProvider para obtener la ruta física
+                string path = this.pathHelper.MapPath(nombreImagen, Folders.Pacientes);
 
                 // Subimos el archivo físicamente
                 using (var stream = new FileStream(path, FileMode.Create))
@@ -75,16 +75,15 @@ namespace BioLIS.Controllers
         public async Task<IActionResult> Update(Patient patient, IFormFile fichero)
         {
             // 1. Gestión de la Imagen (Requisito clave)
-            string nombreImagen = "default.png"; // Imagen por defecto si no suben nada
+            string nombreImagen = patient.PhotoFilename ?? "default.png"; // Mantener imagen actual si no se sube nueva
 
             if (fichero != null)
             {
                 // Generamos un nombre limpio o usamos el original
                 nombreImagen = fichero.FileName;
 
-                // Definimos la ruta: wwwroot/images/pacientes
-                string rootPath = environment.WebRootPath;
-                string path = Path.Combine(rootPath, "images", "pacientes", nombreImagen);
+                // Usamos HelperPathProvider para obtener la ruta física
+                string path = this.pathHelper.MapPath(nombreImagen, Folders.Pacientes);
 
                 // Subimos el archivo físicamente
                 using (var stream = new FileStream(path, FileMode.Create))
@@ -93,7 +92,7 @@ namespace BioLIS.Controllers
                 }
             }
 
-            bool exito= await this.repo.UpdatePatientAsync(
+            bool exito = await this.repo.UpdatePatientAsync(
                 patient.PatientID,
                 patient.FirstName,
                 patient.LastName,
@@ -112,9 +111,9 @@ namespace BioLIS.Controllers
                 ViewData["MENSAJE"] = "Error al actualizar al paciente";
                 return View();
             }
-
         }
 
+        [AuthorizeRole("Admin")] // Solo Admin puede eliminar pacientes
         public async Task<IActionResult> Delete(int patientId)
         {
             Patient paciente = await this.repo.GetPatientByIdAsync(patientId);
@@ -133,7 +132,8 @@ namespace BioLIS.Controllers
                 // Validamos que tenga foto y que no estemos borrando la foto por defecto
                 if (!string.IsNullOrEmpty(nombreImagen) && nombreImagen != "default.png")
                 {
-                    string path = Path.Combine(this.environment.WebRootPath, "images", "pacientes", nombreImagen);
+                    // Usamos HelperPathProvider para obtener la ruta física
+                    string path = this.pathHelper.MapPath(nombreImagen, Folders.Pacientes);
 
                     if (System.IO.File.Exists(path))
                     {
@@ -142,21 +142,7 @@ namespace BioLIS.Controllers
                 }
             }
 
-
             return RedirectToAction("Index");
-
         }
-        //DIVIDIMOS LOS CRUDS POR AHORA
-
-        public async Task<IActionResult> Doctores()
-        {
-            List<Doctor> doctors = await this.repo.GetDoctorsAsync();
-            return View(doctors);
-        }
-
-
-
-
-
     }
 }
