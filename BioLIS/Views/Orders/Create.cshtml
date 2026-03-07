@@ -1,0 +1,178 @@
+@model BioLab.Models.Order
+
+@{
+    ViewData["Title"] = "Nueva Orden de Laboratorio";
+    var patients = ViewBag.Patients as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+    var doctors = ViewBag.Doctors as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+    var labTests = ViewBag.LabTests as List<BioLab.Models.LabTest> ?? new List<BioLab.Models.LabTest>();
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle"></i> Crear Nueva Orden de Laboratorio
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Información del Paciente -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-user"></i> Información del Paciente</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="patientId" class="form-label">
+                                        <i class="fas fa-user-injured"></i> Seleccionar Paciente *
+                                    </label>
+                                    <select class="form-select" id="patientId" name="patientId" required>
+                                        <option value="">-- Seleccione un paciente --</option>
+                                        @foreach (var patient in patients)
+                                        {
+                                            <option value="@patient.Value">@patient.Text</option>
+                                        }
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        Si el paciente no aparece, debe 
+                                        <a asp-controller="Patients" asp-action="Create" target="_blank">registrarlo primero</a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información del Doctor -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-user-md"></i> Médico Solicitante</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="doctorId" class="form-label">
+                                        <i class="fas fa-stethoscope"></i> Seleccionar Doctor *
+                                    </label>
+                                    <select class="form-select" id="doctorId" name="doctorId" required>
+                                        <option value="">-- Seleccione un médico --</option>
+                                        @foreach (var doctor in doctors)
+                                        {
+                                            <option value="@doctor.Value">@doctor.Text</option>
+                                        }
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        Si el médico no aparece, debe 
+                                        <a asp-controller="Doctors" asp-action="Create" target="_blank">registrarlo primero</a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selección de Exámenes -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="fas fa-flask"></i> Exámenes Solicitados</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Seleccione los exámenes que se realizarán. El sistema calculará automáticamente los tubos necesarios.
+                                </p>
+
+                                @if (!labTests.Any())
+                                {
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> 
+                                        No hay exámenes configurados en el catálogo. 
+                                        Contacte al administrador.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <!-- Agrupar por tipo de muestra -->
+                                    var testsBySample = labTests.GroupBy(t => t.SampleType);
+
+                                    @foreach (var group in testsBySample)
+                                    {
+                                        <div class="mb-3">
+                                            <h6 class="border-bottom pb-2">
+                                                <i class="fas fa-vial"></i> 
+                                                @group.Key.SampleName 
+                                                <span class="badge" style="background-color: @GetColorBadge(group.Key.ContainerColor)">
+                                                    Tubo @group.Key.ContainerColor
+                                                </span>
+                                            </h6>
+                                            <div class="row">
+                                                @foreach (var test in group)
+                                                {
+                                                    <div class="col-md-4">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   name="selectedTests" 
+                                                                   value="@test.TestID" 
+                                                                   id="test_@test.TestID">
+                                                            <label class="form-check-label" for="test_@test.TestID">
+                                                                @test.TestName
+                                                                @if (!string.IsNullOrEmpty(test.Units))
+                                                                {
+                                                                    <small class="text-muted">(@test.Units)</small>
+                                                                }
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-save"></i> Crear Orden
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Validar que al menos un examen esté seleccionado
+        $('form').on('submit', function(e) {
+            var checkedCount = $('input[name="selectedTests"]:checked').length;
+            if (checkedCount === 0) {
+                e.preventDefault();
+                alert('Debe seleccionar al menos un examen para crear la orden.');
+                return false;
+            }
+            return true;
+        });
+    </script>
+}
+
+@functions {
+    string GetColorBadge(string containerColor)
+    {
+        return containerColor?.ToLower() switch
+        {
+            "rojo" => "#dc3545",
+            "lila" or "morado" => "#6f42c1",
+            "amarillo" => "#ffc107",
+            "verde" => "#28a745",
+            "azul" => "#007bff",
+            "gris" => "#6c757d",
+            _ => "#17a2b8"
+        };
+    }
+}

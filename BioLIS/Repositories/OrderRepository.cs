@@ -209,22 +209,34 @@ namespace BioLIS.Repositories
             await this.context.SaveChangesAsync();
             return true;
         }
-        //5.Delete órden
+        //5.Delete órden (con eliminación en cascada de resultados)
         public async Task<(bool Success, string Message)> DeleteOrderAsync(int orderId)
         {
-            var validation = await helper.CanDeleteAsync("Orders", orderId);
+            var order = await this.context.Orders
+                .Include(o => o.TestResults) // Incluir resultados para eliminarlos
+                .FirstOrDefaultAsync(o => o.OrderID == orderId);
 
-            if (!validation.CanDelete)
-                return (false, validation.Message);
-
-            var order = await this.context.Orders.FindAsync(orderId);
             if (order == null)
                 return (false, "Orden no encontrada.");
 
+            // Contar resultados para el mensaje
+            int resultsCount = order.TestResults?.Count ?? 0;
+
+            // Eliminar primero los resultados asociados
+            if (order.TestResults != null && order.TestResults.Any())
+            {
+                this.context.TestResults.RemoveRange(order.TestResults);
+            }
+
+            // Luego eliminar la orden
             this.context.Orders.Remove(order);
             await this.context.SaveChangesAsync();
 
-            return (true, "Orden eliminada exitosamente.");
+            string message = resultsCount > 0 
+                ? $"Orden eliminada exitosamente junto con {resultsCount} resultado(s) asociado(s)." 
+                : "Orden eliminada exitosamente.";
+
+            return (true, message);
         }
         //6.Obtener órdenes de hoy
         public async Task<List<Order>> GetTodayOrdersAsync()

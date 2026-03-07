@@ -33,6 +33,7 @@ builder.Services.AddTransient<HelperPathProvider>();
 builder.Services.AddTransient<HelperRepository>();
 builder.Services.AddTransient<CatalogRepository>();
 builder.Services.AddTransient<AuthRepository>();
+builder.Services.AddTransient<OrderRepository>();
 
 var app = builder.Build();
 

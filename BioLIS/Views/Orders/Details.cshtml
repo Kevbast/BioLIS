@@ -1,0 +1,280 @@
+@model BioLab.Models.Order
+
+@{
+    ViewData["Title"] = "Detalles de la Orden";
+    var results = ViewBag.Results as List<BioLab.Models.TestResult> ?? new List<BioLab.Models.TestResult>();
+    var role = Context.Session.GetString("Role");
+}
+
+<div class="container mt-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-file-medical text-primary"></i> 
+            Orden: <strong>@Model.OrderNumber</strong>
+        </h2>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            @if (role == "Admin")
+            {
+                <a asp-action="Delete" asp-route-orderId="@Model.OrderID" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Eliminar
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Información del Paciente -->
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Información del Paciente</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <img src="~/images/pacientes/@Model.Patient.PhotoFilename" 
+                                 alt="@Model.Patient.FirstName" 
+                                 class="rounded-circle border border-3 border-info" 
+                                 style="width: 100px; height: 100px; object-fit: cover;" 
+                                 onerror="this.src='/images/pacientes/default.png'" />
+                        </div>
+                        <div class="col-md-8">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">ID:</dt>
+                                <dd class="col-sm-7">@Model.Patient.PatientID</dd>
+
+                                <dt class="col-sm-5">Nombre:</dt>
+                                <dd class="col-sm-7"><strong>@Model.Patient.FirstName @Model.Patient.LastName</strong></dd>
+
+                                <dt class="col-sm-5">Género:</dt>
+                                <dd class="col-sm-7">
+                                    @if (Model.Patient.Gender == "M")
+                                    {
+                                        <span class="badge bg-primary"><i class="fas fa-mars"></i> Masculino</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger"><i class="fas fa-venus"></i> Femenino</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-5">Fecha Nac.:</dt>
+                                <dd class="col-sm-7">@Model.Patient.BirthDate.ToString("dd/MM/yyyy")</dd>
+
+                                <dt class="col-sm-5">Email:</dt>
+                                <dd class="col-sm-7">
+                                    @if (!string.IsNullOrEmpty(Model.Patient.Email))
+                                    {
+                                        <span>@Model.Patient.Email</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No disponible</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Doctor -->
+        <div class="col-md-6 mb-3">
+            <div class="card h-100 shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-md"></i> Médico Solicitante</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-5">ID:</dt>
+                        <dd class="col-sm-7">@Model.Doctor.DoctorID</dd>
+
+                        <dt class="col-sm-5">Nombre:</dt>
+                        <dd class="col-sm-7"><strong>@Model.Doctor.FullName</strong></dd>
+
+                        <dt class="col-sm-5">Licencia:</dt>
+                        <dd class="col-sm-7">
+                            @if (!string.IsNullOrEmpty(Model.Doctor.LicenseNumber))
+                            {
+                                <span class="badge bg-info">@Model.Doctor.LicenseNumber</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Sin licencia</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-5">Email:</dt>
+                        <dd class="col-sm-7">
+                            @if (!string.IsNullOrEmpty(Model.Doctor.Email))
+                            {
+                                <span>@Model.Doctor.Email</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No disponible</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-5">Fecha Orden:</dt>
+                        <dd class="col-sm-7">
+                            <i class="fas fa-calendar"></i> @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exámenes y Resultados -->
+    <div class="card shadow mt-3">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-flask"></i> Exámenes Solicitados 
+                <span class="badge bg-light text-dark">@results.Count</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (!results.Any())
+            {
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i> No hay exámenes asociados a esta orden.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Examen</th>
+                                <th>Tipo de Muestra</th>
+                                <th>Unidades</th>
+                                <th>Resultado</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var result in results)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@result.LabTest.TestName</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background-color: @GetColorBadge(result.LabTest.SampleType.ContainerColor)">
+                                            <i class="fas fa-vial"></i> @result.LabTest.SampleType.SampleName
+                                        </span>
+                                    </td>
+                                    <td>@result.LabTest.Units</td>
+                                    <td>
+                                        @if (result.ResultValue.HasValue)
+                                        {
+                                            <strong>@result.ResultValue.Value</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Pendiente</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!result.ResultValue.HasValue)
+                                        {
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock"></i> Pendiente
+                                            </span>
+                                        }
+                                        else if (result.IsAbnormal)
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-exclamation-triangle"></i> Anormal
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i> Normal
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(result.Notes))
+                                        {
+                                            <span>@result.Notes</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Información Adicional</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <i class="fas fa-barcode"></i> 
+                        <strong>Código de Barras:</strong> @Model.OrderNumber
+                    </p>
+                    <p class="mb-2">
+                        <i class="fas fa-calendar-alt"></i> 
+                        <strong>Fecha de Creación:</strong> @Model.OrderDate.ToString("dddd, dd MMMM yyyy HH:mm:ss")
+                    </p>
+                    @if (role == "Admin" || role == "Laboratorio")
+                    {
+                        <div class="mt-3">
+                            <a href="#" class="btn btn-primary disabled">
+                                <i class="fas fa-edit"></i> Ingresar Resultados (Próximamente)
+                            </a>
+                            <a href="#" class="btn btn-info disabled">
+                                <i class="fas fa-print"></i> Imprimir Orden
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetColorBadge(string containerColor)
+    {
+        return containerColor?.ToLower() switch
+        {
+            "rojo" => "#dc3545",
+            "lila" or "morado" => "#6f42c1",
+            "amarillo" => "#ffc107",
+            "verde" => "#28a745",
+            "azul" => "#007bff",
+            "gris" => "#6c757d",
+            _ => "#17a2b8"
+        };
+    }
+}

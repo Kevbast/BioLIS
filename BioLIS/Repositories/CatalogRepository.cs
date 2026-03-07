@@ -9,6 +9,9 @@ namespace BioLIS.Repositories
         private LaboratorioContext context;
         private HelperRepository helper;
 
+        // Exponer el contexto para acceso desde controllers
+        public LaboratorioContext Context => context;
+
         //Context y Helper
         public CatalogRepository(LaboratorioContext context, HelperRepository helper)
         {
