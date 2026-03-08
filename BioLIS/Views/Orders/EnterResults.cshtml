@@ -1,0 +1,263 @@
+@model BioLab.Models.Order
+
+@{
+    ViewData["Title"] = "Ingresar Resultados";
+    var results = ViewBag.Results as List<BioLab.Models.TestResult> ?? new List<BioLab.Models.TestResult>();
+    var summary = ViewBag.Summary as BioLIS.Repositories.OrderResultsSummary;
+}
+
+<div class="container mt-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-keyboard text-success"></i> 
+            Ingresar Resultados - Orden: <strong>@Model.OrderNumber</strong>
+        </h2>
+        <a asp-action="Details" asp-route-orderId="@Model.OrderID" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Resumen de la Orden -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6><i class="fas fa-user"></i> Paciente</h6>
+                    <p class="mb-0"><strong>@Model.Patient.FirstName @Model.Patient.LastName</strong></p>
+                    <small class="text-muted">
+                        @Model.Patient.Gender | Edad: @((DateTime.Now.Year - Model.Patient.BirthDate.Year)) años
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6><i class="fas fa-user-md"></i> Doctor</h6>
+                    <p class="mb-0"><strong>@Model.Doctor.FullName</strong></p>
+                    <small class="text-muted">@Model.Doctor.LicenseNumber</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progreso -->
+    @if (summary != null)
+    {
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <h6 class="mb-3"><i class="fas fa-chart-pie"></i> Progreso de Resultados</h6>
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: @summary.CompletionPercentage%" 
+                         aria-valuenow="@summary.CompletionPercentage" aria-valuemin="0" aria-valuemax="100">
+                        @summary.CompletedResults / @summary.TotalResults completados (@summary.CompletionPercentage.ToString("F0")%)
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-2">
+                        <span class="badge bg-warning">
+                            <i class="fas fa-clock"></i> Pendientes: @summary.PendingResults
+                        </span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-success">
+                            <i class="fas fa-check"></i> Normales: @summary.NormalResults
+                        </span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-exclamation-triangle"></i> Anormales: @(summary.AbnormalResults - summary.CriticalResults)
+                        </span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-danger">
+                            <i class="fas fa-skull-crossbones"></i> Críticos: @summary.CriticalResults
+                        </span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-question-circle"></i> Sin Rango: @summary.NoRangeResults
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Formulario de Resultados -->
+    <form asp-action="EnterResults" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="orderId" value="@Model.OrderID" />
+
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-flask"></i> Exámenes - Ingresar Valores
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (!results.Any())
+                {
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i> No hay exámenes en esta orden.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 25%;">Examen</th>
+                                    <th style="width: 15%;">Tipo de Muestra</th>
+                                    <th style="width: 10%;">Unidades</th>
+                                    <th style="width: 20%;">Resultado Actual</th>
+                                    <th style="width: 20%;">Nuevo Valor</th>
+                                    <th style="width: 10%;">Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var result in results)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@result.LabTest.TestName</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge" style="background-color: @GetColorBadge(result.LabTest.SampleType.ContainerColor)">
+                                                <i class="fas fa-vial"></i> @result.LabTest.SampleType.SampleName
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">@result.LabTest.Units</small>
+                                        </td>
+                                        <td>
+                                            @if (result.ResultValue.HasValue)
+                                            {
+                                                <span class="@BioLab.Models.AlertLevels.GetBadgeClass(result.AlertLevel)">
+                                                    @result.ResultValue.Value
+                                                </span>
+                                                @if (!string.IsNullOrEmpty(result.AlertLevel))
+                                                {
+                                                    <br />
+                                                    <small class="text-muted">
+                                                        @BioLab.Models.AlertLevels.GetDisplayName(result.AlertLevel)
+                                                    </small>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock"></i> Pendiente
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                   step="0.01" 
+                                                   class="form-control form-control-sm" 
+                                                   name="resultValues[@result.ResultID]" 
+                                                   value="@(result.ResultValue?.ToString() ?? "")"
+                                                   placeholder="Ingrese valor" />
+                                        </td>
+                                        <td>
+                                            <input type="text" 
+                                                   class="form-control form-control-sm" 
+                                                   name="notes[@result.ResultID]" 
+                                                   value="@(result.Notes ?? "")"
+                                                   placeholder="Opcional" 
+                                                   maxlength="200" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Details" asp-route-orderId="@Model.OrderID" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-save"></i> Guardar Resultados
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Información adicional -->
+    <div class="card mt-3 shadow-sm">
+        <div class="card-body">
+            <h6><i class="fas fa-info-circle"></i> Información Importante</h6>
+            <ul class="mb-0">
+                <li>Los resultados se validarán automáticamente con los rangos de referencia del paciente.</li>
+                <li>El sistema calculará si el resultado es Normal, Anormal o Crítico.</li>
+                <li>Solo se actualizarán los campos que tengan un valor ingresado.</li>
+                <li>Las observaciones son opcionales pero pueden ser útiles para el médico.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-ocultar alertas después de 5 segundos
+        setTimeout(function () {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+
+        // Validación: Al menos un resultado debe tener valor
+        $('form').on('submit', function(e) {
+            var hasValue = false;
+            $('input[name^="resultValues"]').each(function() {
+                if ($(this).val() !== '') {
+                    hasValue = true;
+                    return false; // break
+                }
+            });
+
+            if (!hasValue) {
+                e.preventDefault();
+                alert('Debe ingresar al menos un resultado.');
+                return false;
+            }
+        });
+    </script>
+}
+
+@functions {
+    string GetColorBadge(string containerColor)
+    {
+        return containerColor?.ToLower() switch
+        {
+            "rojo" => "#dc3545",
+            "lila" or "morado" => "#6f42c1",
+            "amarillo" => "#ffc107",
+            "verde" => "#28a745",
+            "azul" => "#007bff",
+            "gris" => "#6c757d",
+            _ => "#17a2b8"
+        };
+    }
+}

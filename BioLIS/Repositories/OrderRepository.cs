@@ -439,8 +439,21 @@ namespace BioLIS.Repositories
                 TotalResults = results.Count,
                 CompletedResults = results.Count(r => r.ResultValue.HasValue),
                 PendingResults = results.Count(r => !r.ResultValue.HasValue),
-                AbnormalResults = results.Count(r => r.IsAbnormal),
-                NormalResults = results.Count(r => !r.IsAbnormal && r.ResultValue.HasValue)
+                // Contar anormales: incluye "ANORMAL" y "CRITICO"
+                AbnormalResults = results.Count(r => 
+                    r.AlertLevel == AlertLevels.Anormal || 
+                    r.AlertLevel == AlertLevels.Critico),
+                // Contar normales: solo "NORMAL" (excluye "SIN_RANGO")
+                NormalResults = results.Count(r => 
+                    r.AlertLevel == AlertLevels.Normal && 
+                    r.ResultValue.HasValue),
+                // Contar críticos específicamente
+                CriticalResults = results.Count(r => 
+                    r.AlertLevel == AlertLevels.Critico),
+                // Contar sin rango
+                NoRangeResults = results.Count(r => 
+                    r.AlertLevel == AlertLevels.SinRango && 
+                    r.ResultValue.HasValue)
             };
         }
 
@@ -479,14 +492,35 @@ namespace BioLIS.Repositories
             if (testResult == null)
                 return false;
 
+            // Normalizar AlertLevel para que coincida con el CHECK constraint
+            string normalizedAlertLevel = NormalizeAlertLevel(alertLevel);
+
             testResult.ResultValue = resultValue;
-            testResult.AlertLevel = alertLevel;
+            testResult.AlertLevel = normalizedAlertLevel;
             testResult.Notes = notes;
             testResult.ModifiedBy = modifiedBy;
             testResult.ModifiedDate = DateTime.Now;
 
             await this.context.SaveChangesAsync();
             return true;
+        }
+
+        /// <summary>
+        /// Normalizar valor de AlertLevel para que coincida con CHECK constraint
+        /// </summary>
+        private string NormalizeAlertLevel(string? alertLevel)
+        {
+            if (string.IsNullOrWhiteSpace(alertLevel))
+                return AlertLevels.Normal;
+
+            return alertLevel.ToUpper() switch
+            {
+                "NORMAL" => AlertLevels.Normal,
+                "ANORMAL" => AlertLevels.Anormal,
+                "CRITICO" or "CRÍTICO" => AlertLevels.Critico,
+                "SIN RANGO" or "SIN_RANGO" or "SINRANGO" => AlertLevels.SinRango,
+                _ => AlertLevels.Normal // Por defecto, asumir normal
+            };
         }
 
         #endregion
@@ -561,8 +595,10 @@ namespace BioLIS.Repositories
         public int TotalResults { get; set; }
         public int CompletedResults { get; set; }
         public int PendingResults { get; set; }
-        public int AbnormalResults { get; set; }
+        public int AbnormalResults { get; set; } // Incluye ANORMAL + CRITICO
         public int NormalResults { get; set; }
+        public int CriticalResults { get; set; } // Solo CRITICO
+        public int NoRangeResults { get; set; } // Solo SIN_RANGO
 
         public decimal CompletionPercentage =>
             TotalResults > 0 ? (decimal)CompletedResults / TotalResults * 100 : 0;

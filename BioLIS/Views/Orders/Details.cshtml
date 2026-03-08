@@ -198,6 +198,13 @@
                                                 <i class="fas fa-clock"></i> Pendiente
                                             </span>
                                         }
+                                        else if (!string.IsNullOrEmpty(result.AlertLevel))
+                                        {
+                                            <span class="@BioLab.Models.AlertLevels.GetBadgeClass(result.AlertLevel)">
+                                                <i class="fas @GetIconForAlertLevel(result.AlertLevel)"></i> 
+                                                @BioLab.Models.AlertLevels.GetDisplayName(result.AlertLevel)
+                                            </span>
+                                        }
                                         else if (result.IsAbnormal)
                                         {
                                             <span class="badge bg-danger">
@@ -249,8 +256,8 @@
                     @if (role == "Admin" || role == "Laboratorio")
                     {
                         <div class="mt-3">
-                            <a href="#" class="btn btn-primary disabled">
-                                <i class="fas fa-edit"></i> Ingresar Resultados (Próximamente)
+                            <a asp-action="EnterResults" asp-route-orderId="@Model.OrderID" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> Ingresar/Modificar Resultados
                             </a>
                             <a href="#" class="btn btn-info disabled">
                                 <i class="fas fa-print"></i> Imprimir Orden
@@ -275,6 +282,18 @@
             "azul" => "#007bff",
             "gris" => "#6c757d",
             _ => "#17a2b8"
+        };
+    }
+
+    string GetIconForAlertLevel(string? alertLevel)
+    {
+        return alertLevel switch
+        {
+            "NORMAL" => "fa-check",
+            "ANORMAL" => "fa-exclamation-triangle",
+            "CRITICO" => "fa-skull-crossbones",
+            "SIN_RANGO" => "fa-question-circle",
+            _ => "fa-info-circle"
         };
     }
 }

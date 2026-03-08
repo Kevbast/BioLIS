@@ -3,6 +3,7 @@ using BioLIS.Filters;
 using BioLIS.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace BioLIS.Controllers
 {
@@ -11,11 +12,13 @@ namespace BioLIS.Controllers
     {
         private readonly OrderRepository orderRepo;
         private readonly CatalogRepository catalogRepo;
+        private readonly HelperRepository helperRepo;
 
-        public OrdersController(OrderRepository orderRepo, CatalogRepository catalogRepo)
+        public OrdersController(OrderRepository orderRepo, CatalogRepository catalogRepo, HelperRepository helperRepo)
         {
             this.orderRepo = orderRepo;
             this.catalogRepo = catalogRepo;
+            this.helperRepo = helperRepo;
         }
 
         // GET: Orders
@@ -167,6 +170,103 @@ namespace BioLIS.Controllers
             }
 
             return RedirectToAction("Index");
+        }
+
+        // GET: Orders/EnterResults/5
+        [AuthorizeRole("Admin", "Laboratorio")] // Solo Admin y Laboratorio pueden ingresar resultados
+        public async Task<IActionResult> EnterResults(int orderId)
+        {
+            var order = await orderRepo.GetOrderByIdAsync(orderId);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            // Obtener resultados con detalles
+            var results = await orderRepo.GetResultsByOrderAsync(orderId);
+            ViewBag.Results = results;
+
+            // Obtener resumen de la orden
+            var summary = await orderRepo.GetOrderSummaryAsync(orderId);
+            ViewBag.Summary = summary;
+
+            return View(order);
+        }
+
+        // POST: Orders/EnterResults
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AuthorizeRole("Admin", "Laboratorio")]
+        public async Task<IActionResult> EnterResults(int orderId, Dictionary<int, string> resultValues, Dictionary<int, string> notes)
+        {
+            var userId = HttpContext.Session.GetInt32("UserID");
+            if (!userId.HasValue)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            int updatedCount = 0;
+            int errorCount = 0;
+
+            foreach (var kvp in resultValues)
+            {
+                int resultId = kvp.Key;
+                string valueStr = kvp.Value;
+
+                // Saltar si está vacío
+                if (string.IsNullOrWhiteSpace(valueStr))
+                    continue;
+
+                // Intentar parsear el valor
+                if (decimal.TryParse(valueStr, out decimal resultValue))
+                {
+                    // Obtener nota si existe
+                    string note = notes.ContainsKey(resultId) ? notes[resultId] : null;
+
+                    // Obtener el TestResult para validación
+                    var testResult = await catalogRepo.Context.TestResults
+                        .Include(tr => tr.Order)
+                        .FirstOrDefaultAsync(tr => tr.ResultID == resultId);
+
+                    if (testResult != null)
+                    {
+                        // Validar y obtener AlertLevel usando HelperRepository
+                        var validation = await helperRepo.ValidateResultAsync(
+                            testResult.TestID,
+                            testResult.Order.PatientID,
+                            resultValue
+                        );
+
+                        string alertLevel = validation.Status;
+
+                        // Actualizar con auditoría
+                        bool success = await orderRepo.UpdateTestResultWithAuditAsync(
+                            resultId, resultValue, alertLevel, userId.Value, note
+                        );
+
+                        if (success)
+                            updatedCount++;
+                        else
+                            errorCount++;
+                    }
+                }
+                else
+                {
+                    errorCount++;
+                }
+            }
+
+            if (updatedCount > 0)
+            {
+                TempData["SuccessMessage"] = $"{updatedCount} resultado(s) actualizado(s) exitosamente.";
+            }
+
+            if (errorCount > 0)
+            {
+                TempData["ErrorMessage"] = $"{errorCount} resultado(s) no pudieron ser actualizados.";
+            }
+
+            return RedirectToAction("Details", new { orderId });
         }
     }
 }
