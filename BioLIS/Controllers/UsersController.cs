@@ -30,7 +30,7 @@ namespace BioLIS.Controllers
             
             // Obtener todos los doctores para poder mostrar sus nombres
             var allDoctors = await this.catalogRepo.GetDoctorsAsync();
-            ViewBag.Doctors = allDoctors.ToDictionary(d => d.DoctorID, d => d.FullName);
+            ViewData["Doctors"] = allDoctors.ToDictionary(d => d.DoctorID, d => d.FullName);
             
             // Convertir UserValidation a User completo para incluir PhotoFilename
             var usersWithDetails = new List<User>();
@@ -67,8 +67,8 @@ namespace BioLIS.Controllers
                 })
                 .ToList();
 
-            ViewBag.AvailableDoctors = availableDoctors;
-            ViewBag.Roles = UserRoles.GetAll();
+            ViewData["AvailableDoctors"] = availableDoctors;
+            ViewData["Roles"] = UserRoles.GetAll();
             return View();
         }
 

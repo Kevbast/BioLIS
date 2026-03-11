@@ -58,7 +58,7 @@ namespace BioLIS.Controllers
         {
             // Obtener lista de pacientes
             var patients = await catalogRepo.GetPatientsAsync();
-            ViewBag.Patients = patients.Select(p => new SelectListItem
+            ViewData["Patients"] = patients.Select(p => new SelectListItem
             {
                 Value = p.PatientID.ToString(),
                 Text = $"{p.FirstName} {p.LastName} - {p.PatientID}"
@@ -66,7 +66,7 @@ namespace BioLIS.Controllers
 
             // Obtener lista de doctores
             var doctors = await catalogRepo.GetDoctorsAsync();
-            ViewBag.Doctors = doctors.Select(d => new SelectListItem
+            ViewData["Doctors"] = doctors.Select(d => new SelectListItem
             {
                 Value = d.DoctorID.ToString(),
                 Text = $"{d.FullName} ({d.LicenseNumber ?? "Sin licencia"})"
@@ -74,7 +74,7 @@ namespace BioLIS.Controllers
 
             // Obtener lista de exámenes disponibles
             var labTests = await catalogRepo.GetLabTestsAsync();
-            ViewBag.LabTests = labTests;
+            ViewData["LabTests"] = labTests;
 
             return View();
         }
@@ -134,7 +134,7 @@ namespace BioLIS.Controllers
 
             // Obtener resultados con detalles
             var results = await orderRepo.GetResultsByOrderAsync(orderId);
-            ViewBag.Results = results;
+            ViewData["Results"] = results;
 
             return View(order);
         }
@@ -184,11 +184,11 @@ namespace BioLIS.Controllers
 
             // Obtener resultados con detalles
             var results = await orderRepo.GetResultsByOrderAsync(orderId);
-            ViewBag.Results = results;
+            ViewData["Results"] = results;
 
             // Obtener resumen de la orden
             var summary = await orderRepo.GetOrderSummaryAsync(orderId);
-            ViewBag.Summary = summary;
+            ViewData["Summary"] = summary;
 
             return View(order);
         }

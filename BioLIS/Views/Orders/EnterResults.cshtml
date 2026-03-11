@@ -2,8 +2,8 @@
 
 @{
     ViewData["Title"] = "Ingresar Resultados";
-    var results = ViewBag.Results as List<BioLab.Models.TestResult> ?? new List<BioLab.Models.TestResult>();
-    var summary = ViewBag.Summary as BioLIS.Repositories.OrderResultsSummary;
+    var results = ViewData["Results"] as List<BioLab.Models.TestResult> ?? new List<BioLab.Models.TestResult>();
+    var summary = ViewData["Summary"] as BioLIS.Repositories.OrderResultsSummary;
 }
 
 <div class="container mt-4">

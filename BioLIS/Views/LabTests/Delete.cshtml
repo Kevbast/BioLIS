@@ -1,0 +1,107 @@
+@model BioLab.Models.LabTest
+
+@{
+    ViewData["Title"] = "Eliminar Examen";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación de Examen
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-skull-crossbones"></i>
+                        <strong>¡ADVERTENCIA!</strong> 
+                        Esta acción eliminará permanentemente este examen del catálogo.
+                        <p class="mb-0 mt-2">
+                            Si existen órdenes con este examen, la eliminación será rechazada.
+                        </p>
+                    </div>
+
+                    <h5 class="mb-3"><i class="fas fa-flask"></i> Datos del Examen</h5>
+
+                    <dl class="row">
+                        <dt class="col-sm-4"><i class="fas fa-hashtag"></i> ID:</dt>
+                        <dd class="col-sm-8">@Model.TestID</dd>
+
+                        <dt class="col-sm-4"><i class="fas fa-vial"></i> Nombre:</dt>
+                        <dd class="col-sm-8"><strong>@Model.TestName</strong></dd>
+
+                        <dt class="col-sm-4"><i class="fas fa-ruler"></i> Unidades:</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.Units))
+                            {
+                                <span class="badge bg-info">@Model.Units</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Sin unidad</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4"><i class="fas fa-test-tube"></i> Tipo de Muestra:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge" style="background-color: @GetColorBadge(Model.SampleType.ContainerColor)">
+                                <i class="fas fa-vial"></i> @Model.SampleType.SampleName
+                            </span>
+                        </dd>
+
+                        @if (Model.ReferenceRanges != null && Model.ReferenceRanges.Any())
+                        {
+                            <dt class="col-sm-4"><i class="fas fa-chart-line"></i> Rangos Configurados:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-warning text-dark">
+                                    @Model.ReferenceRanges.Count rango(s) de referencia
+                                </span>
+                            </dd>
+                        }
+                    </dl>
+
+                    <hr />
+
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="TestID" />
+                        @Html.AntiForgeryToken()
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Sí, Eliminar Examen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Nota:</strong> 
+                Si este examen está siendo usado en órdenes existentes, 
+                el sistema impedirá su eliminación para mantener la integridad de los datos.
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetColorBadge(string containerColor)
+    {
+        return containerColor?.ToLower() switch
+        {
+            "rojo" => "#dc3545",
+            "lila" or "morado" => "#6f42c1",
+            "amarillo" => "#ffc107",
+            "verde" => "#28a745",
+            "azul" => "#007bff",
+            "gris" => "#6c757d",
+            _ => "#17a2b8"
+        };
+    }
+}

@@ -1,0 +1,89 @@
+@model BioLab.Models.LabTest
+
+@{
+    ViewData["Title"] = "Editar Examen";
+    var sampleTypes = ViewData["SampleTypes"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit"></i> Editar Examen: @Model.TestName
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="Update" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="TestID" />
+
+                        <!-- Nombre del Examen -->
+                        <div class="mb-3">
+                            <label asp-for="TestName" class="form-label">
+                                <i class="fas fa-vial"></i> Nombre del Examen *
+                            </label>
+                            <input asp-for="TestName" class="form-control" 
+                                   placeholder="Ej: Hemoglobina, Glucosa" 
+                                   required maxlength="100" />
+                        </div>
+
+                        <!-- Unidades -->
+                        <div class="mb-3">
+                            <label asp-for="Units" class="form-label">
+                                <i class="fas fa-ruler"></i> Unidades de Medida
+                            </label>
+                            <input asp-for="Units" class="form-control" 
+                                   placeholder="Ej: mg/dL, g/dL, mmol/L" 
+                                   maxlength="20" />
+                        </div>
+
+                        <!-- Tipo de Muestra -->
+                        <div class="mb-3">
+                            <label asp-for="SampleID" class="form-label">
+                                <i class="fas fa-test-tube"></i> Tipo de Muestra *
+                            </label>
+                            <select asp-for="SampleID" class="form-select" required>
+                                <option value="">-- Seleccione el tipo de muestra --</option>
+                                @foreach (var sample in sampleTypes)
+                                {
+                                    <option value="@sample.Value" selected="@sample.Selected">@sample.Text</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save"></i> Actualizar Examen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (Model.ReferenceRanges != null && Model.ReferenceRanges.Any())
+            {
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <strong>Este examen tiene @Model.ReferenceRanges.Count rango(s) de referencia configurados.</strong>
+                    <p class="mb-0 mt-2">
+                        Si cambia el tipo de muestra, verifique que los rangos sigan siendo válidos.
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

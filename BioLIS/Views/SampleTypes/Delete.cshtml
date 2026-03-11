@@ -1,0 +1,128 @@
+@model BioLab.Models.SampleType
+
+@{
+    ViewData["Title"] = "Eliminar Tipo de Muestra";
+    var relatedTests = ViewData["RelatedTests"] as List<BioLab.Models.LabTest> ?? new List<BioLab.Models.LabTest>();
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación de Tipo de Muestra
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-skull-crossbones"></i>
+                        <strong>¡ADVERTENCIA!</strong> 
+                        Esta acción eliminará permanentemente este tipo de muestra.
+                        <p class="mb-0 mt-2">
+                            @if (relatedTests.Any())
+                            {
+                                <span class="text-danger">
+                                    <strong>?? Este tipo de muestra está siendo usado por @relatedTests.Count examen(es).</strong>
+                                    <br />La eliminación será rechazada.
+                                </span>
+                            }
+                            else
+                            {
+                                <span>No hay exámenes asociados. La eliminación es segura.</span>
+                            }
+                        </p>
+                    </div>
+
+                    <h5 class="mb-3"><i class="fas fa-vial"></i> Datos del Tipo de Muestra</h5>
+
+                    <dl class="row">
+                        <dt class="col-sm-4"><i class="fas fa-hashtag"></i> ID:</dt>
+                        <dd class="col-sm-8">@Model.SampleID</dd>
+
+                        <dt class="col-sm-4"><i class="fas fa-vial"></i> Nombre:</dt>
+                        <dd class="col-sm-8"><strong>@Model.SampleName</strong></dd>
+
+                        <dt class="col-sm-4"><i class="fas fa-palette"></i> Color del Tubo:</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.ContainerColor))
+                            {
+                                <span class="badge" style="background-color: @GetColorBadge(Model.ContainerColor); color: white;">
+                                    @Model.ContainerColor
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Sin color</span>
+                            }
+                        </dd>
+                    </dl>
+
+                    @if (relatedTests.Any())
+                    {
+                        <hr />
+                        <h5 class="text-danger"><i class="fas fa-flask"></i> Exámenes que usan este tipo de muestra:</h5>
+                        <ul class="list-group">
+                            @foreach (var test in relatedTests)
+                            {
+                                <li class="list-group-item">
+                                    <i class="fas fa-vial"></i> <strong>@test.TestName</strong>
+                                    @if (!string.IsNullOrEmpty(test.Units))
+                                    {
+                                        <span class="badge bg-info">@test.Units</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>No se puede eliminar:</strong> Primero debe reasignar o eliminar estos exámenes.
+                        </div>
+                    }
+
+                    <hr />
+
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="SampleID" />
+                        @Html.AntiForgeryToken()
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            @if (!relatedTests.Any())
+                            {
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> Sí, Eliminar Tipo de Muestra
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-danger" disabled>
+                                    <i class="fas fa-lock"></i> No se puede eliminar
+                                </button>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetColorBadge(string containerColor)
+    {
+        return containerColor?.ToLower() switch
+        {
+            "rojo" => "#dc3545",
+            "lila" or "morado" => "#6f42c1",
+            "amarillo" => "#ffc107",
+            "verde" => "#28a745",
+            "azul" => "#007bff",
+            "gris" => "#6c757d",
+            "negro" => "#212529",
+            _ => "#17a2b8"
+        };
+    }
+}

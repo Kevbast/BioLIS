@@ -1,0 +1,141 @@
+@model List<BioLab.Models.LabTest>
+
+@{
+    ViewData["Title"] = "Catálogo de Exámenes";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-flask text-success"></i> Catálogo de Exámenes de Laboratorio
+        </h2>
+        <a asp-action="Create" class="btn btn-success">
+            <i class="fas fa-plus"></i> Nuevo Examen
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle"></i> 
+            No hay exámenes registrados. 
+            <a asp-action="Create" class="alert-link">Registrar el primero</a>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre del Examen</th>
+                                <th>Unidades</th>
+                                <th>Tipo de Muestra</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var test in Model)
+                            {
+                                <tr>
+                                    <td><strong>@test.TestID</strong></td>
+                                    <td>
+                                        <i class="fas fa-vial text-primary"></i>
+                                        <strong>@test.TestName</strong>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(test.Units))
+                                        {
+                                            <span class="badge bg-info">@test.Units</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Sin unidad</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background-color: @GetColorBadge(test.SampleType.ContainerColor)">
+                                            <i class="fas fa-test-tube"></i> 
+                                            @test.SampleType.SampleName
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Update" asp-route-testId="@test.TestID"
+                                               class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-testId="@test.TestID"
+                                               class="btn btn-sm btn-danger" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                <div class="row">
+                    <div class="col-md-6">
+                        <i class="fas fa-flask"></i> 
+                        Total de exámenes: <strong>@Model.Count</strong>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        @{
+                            var groupedBySample = Model.GroupBy(t => t.SampleType.SampleName);
+                        }
+                        <i class="fas fa-vial"></i> 
+                        Tipos de muestra utilizados: <strong>@groupedBySample.Count()</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-ocultar alertas después de 5 segundos
+        setTimeout(function () {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
+}
+
+@functions {
+    string GetColorBadge(string containerColor)
+    {
+        return containerColor?.ToLower() switch
+        {
+            "rojo" => "#dc3545",
+            "lila" or "morado" => "#6f42c1",
+            "amarillo" => "#ffc107",
+            "verde" => "#28a745",
+            "azul" => "#007bff",
+            "gris" => "#6c757d",
+            _ => "#17a2b8"
+        };
+    }
+}

@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Gestión de Usuarios";
-    var doctorNames = ViewBag.Doctors as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var doctorNames = ViewData["Doctors"] as Dictionary<int, string> ?? new Dictionary<int, string>();
 }
 
 <div class="container-fluid mt-4">

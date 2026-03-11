@@ -1,7 +1,7 @@
 @{
     ViewData["Title"] = "Crear Nuevo Usuario";
-    var roles = ViewBag.Roles as List<string> ?? new List<string>();
-    var availableDoctors = ViewBag.AvailableDoctors as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+    var roles = ViewData["Roles"] as List<string> ?? new List<string>();
+    var availableDoctors = ViewData["AvailableDoctors"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
 }
 
 <div class="container mt-4">

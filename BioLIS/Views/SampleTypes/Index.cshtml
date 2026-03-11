@@ -1,0 +1,156 @@
+@model List<BioLab.Models.SampleType>
+
+@{
+    ViewData["Title"] = "Tipos de Muestra";
+    var usageStats = ViewData["UsageStats"] as dynamic;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-vial text-info"></i> Tipos de Muestra y Tubos
+        </h2>
+        <a asp-action="Create" class="btn btn-success">
+            <i class="fas fa-plus"></i> Nuevo Tipo de Muestra
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Información sobre tipos de muestra -->
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> 
+        <strong>¿Qué son los Tipos de Muestra?</strong>
+        <p class="mb-0 mt-2">
+            Los tipos de muestra definen qué tubos o recipientes se deben usar para cada examen de laboratorio.
+            Cada tubo tiene un color específico y contiene aditivos necesarios para preservar la muestra.
+        </p>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-info-circle"></i> 
+            No hay tipos de muestra registrados. 
+            <a asp-action="Create" class="alert-link">Registrar el primero</a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var item in usageStats)
+            {
+                var sampleType = item.SampleType as SampleType;
+                var testCount = (int)item.TestCount;
+
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header text-white" style="background-color: @GetColorBadge(sampleType.ContainerColor)">
+                            <h5 class="mb-0">
+                                <i class="fas fa-test-tube"></i> @sampleType.SampleName
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">ID:</dt>
+                                <dd class="col-sm-7">@sampleType.SampleID</dd>
+
+                                <dt class="col-sm-5">Color del Tubo:</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge" style="background-color: @GetColorBadge(sampleType.ContainerColor); color: white;">
+                                        @sampleType.ContainerColor
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-5">Exámenes:</dt>
+                                <dd class="col-sm-7">
+                                    @if (testCount > 0)
+                                    {
+                                        <span class="badge bg-primary">@testCount examen(es)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Sin exámenes</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="card-footer">
+                            <div class="btn-group w-100" role="group">
+                                <a asp-action="Update" asp-route-sampleId="@sampleType.SampleID"
+                                   class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <a asp-action="Delete" asp-route-sampleId="@sampleType.SampleID"
+                                   class="btn btn-sm btn-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="card shadow mt-4">
+            <div class="card-body">
+                <h5><i class="fas fa-chart-bar"></i> Estadísticas</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Total de Tipos de Muestra:</strong> @Model.Count</p>
+                    </div>
+                    <div class="col-md-6">
+                        @{
+                            int totalExams = 0;
+                            foreach (var item in usageStats)
+                            {
+                                totalExams += (int)item.TestCount;
+                            }
+                        }
+                        <p><strong>Total de Exámenes Configurados:</strong> @totalExams</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-ocultar alertas después de 5 segundos
+        setTimeout(function () {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
+}
+
+@functions {
+    string GetColorBadge(string containerColor)
+    {
+        return containerColor?.ToLower() switch
+        {
+            "rojo" => "#dc3545",
+            "lila" or "morado" => "#6f42c1",
+            "amarillo" => "#ffc107",
+            "verde" => "#28a745",
+            "azul" => "#007bff",
+            "gris" => "#6c757d",
+            "negro" => "#212529",
+            _ => "#17a2b8"
+        };
+    }
+}

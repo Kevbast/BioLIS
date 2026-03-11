@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Detalles de la Orden";
-    var results = ViewBag.Results as List<BioLab.Models.TestResult> ?? new List<BioLab.Models.TestResult>();
+    var results = ViewData["Results"] as List<BioLab.Models.TestResult> ?? new List<BioLab.Models.TestResult>();
     var role = Context.Session.GetString("Role");
 }
 

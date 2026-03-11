@@ -1,0 +1,95 @@
+@{
+    ViewData["Title"] = "Crear Examen";
+    var sampleTypes = ViewData["SampleTypes"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle"></i> Registrar Nuevo Examen
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Nombre del Examen -->
+                        <div class="mb-3">
+                            <label for="testName" class="form-label">
+                                <i class="fas fa-vial"></i> Nombre del Examen *
+                            </label>
+                            <input type="text" class="form-control" id="testName" name="testName" 
+                                   placeholder="Ej: Hemoglobina, Glucosa, Colesterol Total" 
+                                   required maxlength="100" />
+                            <small class="form-text text-muted">
+                                Nombre oficial del examen de laboratorio
+                            </small>
+                        </div>
+
+                        <!-- Unidades -->
+                        <div class="mb-3">
+                            <label for="units" class="form-label">
+                                <i class="fas fa-ruler"></i> Unidades de Medida
+                            </label>
+                            <input type="text" class="form-control" id="units" name="units" 
+                                   placeholder="Ej: mg/dL, g/dL, mmol/L, UI/L" 
+                                   maxlength="20" />
+                            <small class="form-text text-muted">
+                                Opcional. Unidad en la que se reportará el resultado
+                            </small>
+                        </div>
+
+                        <!-- Tipo de Muestra -->
+                        <div class="mb-3">
+                            <label for="sampleId" class="form-label">
+                                <i class="fas fa-test-tube"></i> Tipo de Muestra *
+                            </label>
+                            <select class="form-select" id="sampleId" name="sampleId" required>
+                                <option value="">-- Seleccione el tipo de muestra --</option>
+                                @foreach (var sample in sampleTypes)
+                                {
+                                    <option value="@sample.Value">@sample.Text</option>
+                                }
+                            </select>
+                            <small class="form-text text-muted">
+                                Determina qué tubo se debe usar para tomar la muestra
+                            </small>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Crear Examen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Ejemplos de Exámenes Comunes:</strong>
+                <ul class="mb-0 mt-2">
+                    <li><strong>Hemoglobina</strong> - Unidades: g/dL - Muestra: Sangre Total (Tubo Lila)</li>
+                    <li><strong>Glucosa</strong> - Unidades: mg/dL - Muestra: Suero (Tubo Rojo)</li>
+                    <li><strong>Creatinina</strong> - Unidades: mg/dL - Muestra: Suero (Tubo Rojo)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
