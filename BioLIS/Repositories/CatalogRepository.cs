@@ -319,17 +319,24 @@ namespace BioLIS.Repositories
 #endregion
 
 #region RANGOS DE REFERENCIA
-        //1.Obtener todos los rangos de referencia
-        public async Task<List<ReferenceRange>> GetReferenceRangesAsync()
-        {
-            return await this.context.ReferenceRanges
-                .Include(rr => rr.LabTest)
-                .OrderBy(rr => rr.LabTest.TestName)
-                .ThenBy(rr => rr.Gender)
-                .ThenBy(rr => rr.MinAgeYear)
-                .ToListAsync();
-        }
-        //2.Obtener rango por ID
+//1.Obtener todos los rangos de referencia
+public async Task<List<ReferenceRange>> GetReferenceRangesAsync()
+{
+    return await this.context.ReferenceRanges
+        .Include(rr => rr.LabTest)
+        .OrderBy(rr => rr.LabTest.TestName)
+        .ThenBy(rr => rr.Gender)
+        .ThenBy(rr => rr.MinAgeYear)
+        .ToListAsync();
+}
+        
+// Alias para compatibilidad
+public async Task<List<ReferenceRange>> GetAllReferenceRangesAsync()
+{
+    return await GetReferenceRangesAsync();
+}
+        
+//2.Obtener rango por ID
         public async Task<ReferenceRange?> GetReferenceRangeByIdAsync(int id)
         {
             return await this.context.ReferenceRanges

@@ -1,0 +1,163 @@
+@{
+    ViewData["Title"] = "Crear Rango de Referencia";
+    var labTests = ViewData["LabTests"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle"></i> Crear Nuevo Rango de Referencia
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row">
+                            <!-- Examen -->
+                            <div class="col-md-6 mb-3">
+                                <label for="testId" class="form-label">
+                                    <i class="fas fa-flask"></i> Examen *
+                                </label>
+                                <select class="form-select" id="testId" name="testId" required>
+                                    <option value="">-- Seleccione el examen --</option>
+                                    @foreach (var test in labTests)
+                                    {
+                                        <option value="@test.Value">@test.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Género -->
+                            <div class="col-md-6 mb-3">
+                                <label for="gender" class="form-label">
+                                    <i class="fas fa-venus-mars"></i> Género *
+                                </label>
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="">-- Seleccione el género --</option>
+                                    <option value="M">?? Masculino</option>
+                                    <option value="F">?? Femenino</option>
+                                    <option value="A">? Ambos (A)</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    Use "Ambos" si el rango aplica para todos
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Rango de Edad -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-birthday-cake"></i> Rango de Edad</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="minAgeYear" class="form-label">
+                                            Edad Mínima (años) *
+                                        </label>
+                                        <input type="number" class="form-control" id="minAgeYear" name="minAgeYear" 
+                                               min="0" max="120" required placeholder="Ej: 0, 18, 65" />
+                                        <small class="form-text text-muted">0 = Recién nacidos</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="maxAgeYear" class="form-label">
+                                            Edad Máxima (años) *
+                                        </label>
+                                        <input type="number" class="form-control" id="maxAgeYear" name="maxAgeYear" 
+                                               min="0" max="120" required placeholder="Ej: 17, 65, 120" />
+                                        <small class="form-text text-muted">120 = Sin límite superior</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rango de Valores -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0"><i class="fas fa-chart-line"></i> Valores del Rango</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="minVal" class="form-label">
+                                            <span class="text-danger">Valor Mínimo *</span>
+                                        </label>
+                                        <input type="number" step="0.01" class="form-control" id="minVal" name="minVal" 
+                                               required placeholder="Ej: 12.0, 70.0" />
+                                        <small class="form-text text-muted">Límite inferior normal</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="maxVal" class="form-label">
+                                            <span class="text-success">Valor Máximo *</span>
+                                        </label>
+                                        <input type="number" step="0.01" class="form-control" id="maxVal" name="maxVal" 
+                                               required placeholder="Ej: 16.0, 100.0" />
+                                        <small class="form-text text-muted">Límite superior normal</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-save"></i> Crear Rango
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ejemplos -->
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-lightbulb"></i> 
+                <strong>Ejemplos de Rangos:</strong>
+                <ul class="mb-0 mt-2">
+                    <li><strong>Hemoglobina Hombres (18-120 años):</strong> 13.5 - 17.5 g/dL</li>
+                    <li><strong>Glucosa en Ayunas (Adultos):</strong> 70.0 - 100.0 mg/dL</li>
+                    <li><strong>Creatinina Mujeres (18+ años):</strong> 0.6 - 1.1 mg/dL</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Validar que minAge < maxAge
+        $('form').on('submit', function(e) {
+            var minAge = parseInt($('#minAgeYear').val());
+            var maxAge = parseInt($('#maxAgeYear').val());
+            
+            if (minAge >= maxAge) {
+                e.preventDefault();
+                alert('La edad mínima debe ser menor que la edad máxima.');
+                return false;
+            }
+            
+            var minVal = parseFloat($('#minVal').val());
+            var maxVal = parseFloat($('#maxVal').val());
+            
+            if (minVal >= maxVal) {
+                e.preventDefault();
+                alert('El valor mínimo debe ser menor que el valor máximo.');
+                return false;
+            }
+        });
+    </script>
+}
