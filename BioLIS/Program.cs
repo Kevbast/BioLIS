@@ -3,6 +3,7 @@ using BioLIS.Data;
 using BioLIS.Helpers;
 using BioLIS.Models;
 using BioLIS.Repositories;
+using BioLIS.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +35,9 @@ builder.Services.AddTransient<HelperRepository>();
 builder.Services.AddTransient<CatalogRepository>();
 builder.Services.AddTransient<AuthRepository>();
 builder.Services.AddTransient<OrderRepository>();
+
+// Servicios
+builder.Services.AddTransient<PdfReportService>();
 
 var app = builder.Build();
 

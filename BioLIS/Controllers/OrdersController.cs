@@ -1,6 +1,7 @@
 using BioLab.Models;
 using BioLIS.Filters;
 using BioLIS.Repositories;
+using BioLIS.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -13,12 +14,14 @@ namespace BioLIS.Controllers
         private readonly OrderRepository orderRepo;
         private readonly CatalogRepository catalogRepo;
         private readonly HelperRepository helperRepo;
+        private readonly PdfReportService pdfReportService;
 
-        public OrdersController(OrderRepository orderRepo, CatalogRepository catalogRepo, HelperRepository helperRepo)
+        public OrdersController(OrderRepository orderRepo, CatalogRepository catalogRepo, HelperRepository helperRepo, PdfReportService pdfReportService)
         {
             this.orderRepo = orderRepo;
             this.catalogRepo = catalogRepo;
             this.helperRepo = helperRepo;
+            this.pdfReportService = pdfReportService;
         }
 
         // GET: Orders
@@ -267,6 +270,35 @@ namespace BioLIS.Controllers
             }
 
             return RedirectToAction("Details", new { orderId });
+        }
+
+        // GET: Orders/Print/5
+        public async Task<IActionResult> Print(int orderId)
+        {
+            var order = await orderRepo.GetOrderByIdAsync(orderId);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            // Verificar permisos: Los doctores solo pueden imprimir sus órdenes
+            var role = HttpContext.Session.GetString("Role");
+            if (role == "Doctor")
+            {
+                var userId = HttpContext.Session.GetInt32("UserID");
+                var user = await catalogRepo.Context.Users.FindAsync(userId);
+                
+                if (user?.DoctorID != order.DoctorID)
+                {
+                    return RedirectToAction("AccessDenied", "Auth");
+                }
+            }
+
+            var results = await orderRepo.GetResultsByOrderAsync(orderId);
+            
+            var pdfBytes = pdfReportService.GenerateResultsPdf(order, results);
+            
+            return File(pdfBytes, "application/pdf", $"Resultados_{order.OrderNumber}.pdf");
         }
     }
 }
