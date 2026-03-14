@@ -36,14 +36,14 @@ namespace BioLIS.Controllers
             if (role == "Doctor")
             {
                 // Obtener el DoctorID del usuario logueado
-                var user = await catalogRepo.Context.Users.FindAsync(userId);
-                if (user?.DoctorID.HasValue == true)
+                var user = await catalogRepo.Context.Users.FindAsync(userId.Value);
+                if (user != null && user.DoctorID.HasValue)
                 {
                     orders = await orderRepo.GetOrdersByDoctorAsync(user.DoctorID.Value);
                 }
                 else
                 {
-                    orders = new List<Order>(); // Sin órdenes si no tiene DoctorID
+                    orders = new List<Order>(); // Sin órdenes si no tiene DoctorID asociado
                 }
             }
             else
@@ -100,13 +100,15 @@ namespace BioLIS.Controllers
                 return RedirectToAction("Create");
             }
 
-            // Crear la orden
             var order = await orderRepo.CreateOrderAsync(patientId, doctorId);
 
-            // Agregar los exámenes seleccionados como resultados pendientes
+            // Obtener el ID del usuario que está creando la orden para la auditoría
+            var userIdClaim = User.FindFirst("UserID");
+            int? userId = userIdClaim != null ? int.Parse(userIdClaim.Value) : null;
+
             foreach (var testId in selectedTests)
             {
-                await orderRepo.AddTestResultAsync(order.OrderID, testId);
+                await orderRepo.AddTestResultAsync(order.OrderID, testId, null, null, userId);
             }
 
             TempData["SuccessMessage"] = $"Orden {order.OrderNumber} creada exitosamente con {selectedTests.Count} exámenes.";
@@ -127,9 +129,10 @@ namespace BioLIS.Controllers
             if (role == "Doctor")
             {
                 var userId = HttpContext.Session.GetInt32("UserID");
-                var user = await catalogRepo.Context.Users.FindAsync(userId);
+                if (!userId.HasValue) return RedirectToAction("Login", "Auth");
                 
-                if (user?.DoctorID != order.DoctorID)
+                var user = await catalogRepo.Context.Users.FindAsync(userId.Value);
+                if (user == null || user.DoctorID != order.DoctorID)
                 {
                     return RedirectToAction("AccessDenied", "Auth");
                 }
@@ -227,7 +230,7 @@ namespace BioLIS.Controllers
                     string note = notes.ContainsKey(resultId) ? notes[resultId] : null;
 
                     // Obtener el TestResult para validación
-                    var testResult = await catalogRepo.Context.TestResults
+                        var testResult = await catalogRepo.Context.TestResults
                         .Include(tr => tr.Order)
                         .FirstOrDefaultAsync(tr => tr.ResultID == resultId);
 
@@ -286,9 +289,10 @@ namespace BioLIS.Controllers
             if (role == "Doctor")
             {
                 var userId = HttpContext.Session.GetInt32("UserID");
-                var user = await catalogRepo.Context.Users.FindAsync(userId);
-                
-                if (user?.DoctorID != order.DoctorID)
+                if (!userId.HasValue) return RedirectToAction("Login", "Auth");
+
+                var user = await catalogRepo.Context.Users.FindAsync(userId.Value);
+                if (user == null || user.DoctorID != order.DoctorID)
                 {
                     return RedirectToAction("AccessDenied", "Auth");
                 }
