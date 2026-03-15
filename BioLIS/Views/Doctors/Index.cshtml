@@ -1,8 +1,9 @@
+@using System.Security.Claims
 @model List<BioLab.Models.Doctor>
 
 @{
     ViewData["Title"] = "Gestión de Médicos";
-    var role = Context.Session.GetString("Role");
+    var role = User.FindFirstValue(ClaimTypes.Role);
 }
 
 <div class="container mt-4">

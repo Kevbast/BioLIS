@@ -1,8 +1,9 @@
-﻿@model IEnumerable<BioLab.Models.Patient>
+﻿@using System.Security.Claims
+@model IEnumerable<BioLab.Models.Patient>
 
 @{
     ViewData["Title"] = "Gestión de Pacientes";
-    var role = Context.Session.GetString("Role");
+    var role = User.FindFirstValue(ClaimTypes.Role);
 }
 
 <div class="container mt-4">

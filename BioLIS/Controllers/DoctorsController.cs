@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeSession]
+    [AuthorizeUsers(Policy = "AllRoles")]
     public class DoctorsController : Controller
     {
         private CatalogRepository repo;
@@ -23,7 +23,7 @@ namespace BioLIS.Controllers
         }
 
         // GET: Doctors/Create
-        [AuthorizeRole("Admin")] // Solo Admin puede crear doctores
+        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede crear doctores
         public IActionResult Create()
         {
             return View();
@@ -32,7 +32,7 @@ namespace BioLIS.Controllers
         // POST: Doctors/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [AuthorizeRole("Admin")] // Solo Admin puede crear doctores
+        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede crear doctores
         public async Task<IActionResult> Create(Doctor doctor)
         {
             if (ModelState.IsValid)
@@ -51,7 +51,7 @@ namespace BioLIS.Controllers
         }
 
         // GET: Doctors/Update/5
-        [AuthorizeRole("Admin")] // Solo Admin puede editar doctores
+        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede editar doctores
         public async Task<IActionResult> Update(int doctorId)
         {
             Doctor doctor = await this.repo.GetDoctorByIdAsync(doctorId);
@@ -66,7 +66,7 @@ namespace BioLIS.Controllers
         // POST: Doctors/Update/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [AuthorizeRole("Admin")] // Solo Admin puede editar doctores
+        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede editar doctores
         public async Task<IActionResult> Update(Doctor doctor)
         {
             if (ModelState.IsValid)
@@ -88,7 +88,7 @@ namespace BioLIS.Controllers
         }
 
         // GET: Doctors/Delete/5
-        [AuthorizeRole("Admin")] // Solo Admin puede eliminar doctores
+        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede eliminar doctores
         public async Task<IActionResult> Delete(int doctorId)
         {
             Doctor doctor = await this.repo.GetDoctorByIdAsync(doctorId);
@@ -103,7 +103,7 @@ namespace BioLIS.Controllers
         // POST: Doctors/DeleteConfirmed/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [AuthorizeRole("Admin")] // Solo Admin puede eliminar doctores
+        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede eliminar doctores
         public async Task<IActionResult> DeleteConfirmed(int doctorId)
         {
             var result = await this.repo.DeleteDoctorAsync(doctorId);

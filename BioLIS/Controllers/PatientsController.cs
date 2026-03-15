@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeRole("Admin", "Laboratorio")] // Solo Admin y Laboratorio pueden gestionar pacientes
+    [AuthorizeUsers(Policy = "AdminOrLab")] // Solo Admin y Laboratorio pueden gestionar pacientes
     public class PatientsController : Controller
     {
         private CatalogRepository repo;
@@ -113,7 +113,7 @@ namespace BioLIS.Controllers
             }
         }
 
-        [AuthorizeRole("Admin")] // Solo Admin puede eliminar pacientes
+        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede eliminar pacientes
         public async Task<IActionResult> Delete(int patientId)
         {
             Patient paciente = await this.repo.GetPatientByIdAsync(patientId);

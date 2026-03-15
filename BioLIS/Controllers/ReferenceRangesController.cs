@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeRole("Admin")] // Solo Admin puede gestionar rangos de referencia
+    [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede gestionar rangos de referencia
     public class ReferenceRangesController : Controller
     {
         private readonly CatalogRepository catalogRepo;

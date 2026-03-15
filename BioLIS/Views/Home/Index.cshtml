@@ -1,203 +1,275 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-    var role = Context.Session.GetString("Role");
-    var username = Context.Session.GetString("Username");
+﻿@using System.Security.Claims
+@{
+    ViewData["Title"] = "Dashboard";
+    var role = User.FindFirstValue(ClaimTypes.Role);
+    var username = User.FindFirstValue(ClaimTypes.Name);
 }
 
-@* Mostrar mensaje de bienvenida o éxito *@
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <strong>✓ Éxito:</strong> @TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-<div class="text-center">
-    <h1 class="display-4">Bienvenido a BioLIS</h1>
-    <p class="lead">Sistema de Información de Laboratorio</p>
-    
-    @if (Context.Session.GetInt32("UserID").HasValue)
-    {
-        <div class="mt-4">
-            <h3>👋 Hola, @username!</h3>
+<div class="container-fluid mt-4">
+    <!-- Encabezado de bienvenida -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-3">
+                <i class="bi bi-speedometer2 text-primary"></i> Dashboard BioLIS
+            </h2>
             <p class="text-muted">
-                Rol: 
-                @if (role == "Admin")
-                {
-                    <span class="badge bg-danger"><i class="fas fa-crown"></i> Administrador</span>
-                }
-                else if (role == "Doctor")
-                {
-                    <span class="badge bg-primary"><i class="fas fa-user-md"></i> Doctor</span>
-                }
-                else if (role == "Laboratorio")
-                {
-                    <span class="badge bg-success"><i class="fas fa-flask"></i> Laboratorio</span>
-                }
+                Bienvenido, <strong>@username</strong>
+                <span class="badge bg-primary">@role</span>
             </p>
         </div>
-    }
-    
-    <hr class="my-4" />
-    
-    <div class="row mt-5 g-4">
-        @* ADMIN: Puede ver TODO *@
+    </div>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+        <!-- Órdenes de Hoy -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                @if (role == "Doctor")
+                                {
+                                    <text>Mis Órdenes Hoy</text>
+                                }
+                                else
+                                {
+                                    <text>Órdenes Hoy</text>
+                                }
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @(role == "Doctor" ? ViewBag.MyTodayOrders ?? ViewBag.TodayOrders : ViewBag.TodayOrders)
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Pacientes -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Pacientes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalPatients</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Médicos -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Médicos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalDoctors</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Exámenes -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total Exámenes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalTests</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-flask fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accesos rápidos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">Accesos Rápidos</h4>
+        </div>
+
+        @if (role != "Doctor")
+        {
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card text-center h-100 shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-person-plus fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Registrar Paciente</h5>
+                        <a asp-controller="Patients" asp-action="Create" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-circle"></i> Nuevo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-file-earmark-medical fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Nueva Orden</h5>
+                    <a asp-controller="Orders" asp-action="Create" class="btn btn-success btn-sm">
+                        <i class="bi bi-plus-circle"></i> Crear
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-file-earmark-text fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Ver Órdenes</h5>
+                    <a asp-controller="Orders" asp-action="Index" class="btn btn-info btn-sm">
+                        <i class="bi bi-list-ul"></i> Listar
+                    </a>
+                </div>
+            </div>
+        </div>
+
         @if (role == "Admin")
         {
-            <div class="col-md-3">
-                <div class="card h-100 border-info">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card text-center h-100 shadow-sm">
                     <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-users text-info"></i> Pacientes</h5>
-                        <p class="card-text">Gestiona la información de los pacientes del laboratorio.</p>
-                        <a asp-controller="Patients" asp-action="Index" class="btn btn-info">Gestionar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100 border-primary">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-user-md text-primary"></i> Médicos</h5>
-                        <p class="card-text">Gestiona el catálogo de médicos que solicitan estudios.</p>
-                        <a asp-controller="Doctors" asp-action="Index" class="btn btn-primary">Gestionar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100 border-success">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-file-medical text-success"></i> Órdenes</h5>
-                        <p class="card-text">Crear, ver y gestionar todas las órdenes del laboratorio.</p>
-                        <a asp-controller="Orders" asp-action="Index" class="btn btn-success">Gestionar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100 border-danger">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-users-cog text-danger"></i> Usuarios</h5>
-                        <p class="card-text">Administra usuarios del sistema y sus permisos.</p>
-                        <a asp-controller="Users" asp-action="Index" class="btn btn-danger">Administrar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100 border-warning">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-flask text-warning"></i> Catálogos</h5>
-                        <p class="card-text">Gestiona exámenes y tipos de muestra.</p>
-                        <a asp-controller="LabTests" asp-action="Index" class="btn btn-warning">Gestionar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100 border-secondary">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-chart-bar text-secondary"></i> Reportes</h5>
-                        <p class="card-text">Estadísticas y reportes del sistema.</p>
-                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100 border-dark">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-history text-dark"></i> Auditoría</h5>
-                        <p class="card-text">Historial de cambios y acciones del sistema.</p>
-                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
-                    </div>
-                </div>
-            </div>
-        }
-        @* LABORATORIO: Operaciones diarias *@
-        else if (role == "Laboratorio")
-        {
-            <div class="col-md-4">
-                <div class="card h-100 border-info">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-users text-info"></i> Pacientes</h5>
-                        <p class="card-text">Registra y edita información de pacientes.</p>
-                        <a asp-controller="Patients" asp-action="Index" class="btn btn-info">Gestionar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100 border-primary">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-user-md text-primary"></i> Médicos</h5>
-                        <p class="card-text">Consulta el listado de médicos registrados.</p>
-                        <a asp-controller="Doctors" asp-action="Index" class="btn btn-primary">Consultar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100 border-success">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-file-medical text-success"></i> Órdenes</h5>
-                        <p class="card-text">Crear órdenes, ingresar y modificar resultados.</p>
-                        <a asp-controller="Orders" asp-action="Index" class="btn btn-success">Gestionar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card h-100 border-warning">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-microscope text-warning"></i> Resultados Pendientes</h5>
-                        <p class="card-text">Ver y procesar resultados pendientes de análisis.</p>
-                        <a asp-controller="Orders" asp-action="Index" class="btn btn-warning">Ver Órdenes</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card h-100 border-secondary">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-print text-secondary"></i> Imprimir Resultados</h5>
-                        <p class="card-text">Generar reportes para pacientes y médicos.</p>
-                        <a href="#" class="btn btn-secondary disabled">Próximamente</a>
-                    </div>
-                </div>
-            </div>
-        }
-        @* DOCTOR: Ver solo sus órdenes *@
-        else if (role == "Doctor")
-        {
-            <div class="col-md-6">
-                <div class="card h-100 border-primary">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-file-medical text-primary"></i> Mis Órdenes</h5>
-                        <p class="card-text">Ver órdenes de laboratorio solicitadas por usted.</p>
-                        <a asp-controller="Orders" asp-action="Index" class="btn btn-primary">Ver Mis Órdenes</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card h-100 border-success">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-print text-success"></i> Mis Resultados</h5>
-                        <p class="card-text">Consultar e imprimir resultados de sus pacientes.</p>
-                        <a asp-controller="Orders" asp-action="Index" class="btn btn-success">Ver Resultados</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-12">
-                <div class="card h-100 border-info">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-user-md text-info"></i> Médicos del Laboratorio</h5>
-                        <p class="card-text">Consulta el directorio de médicos colaboradores.</p>
-                        <a asp-controller="Doctors" asp-action="Index" class="btn btn-info">Ver Directorio</a>
+                        <i class="bi bi-gear fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">Administración</h5>
+                        <a asp-controller="Users" asp-action="Index" class="btn btn-warning btn-sm">
+                            <i class="bi bi-people"></i> Usuarios
+                        </a>
                     </div>
                 </div>
             </div>
         }
     </div>
+
+    <!-- Órdenes recientes -->
+    @if (ViewBag.RecentOrders != null && ((List<BioLab.Models.Order>)ViewBag.RecentOrders).Any())
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            @if (role == "Doctor")
+                            {
+                                <text>Mis Órdenes Recientes</text>
+                            }
+                            else
+                            {
+                                <text>Órdenes Recientes</text>
+                            }
+                        </h6>
+                        <a asp-controller="Orders" asp-action="Index" class="btn btn-sm btn-primary">
+                            Ver todas <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Número Orden</th>
+                                        <th>Paciente</th>
+                                        <th>Médico</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in (List<BioLab.Models.Order>)ViewBag.RecentOrders)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@order.OrderNumber</strong>
+                                            </td>
+                                            <td>@order.Patient?.FullName</td>
+                                            <td>@order.Doctor?.FullName</td>
+                                            <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                @if (order.Status == "Aprobada")
+                                                {
+                                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> Aprobada</span>
+                                                }
+                                                else if (order.Status == "Completada")
+                                                {
+                                                    <span class="badge bg-info text-dark"><i class="fas fa-check-double"></i> Completada</span>
+                                                }
+                                                else if (order.Status == "EnProceso")
+                                                {
+                                                    <span class="badge bg-warning text-dark"><i class="fas fa-spinner"></i> En Proceso</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary"><i class="fas fa-clock"></i> Pendiente</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a asp-controller="Orders" asp-action="Details" asp-route-orderId="@order.OrderID"
+                                                   class="btn btn-sm btn-info">
+                                                    <i class="bi bi-eye"></i> Ver
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
-@section Scripts {
-    <script>
-        // Auto-ocultar alertas después de 5 segundos
-        setTimeout(function () {
-            $('.alert').fadeOut('slow');
-        }, 5000);
-    </script>
-}
+<style>
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
 
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+
+    .border-left-info {
+        border-left: 0.25rem solid #36b9cc !important;
+    }
+
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+
+    .text-gray-300 {
+        color: #dddfeb !important;
+    }
+
+    .text-gray-800 {
+        color: #5a5c69 !important;
+    }
+</style>

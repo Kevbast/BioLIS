@@ -44,6 +44,8 @@ namespace BioLIS.Repositories
             return await this.context.Orders
                 .Include(o => o.Patient)
                 .Include(o => o.Doctor)
+                .Include(o => o.ApprovedByUser)
+                    .ThenInclude(u => u.Doctor)
                 .Include(o => o.TestResults)
                     .ThenInclude(tr => tr.LabTest)
                         .ThenInclude(lt => lt.SampleType)
@@ -158,6 +160,10 @@ namespace BioLIS.Repositories
             return await this.context.TestResults
                 .Include(tr => tr.LabTest)
                     .ThenInclude(lt => lt.SampleType)
+                .Include(tr => tr.LabTest)
+                    .ThenInclude(lt => lt.ReferenceRanges)
+                .Include(tr => tr.EnteredByUser) // <-- ADDED for audit
+                .Include(tr => tr.ModifiedByUser) // <-- ADDED for audit
                 .Where(tr => tr.OrderID == orderId)
                 .OrderBy(tr => tr.LabTest.TestName)
                 .ToListAsync();
@@ -264,11 +270,11 @@ namespace BioLIS.Repositories
             // 5. Automatización extra: Si es CRÍTICO
             if (normalizedAlertLevel == AlertLevels.Critico && string.IsNullOrWhiteSpace(notes))
             {
-                testResult.Notes = "[¡VALOR CRÍTICO!]";
+                testResult.Notes = "Requiere atención médica inmediata";
             }
-            else if (normalizedAlertLevel == AlertLevels.Critico && !string.IsNullOrWhiteSpace(notes) && !notes.Contains("CRÍTICO"))
+            else if (normalizedAlertLevel == AlertLevels.Critico && !string.IsNullOrWhiteSpace(notes) && !notes.Contains("atención médica"))
             {
-                testResult.Notes = $"[¡VALOR CRÍTICO!] {notes}";
+                testResult.Notes = $"URGENTE: {notes}";
             }
             else
             {

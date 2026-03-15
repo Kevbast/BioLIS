@@ -1,8 +1,9 @@
+@using System.Security.Claims
 @model List<BioLab.Models.Order>
 
 @{
     ViewData["Title"] = "Gestión de Órdenes";
-    var role = Context.Session.GetString("Role");
+    var role = User.FindFirstValue(ClaimTypes.Role);
 }
 
 <div class="container mt-4">
@@ -94,9 +95,33 @@
                                         @order.Doctor.FullName
                                     </td>
                                     <td>
-                                        @* Por ahora estado hardcodeado, luego se implementará con el campo Status *@
-                                        <span class="badge bg-warning">
-                                            <i class="fas fa-clock"></i> Pendiente
+                                        @{
+                                            string badgeClass = "bg-secondary";
+                                            string iconClass = "fa-clock";
+
+                                            switch (order.Status)
+                                            {
+                                                case "Aprobada":
+                                                    badgeClass = "bg-success";
+                                                    iconClass = "fa-check-circle";
+                                                    break;
+                                                case "Completada":
+                                                    badgeClass = "bg-info text-dark";
+                                                    iconClass = "fa-check-double";
+                                                    break;
+                                                case "EnProceso":
+                                                    badgeClass = "bg-warning text-dark";
+                                                    iconClass = "fa-spinner fa-spin"; // Añade un pequeño giro si quieres
+                                                    break;
+                                                case "Pendiente":
+                                                default:
+                                                    badgeClass = "bg-secondary";
+                                                    iconClass = "fa-clock";
+                                                    break;
+                                            }
+                                        }
+                                        <span class="badge @badgeClass fs-6">
+                                            <i class="fas @iconClass"></i> @order.Status
                                         </span>
                                     </td>
                                     <td class="text-center">

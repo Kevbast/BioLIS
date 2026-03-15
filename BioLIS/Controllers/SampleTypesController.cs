@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeRole("Admin")] // Solo Admin puede gestionar tipos de muestra
+    [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede gestionar tipos de muestra
     public class SampleTypesController : Controller
     {
         private readonly CatalogRepository catalogRepo;

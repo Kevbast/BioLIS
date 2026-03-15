@@ -87,6 +87,7 @@ namespace BioLIS.Services
                         columns.RelativeColumn(3); // Examen
                         columns.RelativeColumn(2); // Resultado
                         columns.RelativeColumn(1); // Unidades
+                        columns.RelativeColumn(2); // Rango
                         columns.RelativeColumn(2); // Estado
                         columns.RelativeColumn(3); // Observaciones
                     });
@@ -97,6 +98,7 @@ namespace BioLIS.Services
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Examen").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Resultado").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Unidades").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Rango Ref.").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Estado").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Observaciones").SemiBold();
                     });
@@ -106,6 +108,10 @@ namespace BioLIS.Services
                     {
                         var resultColor = Colors.Black;
                         var estado = BioLab.Models.AlertLevels.GetDisplayName(result.AlertLevel);
+                        var referenceRange = ResolveReferenceRange(result, order.Patient);
+                        var referenceRangeText = referenceRange != null
+                            ? $"{referenceRange.MinVal:0.##}-{referenceRange.MaxVal:0.##}"
+                            : "Sin rango";
                         
                         if (result.AlertLevel == BioLab.Models.AlertLevels.Anormal)
                             resultColor = Colors.Orange.Medium;
@@ -123,12 +129,64 @@ namespace BioLIS.Services
                              .Text(result.LabTest.Units ?? "");
 
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
+                             .Text(referenceRangeText)
+                             .FontColor(referenceRange == null ? Colors.Grey.Medium : Colors.Black);
+
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
                              .Text(result.ResultValue.HasValue ? estado : "-")
                              .FontColor(resultColor);
 
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
                              .Text(result.Notes ?? "-");
                     }
+                });
+
+                // Resumen rápido
+                var total = results.Count;
+                var completed = results.Count(x => x.ResultValue.HasValue);
+                var abnormal = results.Count(x => x.AlertLevel == AlertLevels.Anormal || x.AlertLevel == AlertLevels.Critico);
+
+                column.Item().PaddingTop(10).Row(row =>
+                {
+                    row.RelativeItem().Text($"Total exámenes: {total}").SemiBold();
+                    row.RelativeItem().Text($"Completados: {completed}").SemiBold();
+                    row.RelativeItem().Text($"Anormales/Críticos: {abnormal}").SemiBold().FontColor(abnormal > 0 ? Colors.Red.Medium : Colors.Green.Medium);
+                });
+
+                var enteredByNames = results
+                    .Where(x => x.EnteredByUser != null)
+                    .Select(x => x.EnteredByUser!.Username)
+                    .Distinct()
+                    .ToList();
+
+                var modifiedByNames = results
+                    .Where(x => x.ModifiedByUser != null)
+                    .Select(x => x.ModifiedByUser!.Username)
+                    .Distinct()
+                    .ToList();
+
+                column.Item().PaddingTop(8).Column(auditColumn =>
+                {
+                    auditColumn.Item().Text($"Ingresado por: {(enteredByNames.Any() ? string.Join(", ", enteredByNames) : "N/D")}").FontSize(9);
+                    auditColumn.Item().Text($"Modificado por: {(modifiedByNames.Any() ? string.Join(", ", modifiedByNames) : "N/D")}").FontSize(9);
+                    if (order.Status == "Aprobada")
+                    {
+                        var approverName = order.ApprovedByUser?.DisplayName ?? "N/D";
+                        auditColumn.Item().Text($"Aprobada por: {approverName}").FontSize(9).SemiBold();
+                    }
+                });
+
+                // Código de barras de la orden
+                column.Item().PaddingTop(16).AlignCenter().Column(barcodeColumn =>
+                {
+                    barcodeColumn.Item().Text("Código de orden").FontSize(9).FontColor(Colors.Grey.Medium);
+
+                    barcodeColumn.Item()
+                        .PaddingTop(4)
+                        .AlignCenter()
+                        .Width(9, Unit.Centimetre)
+                        .Height(2.2f, Unit.Centimetre)
+                        .BarcodeCode128(order.OrderNumber);
                 });
             });
         }
@@ -148,5 +206,21 @@ namespace BioLIS.Services
                 column.Item().Text("Este reporte es generado de forma automática y los resultados son confidenciales.").FontSize(8).FontColor(Colors.Grey.Medium);
             });
         }
+
+        private static ReferenceRange? ResolveReferenceRange(TestResult result, Patient patient)
+        {
+            var age = DateTime.Today.Year - patient.BirthDate.Year;
+            if (patient.BirthDate.Date > DateTime.Today.AddYears(-age))
+                age--;
+
+            return result.LabTest.ReferenceRanges?
+                .Where(rr => (rr.Gender == patient.Gender || rr.Gender == "A")
+                             && age >= rr.MinAgeYear
+                             && age <= rr.MaxAgeYear)
+                .OrderBy(rr => rr.Gender == patient.Gender ? 0 : 1)
+                .ThenBy(rr => rr.MaxAgeYear - rr.MinAgeYear)
+                .FirstOrDefault();
+        }
+
     }
 }

@@ -1,7 +1,8 @@
-﻿@{
+﻿@using System.Security.Claims
+@{
     ViewData["Title"] = "Acceso Denegado";
-    var username = Context.Session.GetString("Username");
-    var role = Context.Session.GetString("Role");
+    var username = User.Identity?.Name;
+    var role = User.FindFirstValue(ClaimTypes.Role);
 }
 
 <div class="container mt-5">

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeRole("Admin")] // Solo Admin puede gestionar exámenes
+    [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede gestionar exámenes
     public class LabTestsController : Controller
     {
         private readonly CatalogRepository catalogRepo;

@@ -1,6 +1,9 @@
-using BioLIS.Models;
-using BioLIS.Repositories;
+
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using BioLIS.Repositories;
+using System.Security.Claims;
 
 namespace BioLIS.Controllers
 {
@@ -17,7 +20,7 @@ namespace BioLIS.Controllers
         public IActionResult Login()
         {
             // Si ya está autenticado, redirigir al home
-            if (HttpContext.Session.GetInt32("UserID").HasValue)
+            if (User.Identity?.IsAuthenticated ?? false)
             {
                 return RedirectToAction("Index", "Home");
             }
@@ -28,47 +31,83 @@ namespace BioLIS.Controllers
         // POST: Auth/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string username, string password, string? returnUrl = null)
+        public async Task<IActionResult> Login(string username, string password)
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                ViewBag.Error = "Usuario y contraseña son obligatorios";
+                ViewData["MENSAJE"] = "Usuario y contraseña son obligatorios";
                 return View();
             }
 
-            // Validar credenciales usando AuthRepository
+            // Validar credenciales (mantiene Salt+SHA512)
             var userValidation = await this.authRepo.ValidateCredentialsAsync(username, password);
 
             if (userValidation == null)
             {
-                ViewBag.Error = "Usuario o contraseña incorrectos";
+                ViewData["MENSAJE"] = "Usuario o contraseña incorrectos";
                 return View();
             }
 
-            // Obtener datos completos del usuario
+            // Obtener usuario completo
             var user = await this.authRepo.GetUserByIdAsync(userValidation.UserID);
 
             if (user == null)
             {
-                ViewBag.Error = "Error al cargar datos del usuario";
+                ViewData["MENSAJE"] = "Error al cargar datos del usuario";
                 return View();
             }
 
-            // Guardar datos en sesión
-            HttpContext.Session.SetInt32("UserID", user.UserID);
-            HttpContext.Session.SetString("Username", user.Username);
-            HttpContext.Session.SetString("Role", user.Role);
-            
-            if (!string.IsNullOrEmpty(user.PhotoFilename))
+            // ========================================
+            // CREAR CLAIMS
+            // ========================================
+            ClaimsIdentity identity = new ClaimsIdentity(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                ClaimTypes.Name, ClaimTypes.Role);
+
+            // Claims estándar
+            identity.AddClaim(new Claim(ClaimTypes.Name, username));
+            identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()));
+            identity.AddClaim(new Claim(ClaimTypes.Role, user.Role));
+
+            // Claims personalizados
+            identity.AddClaim(new Claim("Username", user.Username));
+            identity.AddClaim(new Claim("UserID", user.UserID.ToString()));
+            identity.AddClaim(new Claim("Role", user.Role));
+
+            if (!string.IsNullOrEmpty(user.Email))
             {
-                HttpContext.Session.SetString("Photo", user.PhotoFilename);
+                identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
             }
 
-            // Mensaje de bienvenida
-            TempData["Success"] = $"Bienvenido/a, {user.Username}!";
+            if (!string.IsNullOrEmpty(user.PhotoFilename))
+            {
+                identity.AddClaim(new Claim("Photo", user.PhotoFilename));
+            }
 
-            // Redirigir según returnUrl o al Home
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            // Si es doctor, agregar DoctorID
+            if (user.DoctorID.HasValue)
+            {
+                identity.AddClaim(new Claim("DoctorID", user.DoctorID.Value.ToString()));
+            }
+
+            // Claim especial para Admin
+            if (user.Role == "Admin")
+            {
+                identity.AddClaim(new Claim("Admin", "Administrador del sistema"));
+            }
+
+            ClaimsPrincipal userPrincipal = new ClaimsPrincipal(identity);
+
+            // Autenticar
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                userPrincipal);
+
+            // ========================================
+            // REDIRIGIR USANDO RETURN URL SEGURA
+            // ========================================
+            string? returnUrl = TempData["returnUrl"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
                 return Redirect(returnUrl);
             }
@@ -77,17 +116,22 @@ namespace BioLIS.Controllers
         }
 
         // GET: Auth/Logout
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            HttpContext.Session.Clear();
-            TempData["Info"] = "Sesión cerrada correctamente";
-            return RedirectToAction("Login");
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login", "Auth");
         }
 
-        // GET: Auth/AccessDenied
-        public IActionResult AccessDenied()
+        // GET: Auth/ErrorAcceso
+        public IActionResult ErrorAcceso()
         {
             return View();
+        }
+
+        // GET: Auth/AccessDenied (alias para compatibilidad)
+        public IActionResult AccessDenied()
+        {
+            return View("ErrorAcceso");
         }
     }
 }

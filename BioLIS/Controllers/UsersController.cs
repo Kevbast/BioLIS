@@ -5,10 +5,11 @@ using BioLIS.Models;
 using BioLIS.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeRole("Admin")] // Solo admins pueden gestionar usuarios
+    [AuthorizeUsers(Policy = "AdminOnly")] // CAMBIADO de [AuthorizeRole("Admin")]
     public class UsersController : Controller
     {
         private readonly AuthRepository authRepo;
@@ -25,14 +26,10 @@ namespace BioLIS.Controllers
         // GET: Users
         public async Task<IActionResult> Index()
         {
-            // Obtener usuarios completos desde la tabla Users
             var users = await this.authRepo.GetAllUsersAsync();
-            
-            // Obtener todos los doctores para poder mostrar sus nombres
             var allDoctors = await this.catalogRepo.GetDoctorsAsync();
             ViewData["Doctors"] = allDoctors.ToDictionary(d => d.DoctorID, d => d.FullName);
-            
-            // Convertir UserValidation a User completo para incluir PhotoFilename
+
             var usersWithDetails = new List<User>();
             foreach (var userValidation in users)
             {
@@ -42,21 +39,19 @@ namespace BioLIS.Controllers
                     usersWithDetails.Add(user);
                 }
             }
-            
+
             return View(usersWithDetails);
         }
 
         // GET: Users/Create
         public async Task<IActionResult> Create()
         {
-            // Obtener todos los usuarios existentes para filtrar doctores disponibles
             var existingUsers = await this.authRepo.GetAllUsersAsync();
             var assignedDoctorIds = existingUsers
                 .Where(u => u.DoctorID.HasValue)
                 .Select(u => u.DoctorID.Value)
                 .ToList();
 
-            // Obtener doctores que NO tienen usuario asignado
             var allDoctors = await this.catalogRepo.GetDoctorsAsync();
             var availableDoctors = allDoctors
                 .Where(d => !assignedDoctorIds.Contains(d.DoctorID))
@@ -75,10 +70,9 @@ namespace BioLIS.Controllers
         // POST: Users/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string username, string password, string email, 
+        public async Task<IActionResult> Create(string username, string password, string email,
                                                  string role, int? doctorId, IFormFile? photoFile)
         {
-            // Validación: Solo usuarios con rol "Doctor" pueden tener DoctorID
             if (role == "Doctor" && !doctorId.HasValue)
             {
                 TempData["ErrorMessage"] = "Debe seleccionar un médico para el rol Doctor.";
@@ -95,12 +89,11 @@ namespace BioLIS.Controllers
 
             string photoFilename = "default-user.png";
 
-            // Subir foto si se proporcionó
             if (photoFile != null)
             {
                 photoFilename = photoFile.FileName;
                 string path = this.pathHelper.MapPath(photoFilename, Folders.Users);
-                
+
                 using (var stream = new FileStream(path, FileMode.Create))
                 {
                     await photoFile.CopyToAsync(stream);
@@ -124,7 +117,7 @@ namespace BioLIS.Controllers
             }
         }
 
-        // Método auxiliar para cargar datos del formulario Create
+        // Método auxiliar
         private async Task LoadCreateViewDataAsync()
         {
             var existingUsers = await this.authRepo.GetAllUsersAsync();
@@ -147,21 +140,21 @@ namespace BioLIS.Controllers
             ViewBag.Roles = UserRoles.GetAll();
         }
 
-        // GET: Users/Delete/5
+        // GET: Users/Delete
         public async Task<IActionResult> Delete(int id)
         {
             var user = await this.authRepo.GetUserByIdAsync(id);
-            
+
             if (user == null)
             {
-                TempData["Error"] = "Usuario no encontrado";
+                TempData["ErrorMessage"] = "Usuario no encontrado";
                 return RedirectToAction("Index");
             }
 
             return View(user);
         }
 
-        // POST: Users/Delete/5
+        // POST: Users/Delete
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -180,40 +173,44 @@ namespace BioLIS.Controllers
             return RedirectToAction("Index");
         }
 
-        // GET: Users/ChangePassword
+        // ========================================
+        // CHANGE PASSWORD - CUALQUIER USUARIO AUTENTICADO
+        // ========================================
+        [AuthorizeUsers] // Sobreescribe la policy de clase - permite a cualquier autenticado
         public IActionResult ChangePassword()
         {
             return View();
         }
 
-        // POST: Users/ChangePassword
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [AuthorizeUsers] // Sobreescribe la policy de clase
         public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
         {
             if (newPassword != confirmPassword)
             {
-                TempData["Error"] = "La nueva contraseña y su confirmación no coinciden";
+                TempData["ErrorMessage"] = "La nueva contraseña y su confirmación no coinciden";
                 return View();
             }
 
-            var userId = HttpContext.Session.GetInt32("UserID");
-            
-            if (!userId.HasValue)
+            // CAMBIADO: Usar Claims en lugar de Session
+            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
                 return RedirectToAction("Login", "Auth");
             }
 
-            var result = await this.authRepo.ChangePasswordAsync(userId.Value, currentPassword, newPassword);
+            var result = await this.authRepo.ChangePasswordAsync(userId, currentPassword, newPassword);
 
             if (result.Success)
             {
-                TempData["Success"] = result.Message;
+                TempData["SuccessMessage"] = result.Message;
                 return RedirectToAction("Index", "Home");
             }
             else
             {
-                TempData["Error"] = result.Message;
+                TempData["ErrorMessage"] = result.Message;
                 return View();
             }
         }

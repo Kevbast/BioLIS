@@ -1,93 +1,147 @@
-﻿using BioLab.Models;
+﻿
+using BioLab.Models;
 using BioLIS.Data;
 using BioLIS.Helpers;
 using BioLIS.Models;
 using BioLIS.Repositories;
 using BioLIS.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+// ========================================
+// AUTORIZACIÓN CON POLICIES
+// ========================================
+builder.Services.AddAuthorization(options =>
+{
+    // Solo Admin
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
 
-//CONEXION SQLSERVER
-string connectionString = builder.Configuration.GetConnectionString("SqlLaboratorio");
+    // Admin o Laboratorio (registrar pacientes, ingresar resultados)
+    options.AddPolicy("AdminOrLab", policy =>
+        policy.RequireRole("Admin", "Laboratorio"));
 
-builder.Services.AddDbContext<LaboratorioContext>(options =>
-    options.UseSqlServer(connectionString));
+    // Todos los roles autenticados (lectura general)
+    options.AddPolicy("AllRoles", policy =>
+        policy.RequireRole("Admin", "Doctor", "Laboratorio"));
+});
 
-// Configuración de sesiones
+// ========================================
+// SESSION Y TEMPDATA
+// ========================================
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(2); // Tiempo de expiración de sesión
+    options.IdleTimeout = TimeSpan.FromHours(2);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
-// Helpers
-builder.Services.AddHttpContextAccessor(); // Requerido para HelperPathProvider
+// ========================================
+// AUTHENTICATION CON COOKIES
+// ========================================
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, config =>
+{
+    config.LoginPath = "/Auth/Login";
+    config.AccessDeniedPath = "/Auth/ErrorAcceso";
+    config.ExpireTimeSpan = TimeSpan.FromHours(8);
+});
+
+// ========================================
+// CONTROLLERS CON TEMPDATA
+// ========================================
+builder.Services.AddControllersWithViews(options =>
+    options.EnableEndpointRouting = false)
+    .AddSessionStateTempDataProvider();
+
+// ========================================
+// DBCONTEXT
+// ========================================
+string connectionString = builder.Configuration.GetConnectionString("SqlLaboratorio");
+builder.Services.AddDbContext<LaboratorioContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// ========================================
+// HELPERS
+// ========================================
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<HelperPathProvider>();
 
-// Repositorios
+// ========================================
+// REPOSITORIOS
+// ========================================
 builder.Services.AddTransient<HelperRepository>();
 builder.Services.AddTransient<CatalogRepository>();
 builder.Services.AddTransient<AuthRepository>();
 builder.Services.AddTransient<OrderRepository>();
 
-// Servicios
+// ========================================
+// SERVICIOS
+// ========================================
 builder.Services.AddTransient<PdfReportService>();
 
 var app = builder.Build();
 
-// Crear usuario admin por defecto si no existe ningún usuario
+// Crear usuario admin por defecto
 await InitializeDefaultAdminAsync(app.Services);
 
-// Configure the HTTP request pipeline.
+// ========================================
+// MIDDLEWARE PIPELINE (ORDEN CRÍTICO)
+// ========================================
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-app.UseRouting();
+app.UseStaticFiles();
 
-app.UseSession(); // Activar sesiones antes de autorización
-app.UseAuthorization();
+// ORDEN IMPORTANTE
+app.UseAuthentication();  // 1º
+app.UseAuthorization();   // 2º
+app.UseSession();         // 3º
 
-app.MapStaticAssets();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Auth}/{action=Login}/{id?}") // Ruta por defecto al Login
-    .WithStaticAssets();
-
+// ========================================
+// ROUTING
+// ========================================
+app.UseMvc(routes =>
+{
+    routes.MapRoute(
+        name: "default",
+        template: "{controller=Auth}/{action=Login}/{id?}");
+});
 
 app.Run();
 
-// Método para inicializar el usuario admin por defecto
+// ========================================
+// INICIALIZAR USUARIO ADMIN
+// ========================================
 async Task InitializeDefaultAdminAsync(IServiceProvider services)
 {
     using var scope = services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<LaboratorioContext>();
     var helperRepo = scope.ServiceProvider.GetRequiredService<HelperRepository>();
-    
+
     try
     {
-        // Verificar si hay usuarios en la base de datos
         bool hasUsers = await context.Users.AnyAsync();
-        
+
         if (!hasUsers)
         {
-            Console.WriteLine("No se encontraron usuarios. Creando usuario admin por defecto...");
-            
-            // Generar ID para el nuevo usuario
+            Console.WriteLine("🔧 Creando usuario admin por defecto...");
+
             int newId = await helperRepo.GetNextIdAsync("Users");
-            
-            // Crear usuario admin
+
             var adminUser = new User
             {
                 UserID = newId,
@@ -98,35 +152,28 @@ async Task InitializeDefaultAdminAsync(IServiceProvider services)
                 Role = UserRoles.Admin,
                 DoctorID = null
             };
-            
-            // Crear seguridad con Salt y Hash
+
             string salt = HelperTools.GenerateSalt();
             byte[] passwordHash = HelperCryptography.EncryptPassword("12345", salt);
-            
+
             var security = new UserSecurity
             {
                 UserID = newId,
                 Salt = salt,
                 PasswordHash = passwordHash
             };
-            
-            // Guardar en la base de datos
+
             await context.Users.AddAsync(adminUser);
             await context.UsersSecurity.AddAsync(security);
             await context.SaveChangesAsync();
-            
-            Console.WriteLine($"✓ Usuario admin creado exitosamente (ID: {newId})");
-            Console.WriteLine("  - Usuario: admin");
-            Console.WriteLine("  - Contraseña: 12345");
-            Console.WriteLine("  - Rol: Admin");
-        }
-        else
-        {
-            Console.WriteLine("Ya existen usuarios en la base de datos.");
+
+            Console.WriteLine("✅ Usuario admin creado");
+            Console.WriteLine("   Usuario: admin");
+            Console.WriteLine("   Contraseña: 12345");
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error al inicializar usuario admin: {ex.Message}");
+        Console.WriteLine($"❌ Error al inicializar admin: {ex.Message}");
     }
 }
