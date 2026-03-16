@@ -179,7 +179,7 @@ namespace BioLIS.Repositories
         public async Task<List<SampleType>> GetSampleTypesAsync()
         {
             return await this.context.SampleTypes
-                .OrderBy(st => st.SampleName)
+                .OrderBy(st => st.SampleID)
                 .ToListAsync();
         }
         //2.Obtener tipo de muestra por ID
@@ -247,7 +247,7 @@ namespace BioLIS.Repositories
             // Traemos también el color del tubo asociado
             return await this.context.LabTests
                                      .Include(t => t.SampleType)
-                                     .OrderBy(t => t.TestName)
+                                     .OrderBy(t => t.TestID)
                                      .ToListAsync();
         }
         //2.Obtener examen por ID

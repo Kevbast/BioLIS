@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Crear Tipo de Muestra";
 }
 
@@ -32,40 +32,40 @@
                     <form asp-action="Create" method="post" class="catalog-form" id="sampleTypeCreateForm">
                         @Html.AntiForgeryToken()
 
-                        <!-- Nombre del Tipo de Muestra -->
                         <div class="mb-3">
                             <label for="sampleName" class="form-label">
                                 <i class="fas fa-vial"></i> Nombre del Tipo de Muestra *
                             </label>
-                            <input type="text" class="form-control" id="sampleName" name="sampleName" 
-                                   placeholder="Ej: Suero, Sangre Total, Plasma, Orina" 
+                            <input type="text" class="form-control" id="sampleName" name="sampleName"
+                                   placeholder="Ej: Suero, Sangre Total, Plasma, Orina"
                                    required maxlength="50" />
                             <small class="form-text text-muted">
-                                Tipo de muestra biol�gica que se recolectar�
+                                Tipo de muestra biológica que se recolectará
                             </small>
                         </div>
 
-                        <!-- Color del Tubo -->
                         <div class="mb-3">
                             <label for="containerColor" class="form-label">
                                 <i class="fas fa-palette"></i> Color del Tubo/Recipiente
                             </label>
                             <select class="form-select" id="containerColor" name="containerColor">
-                                <option value="">-- Sin color espec�fico --</option>
-                                <option value="Rojo">?? Rojo</option>
-                                <option value="Lila">?? Lila/Morado (EDTA)</option>
-                                <option value="Amarillo">?? Amarillo (Gel separador)</option>
-                                <option value="Verde">?? Verde (Heparina)</option>
-                                <option value="Azul">?? Azul (Citrato)</option>
-                                <option value="Gris">? Gris (Fluoruro)</option>
-                                <option value="Negro">? Negro</option>
+                                <option value="">-- Sin color específico --</option>
+                                <option value="Rojo">🔴 Rojo</option>
+                                <option value="Lila">🟣 Lila/Morado (EDTA)</option>
+                                <option value="Amarillo">🟡 Amarillo (Gel separador)</option>
+                                <option value="Verde">🟢 Verde (Heparina)</option>
+                                <option value="Azul">🔵 Azul (Citrato)</option>
+                                <option value="Celeste">🟦 Celeste</option>
+                                <option value="Gris">🔘 Gris (Fluoruro)</option>
+                                <option value="Negro">⚫ Negro</option>
+                                <option value="Blanco">⚪ Blanco (Ej: Recipiente heces)</option>
+                                <option value="Transparente">🫙 Transparente (Ej: Hisopo saliva)</option>
                             </select>
                             <small class="form-text text-muted">
                                 El color del tubo indica el aditivo/anticoagulante que contiene
                             </small>
                         </div>
 
-                        <!-- Botones -->
                         <div class="catalog-actions mt-4 d-flex justify-content-between">
                             <a asp-action="Index" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancelar
@@ -78,17 +78,21 @@
                 </div>
             </div>
 
-            <!-- Informaci�n adicional -->
             <div class="alert alert-info mt-3">
-                <i class="fas fa-info-circle"></i> 
-                <strong>Gu�a de Tubos Comunes:</strong>
+                <i class="fas fa-info-circle"></i>
+                <strong>Guía de Tubos y Recipientes Comunes:</strong>
                 <ul class="mb-0 mt-2">
-                    <li><strong>Tubo Rojo</strong> - Sin anticoagulante, para obtener suero (qu�mica cl�nica)</li>
-                    <li><strong>Tubo Lila/Morado (EDTA)</strong> - Para hematolog�a completa (CBC)</li>
-                    <li><strong>Tubo Amarillo</strong> - Gel separador, para qu�mica cl�nica</li>
-                    <li><strong>Tubo Verde (Heparina)</strong> - Para determinaciones urgentes de qu�mica</li>
-                    <li><strong>Tubo Azul (Citrato)</strong> - Para coagulaci�n (PT, PTT)</li>
-                    <li><strong>Tubo Gris (Fluoruro)</strong> - Para glucosa (inhibe gluc�lisis)</li>
+                    <li><strong>🔴 Tubo Rojo:</strong> Sin anticoagulante, para obtener suero (química clínica)</li>
+                    <li><strong>🟣 Tubo Lila/Morado (EDTA):</strong> Para hematología completa (CBC, Leucocitos)</li>
+                    <li><strong>🟡 Tubo Amarillo:</strong> Gel separador, para química clínica</li>
+                    <li><strong>🟢 Tubo Verde (Heparina):</strong> Para determinaciones urgentes de química</li>
+                    <li><strong>🔵 Tubo Azul (Citrato):</strong> Para pruebas de coagulación (PT, PTT)</li>
+                    <li><strong>🟦 Tubo Celeste:</strong> Pruebas de coagulación especializadas o plasma</li>
+                    <li><strong>🔘 Tubo Gris (Fluoruro):</strong> Para pruebas de glucosa (inhibe glucólisis)</li>
+                    <li><strong>⚫ Tubo Negro:</strong> VSG (Velocidad de Sedimentación Globular) pediátrica/especial</li>
+                    <li><strong>🟡 Bote Amarillo/Translúcido:</strong> Recolección de orina</li>
+                    <li><strong>⚪ Bote Blanco/Opaco:</strong> Recolección de heces</li>
+                    <li><strong>🫙 Tubo Transparente/Hisopo:</strong> Recolección de saliva o exudados</li>
                 </ul>
             </div>
         </div>

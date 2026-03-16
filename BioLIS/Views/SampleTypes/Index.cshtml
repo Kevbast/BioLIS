@@ -47,8 +47,8 @@
                 var testCount = (int)item.TestCount;
 
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100 catalog-list-card">
-                        <div class="card-header text-white" style="background-color: @GetColorBadge(sampleType.ContainerColor)">
+                    <div class="card h-100 catalog-list-card sample-tube-card" style="border-top: 4px solid @GetColorBadge(sampleType.ContainerColor)">
+                        <div class="card-header" style="background-color: @GetColorBadge(sampleType.ContainerColor); color: @GetTubeTextColor(sampleType.ContainerColor)">
                             <h5 class="mb-0">
                                 <i class="fas fa-test-tube"></i> @sampleType.SampleName
                             </h5>
@@ -60,7 +60,7 @@
 
                                 <dt class="col-sm-5">Color del Tubo:</dt>
                                 <dd class="col-sm-7">
-                                    <span class="badge" style="background-color: @GetColorBadge(sampleType.ContainerColor); color: white;">
+                                    <span class="badge tube-color-pill" style="background-color: @GetColorBadge(sampleType.ContainerColor); color: @GetTubeTextColor(sampleType.ContainerColor)">
                                         @sampleType.ContainerColor
                                     </span>
                                 </dd>
@@ -207,10 +207,22 @@
             "lila" or "morado" => "#6f42c1",
             "amarillo" => "#ffc107",
             "verde" => "#28a745",
-            "azul" => "#007bff",
+            "azul" => "#0d6efd",
+            "celeste" => "#0dcaf0",
             "gris" => "#6c757d",
             "negro" => "#212529",
+            "blanco" => "#f8f9fa", // Blanco (necesitará texto oscuro)
+            "transparente" => "#e9ecef", // Un gris muy clarito simulando transparencia
             _ => "#17a2b8"
+        };
+    }
+
+    string GetTubeTextColor(string? containerColor)
+    {
+        return containerColor?.ToLower() switch
+        {
+            "blanco" or "amarillo" or "transparente" => "#212529",
+            _ => "#ffffff"
         };
     }
 }

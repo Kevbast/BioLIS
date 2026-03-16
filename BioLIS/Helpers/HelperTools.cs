@@ -1,19 +1,25 @@
-﻿namespace BioLIS.Helpers
+﻿using System;
+using System.Security.Cryptography;
+
+namespace BioLIS.Helpers
 {
     public class HelperTools
     {
         public static string GenerateSalt()
         {
-            Random random = new Random();
-            string salt = "";
-            for (int i = 0; i < 50; i++)//!!!!!
+            // 1. Creamos un array de 50 bytes
+            byte[] randomBytes = new byte[50];
+
+            // 2. Llenamos el array con números aleatorios criptográficamente seguros
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
-                //GENEREMOS UN ALEATORIO
-                int num = random.Next(1, 255);
-                char letra = Convert.ToChar(num);
-                salt += letra;
+                rng.GetBytes(randomBytes);
             }
-            return salt;
+
+            // 3. Convertimos los bytes a Base64. 
+            // Esto devolverá SOLO letras, números, y los símbolos '+' , '/' y '='.
+            // ¡Jamás tendrá saltos de línea ni caracteres invisibles!
+            return Convert.ToBase64String(randomBytes);
         }
 
         public static bool CompareArrays(byte[] a, byte[] b)
@@ -26,7 +32,7 @@
             }
             else
             {
-                //COMPARAMOS BYTE A BYTE
+                // COMPARAMOS BYTE A BYTE
                 for (int i = 0; i < a.Length; i++)
                 {
                     if (a[i].Equals(b[i]) == false)
@@ -39,6 +45,5 @@
 
             return iguales;
         }
-
     }
 }

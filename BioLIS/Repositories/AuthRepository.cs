@@ -74,7 +74,7 @@ namespace BioLIS.Repositories
         public async Task<List<UserValidation>> GetAllUsersAsync()
         {
             return await this.context.Usersvalidations
-                .OrderBy(u => u.Username)
+                .OrderBy(u => u.UserID)
                 .ToListAsync();
         }
 

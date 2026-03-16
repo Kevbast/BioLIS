@@ -10,6 +10,26 @@
     padding: 0.5rem 0;
 }
 
+.sample-tube-card {
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sample-tube-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 1rem 1.7rem rgba(15, 23, 42, 0.12) !important;
+}
+
+.sample-tube-card .card-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.sample-tube-card .tube-color-pill {
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    font-weight: 700;
+    padding: 0.45em 0.72em;
+}
+
 .catalog-header {
     display: flex;
     justify-content: space-between;
@@ -82,6 +102,23 @@
 .catalog-table .badge {
     border-radius: 999px;
     padding: 0.42em 0.68em;
+}
+
+.catalog-table .lab-tube-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    font-weight: 700;
+    padding: 0.45rem 0.72rem;
+    letter-spacing: 0.01em;
+}
+
+.catalog-table .lab-tube-badge .lab-tube-color {
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.92;
 }
 
 .catalog-empty {

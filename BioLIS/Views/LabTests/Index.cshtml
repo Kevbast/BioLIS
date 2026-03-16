@@ -62,9 +62,13 @@
                                         }
                                     </td>
                                     <td>
-                                        <span class="badge" style="background-color: @GetColorBadge(test.SampleType.ContainerColor)">
-                                            <i class="fas fa-test-tube"></i> 
+                                        <span class="badge lab-tube-badge" style="background-color: @GetColorBadge(test.SampleType.ContainerColor); color: @GetTubeTextColor(test.SampleType.ContainerColor)">
+                                            <i class="fas fa-vial"></i>
                                             @test.SampleType.SampleName
+                                            @if (!string.IsNullOrEmpty(test.SampleType.ContainerColor))
+                                            {
+                                                <span class="lab-tube-color">(@test.SampleType.ContainerColor)</span>
+                                            }
                                         </span>
                                     </td>
                                     <td class="text-center">
@@ -193,9 +197,22 @@
             "lila" or "morado" => "#6f42c1",
             "amarillo" => "#ffc107",
             "verde" => "#28a745",
-            "azul" => "#007bff",
+            "azul" => "#0d6efd",
+            "celeste" => "#0dcaf0",
             "gris" => "#6c757d",
+            "negro" => "#212529",
+            "blanco" => "#f8f9fa", // Blanco (necesitará texto oscuro)
+            "transparente" => "#e9ecef", // Un gris muy clarito simulando transparencia
             _ => "#17a2b8"
+        };
+    }
+
+    string GetTubeTextColor(string? containerColor)
+    {
+        return containerColor?.ToLower() switch
+        {
+            "blanco" or "amarillo" or "transparente" => "#212529",
+            _ => "#ffffff"
         };
     }
 }
