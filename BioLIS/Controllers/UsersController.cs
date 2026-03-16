@@ -183,9 +183,84 @@ namespace BioLIS.Controllers
         // CHANGE PASSWORD - CUALQUIER USUARIO AUTENTICADO
         // ========================================
         [AuthorizeUsers] // Sobreescribe la policy de clase - permite a cualquier autenticado
-        public IActionResult ChangePassword()
+        public async Task<IActionResult> ChangePassword()
         {
-            return View();
+            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var user = await this.authRepo.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            return View(user);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AuthorizeUsers]
+        public async Task<IActionResult> UpdateProfile(string username, string email, IFormFile? photoFile)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                TempData["SwalType"] = "warning";
+                TempData["SwalTitle"] = "Datos incompletos";
+                TempData["SwalMessage"] = "El nombre de usuario es obligatorio.";
+                return RedirectToAction("ChangePassword");
+            }
+
+            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var currentUser = await this.authRepo.GetUserByIdAsync(userId);
+            if (currentUser == null)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            string photoFilename = currentUser.PhotoFilename;
+            if (photoFile != null)
+            {
+                photoFilename = photoFile.FileName;
+                string path = this.pathHelper.MapPath(photoFilename, Folders.Users);
+
+                using (var stream = new FileStream(path, FileMode.Create))
+                {
+                    await photoFile.CopyToAsync(stream);
+                }
+            }
+
+            var result = await this.authRepo.UpdateUserAsync(
+                userId,
+                username,
+                email,
+                photoFilename,
+                null,
+                currentUser.Role,
+                currentUser.DoctorID
+            );
+
+            if (result.Success)
+            {
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Perfil actualizado";
+                TempData["SwalMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo actualizar";
+                TempData["SwalMessage"] = result.Message;
+            }
+
+            return RedirectToAction("ChangePassword");
         }
 
         [HttpPost]
@@ -195,8 +270,17 @@ namespace BioLIS.Controllers
         {
             if (newPassword != confirmPassword)
             {
-                TempData["ErrorMessage"] = "La nueva contraseña y su confirmación no coinciden";
-                return View();
+                TempData["SwalType"] = "warning";
+                TempData["SwalTitle"] = "Contraseñas no coinciden";
+                TempData["SwalMessage"] = "La nueva contraseña y su confirmación no coinciden";
+                var userIdForError = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdForError) || !int.TryParse(userIdForError, out int currentUserId))
+                {
+                    return RedirectToAction("Login", "Auth");
+                }
+
+                var currentUserForError = await this.authRepo.GetUserByIdAsync(currentUserId);
+                return View(currentUserForError);
             }
 
             // CAMBIADO: Usar Claims en lugar de Session
@@ -214,14 +298,15 @@ namespace BioLIS.Controllers
                 TempData["SwalType"] = "success";
                 TempData["SwalTitle"] = "Contraseña actualizada";
                 TempData["SwalMessage"] = result.Message;
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("ChangePassword");
             }
             else
             {
                 TempData["SwalType"] = "error";
                 TempData["SwalTitle"] = "No se pudo cambiar";
                 TempData["SwalMessage"] = result.Message;
-                return View();
+                var currentUser = await this.authRepo.GetUserByIdAsync(userId);
+                return View(currentUser);
             }
         }
 

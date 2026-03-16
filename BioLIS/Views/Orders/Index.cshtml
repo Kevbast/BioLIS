@@ -24,7 +24,7 @@
                 <text>Gestión de Órdenes</text>
             }
         </h2>
-        @if (role == "Admin" || role == "Laboratorio")
+        @if (role == "Admin" || role == "Laboratorio" || role == "Doctor")
         {
             <a asp-action="Create" class="btn btn-success">
                 <i class="fas fa-plus"></i> Nueva Orden

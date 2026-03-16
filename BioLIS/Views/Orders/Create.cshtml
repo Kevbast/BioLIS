@@ -1,10 +1,14 @@
 @model BioLab.Models.Order
+@using System.Security.Claims
 
 @{
     ViewData["Title"] = "Nueva Orden de Laboratorio";
     var patients = ViewData["Patients"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
     var doctors = ViewData["Doctors"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
     var labTests = ViewData["LabTests"] as List<BioLab.Models.LabTest> ?? new List<BioLab.Models.LabTest>();
+    var isDoctor = User.IsInRole("Doctor");
+    var preselectedDoctorId = ViewData["PreselectedDoctorId"]?.ToString();
+    var preselectedDoctorName = doctors.FirstOrDefault(d => d.Value == preselectedDoctorId)?.Text;
 }
 
 <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" />
@@ -60,22 +64,36 @@
                                 <h5 class="mb-0"><i class="fas fa-user-md"></i> Médico Solicitante</h5>
                             </div>
                             <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="doctorId" class="form-label">
-                                        <i class="fas fa-stethoscope"></i> Seleccionar Doctor *
-                                    </label>
-                                    <select class="form-select" id="doctorId" name="doctorId" required>
-                                        <option value="">-- Seleccione un médico --</option>
-                                        @foreach (var doctor in doctors)
-                                        {
-                                            <option value="@doctor.Value">@doctor.Text</option>
-                                        }
-                                    </select>
-                                    <small class="form-text text-muted">
-                                        Si el médico no aparece, debe 
-                                        <a asp-controller="Doctors" asp-action="Create" target="_blank">registrarlo primero</a>
-                                    </small>
-                                </div>
+                                @if (isDoctor)
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-stethoscope"></i> Médico Solicitante
+                                        </label>
+                                        <input type="text" class="form-control" value="@(preselectedDoctorName ?? "Médico asignado")" readonly />
+                                        <input type="hidden" id="doctorId" name="doctorId" value="@preselectedDoctorId" />
+                                        <small class="form-text text-muted">Al crear la orden se asigna automáticamente tu médico solicitante.</small>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="mb-3">
+                                        <label for="doctorId" class="form-label">
+                                            <i class="fas fa-stethoscope"></i> Seleccionar Doctor *
+                                        </label>
+                                        <select class="form-select" id="doctorId" name="doctorId" required>
+                                            <option value="">-- Seleccione un médico --</option>
+                                            @foreach (var doctor in doctors)
+                                            {
+                                                <option value="@doctor.Value">@doctor.Text</option>
+                                            }
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            Si el médico no aparece, debe 
+                                            <a asp-controller="Doctors" asp-action="Create" target="_blank">registrarlo primero</a>
+                                        </small>
+                                    </div>
+                                }
                             </div>
                         </div>
 
@@ -89,6 +107,15 @@
                                     <i class="fas fa-info-circle"></i> 
                                     Seleccione los exámenes que se realizarán. El sistema calculará automáticamente los tubos necesarios.
                                 </p>
+
+                                <div class="d-flex justify-content-end mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllTests">
+                                        <label class="form-check-label fw-semibold" for="selectAllTests">
+                                            Seleccionar todos
+                                        </label>
+                                    </div>
+                                </div>
 
                                 @if (!labTests.Any())
                                 {
@@ -161,9 +188,26 @@
         (function () {
             const form = document.getElementById('orderCreateForm');
             const submitButton = document.getElementById('btnCreateOrder');
+            const selectAllTests = document.getElementById('selectAllTests');
+            const testCheckboxes = document.querySelectorAll('input[name="selectedTests"]');
 
             if (!form || !submitButton) {
                 return;
+            }
+
+            if (selectAllTests && testCheckboxes.length > 0) {
+                selectAllTests.addEventListener('change', function () {
+                    testCheckboxes.forEach(function (checkbox) {
+                        checkbox.checked = selectAllTests.checked;
+                    });
+                });
+
+                testCheckboxes.forEach(function (checkbox) {
+                    checkbox.addEventListener('change', function () {
+                        const checkedCount = document.querySelectorAll('input[name="selectedTests"]:checked').length;
+                        selectAllTests.checked = checkedCount === testCheckboxes.length;
+                    });
+                });
             }
 
             form.addEventListener('submit', function (e) {

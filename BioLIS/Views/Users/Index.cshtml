@@ -16,7 +16,7 @@
             <i class="fas fa-users"></i> Gestión de Usuarios
             <span class="badge bg-info">@(Model?.Count ?? 0) usuarios</span>
         </h2>
-        <div>
+        <div class="users-actions">
             <a asp-action="Create" class="btn btn-success">
                 <i class="fas fa-user-plus"></i> Crear Nuevo Usuario
             </a>
@@ -37,14 +37,14 @@
     <div class="card users-list-card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover users-table">
+                <table class="table table-hover align-middle users-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Foto</th>
+                            <th class="text-nowrap">ID</th>
+                            <th class="text-nowrap">Foto</th>
                             <th>Usuario</th>
                             <th>Email</th>
-                            <th>Rol</th>
+                            <th class="text-nowrap">Rol</th>
                             <th>Médico Vinculado</th>
                             <th class="text-center">Acciones</th>
                         </tr>

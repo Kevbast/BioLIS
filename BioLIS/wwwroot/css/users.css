@@ -10,6 +10,17 @@
     padding: 0.5rem 0;
 }
 
+.users-table td,
+.users-table th {
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+}
+
+.users-table th:last-child,
+.users-table td:last-child {
+    width: 110px;
+}
+
 .users-header {
     display: flex;
     justify-content: space-between;
