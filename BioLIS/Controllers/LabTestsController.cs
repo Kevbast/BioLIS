@@ -80,10 +80,28 @@ namespace BioLIS.Controllers
         // POST: LabTests/Update/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Update(LabTest labTest)
+        public async Task<IActionResult> Update(int testId, string testName, string? units, int sampleId)
         {
+            if (string.IsNullOrWhiteSpace(testName))
+            {
+                ModelState.AddModelError(nameof(testName), "El nombre del examen es obligatorio.");
+            }
+
+            if (sampleId <= 0)
+            {
+                ModelState.AddModelError(nameof(sampleId), "Debe seleccionar un tipo de muestra.");
+            }
+
             if (ModelState.IsValid)
             {
+                var labTest = new LabTest
+                {
+                    TestID = testId,
+                    TestName = testName.Trim(),
+                    Units = units?.Trim(),
+                    SampleID = sampleId
+                };
+
                 bool success = await catalogRepo.UpdateLabTestAsync(labTest);
 
                 if (success)
@@ -106,10 +124,21 @@ namespace BioLIS.Controllers
             ViewData["SampleTypes"] = sampleTypes.Select(s => new SelectListItem
             {
                 Value = s.SampleID.ToString(),
-                Text = $"{s.SampleName} (Tubo {s.ContainerColor})"
+                Text = $"{s.SampleName} (Tubo {s.ContainerColor})",
+                Selected = s.SampleID == sampleId
             }).ToList();
 
-            return View(labTest);
+            var existingLabTest = await catalogRepo.GetLabTestByIdAsync(testId);
+            if (existingLabTest == null)
+            {
+                return NotFound();
+            }
+
+            existingLabTest.TestName = testName;
+            existingLabTest.Units = units;
+            existingLabTest.SampleID = sampleId;
+
+            return View(existingLabTest);
         }
 
         // GET: LabTests/Delete/5

@@ -16,19 +16,21 @@
         .app-navbar {
             border-radius: 12px;
             margin: 0.75rem;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 10px 24px rgba(13, 110, 253, 0.28);
+            background: linear-gradient(90deg, #0d6efd 0%, #0b5ed7 45%, #084298 100%);
         }
 
         .app-navbar .navbar-brand {
             font-weight: 700;
             letter-spacing: 0.2px;
+            color: #ffffff !important;
         }
 
         .app-navbar .nav-link {
             position: relative;
             border-radius: 8px;
             padding: 0.45rem 0.8rem;
-            color: #334155 !important;
+            color: #eaf2ff !important;
             transition: background-color 0.25s ease, color 0.25s ease, transform 0.2s ease;
         }
 
@@ -39,7 +41,7 @@
             right: 0.8rem;
             bottom: 0.2rem;
             height: 2px;
-            background-color: #0d6efd;
+            background-color: #ffffff;
             border-radius: 999px;
             transform: scaleX(0);
             transform-origin: center;
@@ -48,8 +50,8 @@
 
         .app-navbar .nav-link:hover,
         .app-navbar .nav-link:focus {
-            background-color: #f1f5f9;
-            color: #0f172a !important;
+            background-color: rgba(255, 255, 255, 0.16);
+            color: #ffffff !important;
             transform: translateY(-1px);
         }
 
@@ -59,8 +61,8 @@
         }
 
         .app-navbar .nav-link.active {
-            background-color: #e9f2ff;
-            color: #0d6efd !important;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff !important;
             font-weight: 600;
             transform: translateY(-1px);
         }
