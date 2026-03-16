@@ -19,92 +19,156 @@
                 <span class="badge bg-primary">@role</span>
             </p>
         </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const statusLabels = @Html.Raw((string?)ViewData["ChartStatusLabels"] ?? "[]");
+        const statusValues = @Html.Raw((string?)ViewData["ChartStatusValues"] ?? "[]");
+        const dayLabels = @Html.Raw((string?)ViewData["ChartDayLabels"] ?? "[]");
+        const dayValues = @Html.Raw((string?)ViewData["ChartDayValues"] ?? "[]");
+
+        const statusCtx = document.getElementById('ordersByStatusChart');
+        if (statusCtx) {
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusValues,
+                        borderWidth: 1,
+                        backgroundColor: ['#6c757d', '#f6c23e', '#36b9cc', '#1cc88a', '#4e73df']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        const daysCtx = document.getElementById('ordersLast7DaysChart');
+        if (daysCtx) {
+            new Chart(daysCtx, {
+                type: 'bar',
+                data: {
+                    labels: dayLabels,
+                    datasets: [{
+                        label: 'Órdenes',
+                        data: dayValues,
+                        borderRadius: 6,
+                        backgroundColor: '#4e73df'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+}
     </div>
 
-    <!-- Tarjetas de estadísticas -->
-    <div class="row mb-4">
-        <!-- Órdenes de Hoy -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2 stat-card">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                @if (role == "Doctor")
-                                {
-                                    <text>Mis Órdenes Hoy</text>
-                                }
-                                else
-                                {
-                                    <text>Órdenes Hoy</text>
-                                }
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                @(role == "Doctor" ? ViewBag.MyTodayOrders ?? ViewBag.TodayOrders : ViewBag.TodayOrders)
+    <!-- Resumen + Gráficos -->
+    <div class="row mb-4 g-3 dashboard-overview">
+        <div class="col-xl-7 stats-column">
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="card border-left-primary shadow h-100 py-2 stat-card">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        @if (role == "Doctor")
+                                        {
+                                            <text>Mis Órdenes Hoy</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Órdenes Hoy</text>
+                                        }
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        @(role == "Doctor" ? ViewBag.MyTodayOrders ?? ViewBag.TodayOrders : ViewBag.TodayOrders)
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card border-left-success shadow h-100 py-2 stat-card">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Pacientes</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalPatients</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card border-left-info shadow h-100 py-2 stat-card">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Médicos</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalDoctors</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card border-left-warning shadow h-100 py-2 stat-card">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Total Exámenes</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalTests</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-flask fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Total Pacientes -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2 stat-card">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Total Pacientes
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalPatients</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
+        <div class="col-xl-5 charts-column d-flex flex-column">
+            <div class="card shadow-sm chart-card mb-3">
+                <div class="card-header"><strong>Órdenes por estado</strong></div>
+                <div class="card-body chart-canvas-wrap"><canvas id="ordersByStatusChart"></canvas></div>
             </div>
-        </div>
-
-        <!-- Total Médicos -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2 stat-card">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Total Médicos
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalDoctors</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Exámenes -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2 stat-card">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Total Exámenes
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalTests</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-flask fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="card shadow-sm chart-card">
+                <div class="card-header"><strong>Órdenes últimos 7 días</strong></div>
+                <div class="card-body chart-canvas-wrap"><canvas id="ordersLast7DaysChart"></canvas></div>
             </div>
         </div>
     </div>
@@ -188,6 +252,7 @@
                             Ver todas <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
+
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-hover orders-table">

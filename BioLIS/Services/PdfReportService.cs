@@ -70,12 +70,24 @@ namespace BioLIS.Services
                         var age = DateTime.Now.Year - order.Patient.BirthDate.Year;
                         col.Item().Text($"Edad: {age} años | Sexo: {order.Patient.Gender}");
                     });
-                    
+
                     row.RelativeItem().Column(col =>
                     {
                         col.Item().Text("Médico Solicitante:").SemiBold();
                         col.Item().Text(order.Doctor.FullName);
                         col.Item().Text($"Licencia: {order.Doctor.LicenseNumber ?? "S/N"}");
+                    });
+
+                    // 3ra columna: código de barras pequeño
+                    row.ConstantItem(145).AlignRight().Column(col =>
+                    {
+                        col.Item().AlignRight().Text("Código").FontSize(7).FontColor(Colors.Grey.Medium);
+                        col.Item()
+                            .PaddingTop(2)
+                            .AlignRight()
+                            .Width(4.6f, Unit.Centimetre)
+                            .Height(1.2f, Unit.Centimetre)
+                            .BarcodeCode128(order.OrderNumber);
                     });
                 });
 
@@ -176,18 +188,6 @@ namespace BioLIS.Services
                     }
                 });
 
-                // Código de barras de la orden
-                column.Item().PaddingTop(16).AlignCenter().Column(barcodeColumn =>
-                {
-                    barcodeColumn.Item().Text("Código de orden").FontSize(9).FontColor(Colors.Grey.Medium);
-
-                    barcodeColumn.Item()
-                        .PaddingTop(4)
-                        .AlignCenter()
-                        .Width(9, Unit.Centimetre)
-                        .Height(2.2f, Unit.Centimetre)
-                        .BarcodeCode128(order.OrderNumber);
-                });
             });
         }
 

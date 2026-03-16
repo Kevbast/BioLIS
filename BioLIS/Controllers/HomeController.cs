@@ -4,6 +4,7 @@ using BioLIS.Models;
 using BioLIS.Filters;
 using BioLIS.Repositories;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace BioLIS.Controllers
 {
@@ -46,6 +47,7 @@ namespace BioLIS.Controllers
                 ViewBag.TotalTests = labTests.Count;
 
                 // Si es Doctor, mostrar solo SUS órdenes recientes
+                List<BioLab.Models.Order> chartOrders;
                 if (role == "Doctor")
                 {
                     var doctorIdClaim = HttpContext.User.FindFirstValue("DoctorID");
@@ -54,13 +56,39 @@ namespace BioLIS.Controllers
                         var myOrders = await _orderRepo.GetOrdersByDoctorAsync(doctorId);
                         ViewBag.RecentOrders = myOrders.OrderByDescending(o => o.OrderDate).Take(5).ToList();
                         ViewBag.MyTodayOrders = myOrders.Count(o => o.OrderDate.Date == DateTime.Today);
+                        chartOrders = myOrders;
+                    }
+                    else
+                    {
+                        chartOrders = new List<BioLab.Models.Order>();
                     }
                 }
                 else
                 {
                     // Admin y Laboratorio ven las últimas 5 órdenes de todos
                     ViewBag.RecentOrders = allOrders.OrderByDescending(o => o.OrderDate).Take(5).ToList();
+                    chartOrders = allOrders;
                 }
+
+                // Datos para gráficos (Chart.js)
+                var statusCounts = chartOrders
+                    .GroupBy(o => string.IsNullOrWhiteSpace(o.Status) ? "Pendiente" : o.Status)
+                    .Select(g => new { Label = g.Key, Count = g.Count() })
+                    .OrderBy(x => x.Label)
+                    .ToList();
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => DateTime.Today.AddDays(-6 + offset))
+                    .ToList();
+
+                var dailyCounts = last7Days
+                    .Select(day => chartOrders.Count(o => o.OrderDate.Date == day))
+                    .ToList();
+
+                ViewData["ChartStatusLabels"] = JsonSerializer.Serialize(statusCounts.Select(x => x.Label));
+                ViewData["ChartStatusValues"] = JsonSerializer.Serialize(statusCounts.Select(x => x.Count));
+                ViewData["ChartDayLabels"] = JsonSerializer.Serialize(last7Days.Select(d => d.ToString("dd/MM")));
+                ViewData["ChartDayValues"] = JsonSerializer.Serialize(dailyCounts);
 
                 return View();
             }

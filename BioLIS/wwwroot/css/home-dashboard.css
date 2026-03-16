@@ -8,10 +8,14 @@
     --text-title: #2d3748;
     --text-muted: #6b7280;
 
-    background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
-    border: 1px solid #eef2fb;
+    background:
+        radial-gradient(1200px 380px at -10% -20%, rgba(78, 115, 223, 0.08), transparent 55%),
+        radial-gradient(900px 320px at 110% -10%, rgba(28, 200, 138, 0.07), transparent 55%),
+        linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+    border: 1px solid #e8eefb;
     border-radius: 18px;
     padding: 1.4rem 1.2rem;
+    box-shadow: 0 10px 24px rgba(24, 39, 75, 0.06);
 }
 
 .dashboard-title {
@@ -89,6 +93,43 @@
     box-shadow: 0 0.55rem 1.25rem rgba(15, 23, 42, 0.07) !important;
 }
 
+.dashboard-home .chart-card {
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 0.55rem 1.25rem rgba(15, 23, 42, 0.07) !important;
+}
+
+.dashboard-home .chart-card .card-header {
+    background: linear-gradient(180deg, #f8faff 0%, #f3f7ff 100%);
+    border-bottom: 1px solid var(--surface-border);
+    color: #324563;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+.dashboard-home .chart-canvas-wrap {
+    min-height: 150px;
+    height: 150px;
+}
+
+.dashboard-home .dashboard-overview {
+    align-items: stretch;
+}
+
+.dashboard-home .stats-column,
+.dashboard-home .charts-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-home .stats-column .stat-card {
+    min-height: 92px;
+}
+
+.dashboard-home .charts-column .chart-card {
+    flex: 1 1 0;
+}
+
 .dashboard-home .recent-orders-card .card-header {
     background: var(--surface-soft);
     border-bottom: 1px solid var(--surface-border);
@@ -97,10 +138,14 @@
 }
 
 .dashboard-home .orders-table thead th {
-    background-color: #f8f9fc;
-    color: #4a5568;
+    background: linear-gradient(180deg, #f8faff 0%, #eef3ff 100%);
+    color: #324563;
     font-weight: 600;
     border-bottom-width: 1px;
+}
+
+.dashboard-home .orders-table tbody tr:nth-child(even) {
+    background-color: #fcfdff;
 }
 
 .dashboard-home .orders-table tbody tr {
@@ -165,5 +210,14 @@
 
     .dashboard-home .card-body {
         padding: 0.95rem 0.95rem;
+    }
+
+    .dashboard-home .chart-canvas-wrap {
+        min-height: 190px;
+        height: 190px;
+    }
+
+    .dashboard-home .charts-column .chart-card {
+        flex: initial;
     }
 }
