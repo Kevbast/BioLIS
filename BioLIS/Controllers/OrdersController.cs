@@ -133,7 +133,9 @@ namespace BioLIS.Controllers
                 await orderRepo.AddTestResultAsync(order.OrderID, testId, null, null, userId);
             }
 
-            TempData["SuccessMessage"] = $"Orden {order.OrderNumber} creada exitosamente con {selectedTests.Count} exámenes.";
+            TempData["SwalType"] = "success";
+            TempData["SwalTitle"] = "Orden creada";
+            TempData["SwalMessage"] = $"Orden {order.OrderNumber} creada exitosamente con {selectedTests.Count} exámenes.";
             return RedirectToAction("Details", new { orderId = order.OrderID });
         }
 
@@ -192,11 +194,15 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Orden eliminada";
+                TempData["SwalMessage"] = result.Message;
             }
             else
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo eliminar";
+                TempData["SwalMessage"] = result.Message;
             }
 
             return RedirectToAction("Index");
@@ -288,12 +294,16 @@ namespace BioLIS.Controllers
                     await orderRepo.ChangeOrderStatusAsync(orderId, "EnProceso");
                 }
 
-                TempData["SuccessMessage"] = $"{updatedCount} resultado(s) actualizado(s) exitosamente.";
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Resultados actualizados";
+                TempData["SwalMessage"] = $"{updatedCount} resultado(s) actualizado(s) exitosamente.";
             }
 
             if (errorCount > 0)
             {
-                TempData["ErrorMessage"] = $"{errorCount} resultado(s) no pudieron ser actualizados.";
+                TempData["SwalType"] = "warning";
+                TempData["SwalTitle"] = "Resultados con incidencias";
+                TempData["SwalMessage"] = $"{errorCount} resultado(s) no pudieron ser actualizados.";
             }
 
             return RedirectToAction("Details", new { orderId });
@@ -349,11 +359,15 @@ namespace BioLIS.Controllers
 
             if (success)
             {
-                TempData["SuccessMessage"] = $"Estado de la orden actualizado a: {status}";
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Estado actualizado";
+                TempData["SwalMessage"] = $"Estado de la orden actualizado a: {status}";
             }
             else
             {
-                TempData["ErrorMessage"] = "No se pudo actualizar el estado de la orden.";
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "Error de actualización";
+                TempData["SwalMessage"] = "No se pudo actualizar el estado de la orden.";
             }
 
             return RedirectToAction("Details", new { orderId });

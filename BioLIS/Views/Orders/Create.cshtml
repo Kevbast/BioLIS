@@ -7,21 +7,30 @@
     var labTests = ViewData["LabTests"] as List<BioLab.Models.LabTest> ?? new List<BioLab.Models.LabTest>();
 }
 
-<div class="container mt-4">
+<link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" />
+
+<div class="container mt-4 orders-page">
+    <div class="orders-header">
+        <h2><i class="fas fa-plus-circle text-success"></i> Crear Nueva Orden de Laboratorio</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-10">
-            <div class="card shadow">
+            <div class="card order-form-card">
                 <div class="card-header bg-success text-white">
                     <h4 class="mb-0">
                         <i class="fas fa-plus-circle"></i> Crear Nueva Orden de Laboratorio
                     </h4>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Create" method="post">
+                    <form asp-action="Create" method="post" id="orderCreateForm">
                         @Html.AntiForgeryToken()
 
                         <!-- Información del Paciente -->
-                        <div class="card mb-3">
+                        <div class="card mb-3 order-subcard">
                             <div class="card-header bg-info text-white">
                                 <h5 class="mb-0"><i class="fas fa-user"></i> Información del Paciente</h5>
                             </div>
@@ -46,7 +55,7 @@
                         </div>
 
                         <!-- Información del Doctor -->
-                        <div class="card mb-3">
+                        <div class="card mb-3 order-subcard">
                             <div class="card-header bg-primary text-white">
                                 <h5 class="mb-0"><i class="fas fa-user-md"></i> Médico Solicitante</h5>
                             </div>
@@ -71,7 +80,7 @@
                         </div>
 
                         <!-- Selección de Exámenes -->
-                        <div class="card mb-3">
+                        <div class="card mb-3 order-subcard">
                             <div class="card-header bg-warning text-dark">
                                 <h5 class="mb-0"><i class="fas fa-flask"></i> Exámenes Solicitados</h5>
                             </div>
@@ -131,11 +140,11 @@
                         </div>
 
                         <!-- Botones -->
-                        <div class="d-flex justify-content-between mt-4">
+                        <div class="order-actions mt-4 d-flex justify-content-between">
                             <a asp-action="Index" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-success btn-lg">
+                            <button type="submit" class="btn btn-success btn-lg order-submit" id="btnCreateOrder">
                                 <i class="fas fa-save"></i> Crear Orden
                             </button>
                         </div>
@@ -147,17 +156,33 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Validar que al menos un examen esté seleccionado
-        $('form').on('submit', function(e) {
-            var checkedCount = $('input[name="selectedTests"]:checked').length;
-            if (checkedCount === 0) {
-                e.preventDefault();
-                alert('Debe seleccionar al menos un examen para crear la orden.');
-                return false;
+        (function () {
+            const form = document.getElementById('orderCreateForm');
+            const submitButton = document.getElementById('btnCreateOrder');
+
+            if (!form || !submitButton) {
+                return;
             }
-            return true;
-        });
+
+            form.addEventListener('submit', function (e) {
+                const checkedCount = document.querySelectorAll('input[name="selectedTests"]:checked').length;
+                if (checkedCount === 0) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Faltan exámenes',
+                        text: 'Debe seleccionar al menos un examen para crear la orden.',
+                        confirmButtonColor: '#4e73df'
+                    });
+                    return;
+                }
+
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Creando...';
+            });
+        })();
     </script>
 }
 

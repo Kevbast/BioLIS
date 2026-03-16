@@ -3,10 +3,19 @@
     var sampleTypes = ViewData["SampleTypes"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
 }
 
-<div class="container mt-4">
+<link rel="stylesheet" href="~/css/catalog-modules.css" asp-append-version="true" />
+
+<div class="container mt-4 catalog-page">
+    <div class="catalog-header">
+        <h2><i class="fas fa-flask text-success"></i> Registrar Nuevo Examen</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow">
+            <div class="card catalog-card">
                 <div class="card-header bg-success text-white">
                     <h4 class="mb-0">
                         <i class="fas fa-plus-circle"></i> Registrar Nuevo Examen
@@ -21,7 +30,7 @@
                         </div>
                     }
 
-                    <form asp-action="Create" method="post">
+                    <form asp-action="Create" method="post" class="catalog-form" id="labTestCreateForm">
                         @Html.AntiForgeryToken()
 
                         <!-- Nombre del Examen -->
@@ -68,11 +77,11 @@
                         </div>
 
                         <!-- Botones -->
-                        <div class="d-flex justify-content-between mt-4">
+                        <div class="catalog-actions mt-4 d-flex justify-content-between">
                             <a asp-action="Index" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-success">
+                            <button type="submit" class="btn btn-success" id="btnCreateLabTest">
                                 <i class="fas fa-save"></i> Crear Examen
                             </button>
                         </div>
@@ -92,4 +101,22 @@
             </div>
         </div>
     </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('labTestCreateForm');
+            const submitButton = document.getElementById('btnCreateLabTest');
+
+            if (!form || !submitButton) {
+                return;
+            }
+
+            form.addEventListener('submit', function () {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+            });
+        })();
+    </script>
+}
 </div>

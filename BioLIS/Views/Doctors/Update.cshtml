@@ -4,17 +4,26 @@
     ViewData["Title"] = "Editar Médico";
 }
 
-<div class="container mt-4">
+<link rel="stylesheet" href="~/css/doctors.css" asp-append-version="true" />
+
+<div class="container mt-4 doctors-page">
+    <div class="doctors-header">
+        <h2><i class="fas fa-user-edit text-warning"></i> Editar Médico</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0">
-                        <i class="fas fa-edit"></i> Editar Información del Médico
-                    </h4>
+            <div class="card doctor-form-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold text-warning">
+                        Editar información del médico
+                    </h6>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Update" method="post">
+                    <form asp-action="Update" method="post" id="doctorUpdateForm">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <!-- ID Oculto -->
@@ -56,11 +65,11 @@
                         </div>
 
                         <!-- Botones -->
-                        <div class="d-flex justify-content-between mt-4">
+                        <div class="doctor-form-actions mt-4">
                             <a asp-action="Index" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-warning">
+                            <button type="submit" class="btn btn-warning doctors-submit" id="btnUpdateDoctor">
                                 <i class="fas fa-save"></i> Actualizar Información
                             </button>
                         </div>
@@ -69,7 +78,7 @@
             </div>
 
             <!-- Información sobre usuarios vinculados -->
-            <div class="alert alert-secondary mt-3">
+            <div class="alert alert-secondary mt-3 doctor-note">
                 <i class="fas fa-link"></i> 
                 <strong>Usuarios vinculados:</strong> 
                 Si este médico tiene un usuario del sistema, los cambios aquí NO afectan su cuenta de acceso. 
@@ -82,4 +91,19 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        (function () {
+            const form = document.getElementById('doctorUpdateForm');
+            const submitButton = document.getElementById('btnUpdateDoctor');
+
+            if (!form || !submitButton) {
+                return;
+            }
+
+            form.addEventListener('submit', function () {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Actualizando...';
+            });
+        })();
+    </script>
 }

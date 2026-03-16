@@ -1,0 +1,169 @@
+.dashboard-home {
+    --brand-primary: #4e73df;
+    --brand-success: #1cc88a;
+    --brand-info: #36b9cc;
+    --brand-warning: #f6c23e;
+    --surface-soft: #f8faff;
+    --surface-border: #e9eefb;
+    --text-title: #2d3748;
+    --text-muted: #6b7280;
+
+    background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+    border: 1px solid #eef2fb;
+    border-radius: 18px;
+    padding: 1.4rem 1.2rem;
+}
+
+.dashboard-title {
+    font-weight: 700;
+    color: var(--text-title);
+    letter-spacing: 0.2px;
+    text-wrap: balance;
+}
+
+.dashboard-subtitle {
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+.dashboard-home .badge {
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.45em 0.7em;
+}
+
+.dashboard-home .stat-card {
+    border: 0;
+    border-radius: 14px;
+    background: #fff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 0.45rem 1rem rgba(15, 23, 42, 0.06) !important;
+}
+
+.dashboard-home .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.9rem 1.6rem rgba(15, 23, 42, 0.12) !important;
+}
+
+.dashboard-home .stat-card .card-body {
+    padding: 1.05rem 1.1rem;
+}
+
+.dashboard-home .text-xs {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+}
+
+.dashboard-home .quick-card {
+    border: 0;
+    border-radius: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    box-shadow: 0 0.4rem 1rem rgba(15, 23, 42, 0.06) !important;
+}
+
+.dashboard-home .quick-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.9rem 1.4rem rgba(15, 23, 42, 0.1) !important;
+    background-color: #fff;
+}
+
+.dashboard-home .quick-icon {
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.dashboard-home .quick-card:hover .quick-icon {
+    transform: scale(1.04);
+}
+
+.dashboard-home .quick-card .btn {
+    border-radius: 10px;
+    font-weight: 600;
+    padding-inline: 0.85rem;
+}
+
+.dashboard-home .recent-orders-card {
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 0.55rem 1.25rem rgba(15, 23, 42, 0.07) !important;
+}
+
+.dashboard-home .recent-orders-card .card-header {
+    background: var(--surface-soft);
+    border-bottom: 1px solid var(--surface-border);
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+.dashboard-home .orders-table thead th {
+    background-color: #f8f9fc;
+    color: #4a5568;
+    font-weight: 600;
+    border-bottom-width: 1px;
+}
+
+.dashboard-home .orders-table tbody tr {
+    vertical-align: middle;
+    transition: background-color 0.15s ease;
+}
+
+.dashboard-home .orders-table tbody tr:hover {
+    background-color: var(--surface-soft);
+}
+
+.dashboard-home .orders-table td,
+.dashboard-home .orders-table th {
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+}
+
+.dashboard-home .orders-table .badge {
+    border-radius: 999px;
+    font-weight: 600;
+    padding: 0.45em 0.65em;
+}
+
+.dashboard-home .btn-sm {
+    font-weight: 600;
+}
+
+.dashboard-home .btn:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.border-left-primary {
+    border-left: 0.3rem solid var(--brand-primary) !important;
+}
+
+.border-left-success {
+    border-left: 0.3rem solid var(--brand-success) !important;
+}
+
+.border-left-info {
+    border-left: 0.3rem solid var(--brand-info) !important;
+}
+
+.border-left-warning {
+    border-left: 0.3rem solid var(--brand-warning) !important;
+}
+
+.text-gray-300 {
+    color: #d8ddee !important;
+}
+
+.text-gray-800 {
+    color: #374151 !important;
+}
+
+@media (max-width: 991.98px) {
+    .dashboard-home {
+        border-radius: 14px;
+        padding: 1.1rem 0.9rem;
+    }
+
+    .dashboard-home .card-body {
+        padding: 0.95rem 0.95rem;
+    }
+}

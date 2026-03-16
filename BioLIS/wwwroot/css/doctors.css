@@ -1,0 +1,124 @@
+.doctors-page {
+    --doctors-primary: #4e73df;
+    --doctors-success: #1cc88a;
+    --doctors-warning: #f6c23e;
+    --doctors-danger: #e74a3b;
+    --doctors-surface: #f8faff;
+    --doctors-border: #e8eefc;
+
+    padding: 0.5rem 0;
+}
+
+.doctors-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.doctors-header h2 {
+    margin-bottom: 0;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.doctor-form-card,
+.doctor-list-card {
+    border: 0;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 0.7rem 1.5rem rgba(15, 23, 42, 0.08) !important;
+}
+
+.doctor-form-card .card-header,
+.doctor-list-card .card-header {
+    background: var(--doctors-surface);
+    border-bottom: 1px solid var(--doctors-border);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+
+.doctor-form-card .form-label {
+    font-weight: 600;
+    color: #374151;
+}
+
+.doctor-form-card .form-control {
+    border-radius: 10px;
+    border-color: #d8e1f4;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.doctor-form-card .form-control:focus {
+    border-color: #9ab3f5;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.18);
+}
+
+.doctor-form-actions {
+    display: flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+.doctor-form-actions .btn {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.doctors-submit {
+    min-width: 175px;
+}
+
+.doctor-table thead th {
+    background-color: #f8f9fc;
+    color: #374151;
+    font-weight: 700;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.doctor-table tbody tr {
+    vertical-align: middle;
+    transition: background-color 0.18s ease;
+}
+
+.doctor-table tbody tr:hover {
+    background-color: #f8faff;
+}
+
+.doctor-table .badge {
+    border-radius: 999px;
+    padding: 0.42em 0.68em;
+}
+
+.doctor-table-actions .btn {
+    border-radius: 8px;
+}
+
+.doctor-list-card .card-footer {
+    background: #fcfdff;
+    border-top: 1px solid var(--doctors-border);
+}
+
+.doctors-empty {
+    border: 1px dashed #c7d7f8;
+    border-radius: 14px;
+    background-color: #f8faff;
+}
+
+.doctor-note {
+    border-radius: 12px;
+}
+
+@media (max-width: 767.98px) {
+    .doctors-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .doctors-header .btn,
+    .doctor-form-actions .btn {
+        width: 100%;
+    }
+}

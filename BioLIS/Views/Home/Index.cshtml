@@ -5,14 +5,16 @@
     var username = User.FindFirstValue(ClaimTypes.Name);
 }
 
-<div class="container-fluid mt-4">
+<link rel="stylesheet" href="~/css/home-dashboard.css" asp-append-version="true" />
+
+<div class="container-fluid mt-4 dashboard-home">
     <!-- Encabezado de bienvenida -->
     <div class="row mb-4">
         <div class="col-12">
-            <h2 class="mb-3">
+            <h2 class="mb-3 dashboard-title">
                 <i class="bi bi-speedometer2 text-primary"></i> Dashboard BioLIS
             </h2>
-            <p class="text-muted">
+            <p class="dashboard-subtitle">
                 Bienvenido, <strong>@username</strong>
                 <span class="badge bg-primary">@role</span>
             </p>
@@ -23,7 +25,7 @@
     <div class="row mb-4">
         <!-- Órdenes de Hoy -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card border-left-primary shadow h-100 py-2 stat-card">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -51,7 +53,7 @@
 
         <!-- Total Pacientes -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
+            <div class="card border-left-success shadow h-100 py-2 stat-card">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -70,7 +72,7 @@
 
         <!-- Total Médicos -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
+            <div class="card border-left-info shadow h-100 py-2 stat-card">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -89,7 +91,7 @@
 
         <!-- Total Exámenes -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card border-left-warning shadow h-100 py-2 stat-card">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -116,9 +118,9 @@
         @if (role != "Doctor")
         {
             <div class="col-lg-3 col-md-6 mb-3">
-                <div class="card text-center h-100 shadow-sm">
+                <div class="card text-center h-100 shadow-sm quick-card">
                     <div class="card-body">
-                        <i class="bi bi-person-plus fa-3x text-primary mb-3"></i>
+                        <i class="bi bi-person-plus fa-3x text-primary mb-3 quick-icon"></i>
                         <h5 class="card-title">Registrar Paciente</h5>
                         <a asp-controller="Patients" asp-action="Create" class="btn btn-primary btn-sm">
                             <i class="bi bi-plus-circle"></i> Nuevo
@@ -129,9 +131,9 @@
         }
 
         <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-center h-100 shadow-sm">
+            <div class="card text-center h-100 shadow-sm quick-card">
                 <div class="card-body">
-                    <i class="bi bi-file-earmark-medical fa-3x text-success mb-3"></i>
+                    <i class="bi bi-file-earmark-medical fa-3x text-success mb-3 quick-icon"></i>
                     <h5 class="card-title">Nueva Orden</h5>
                     <a asp-controller="Orders" asp-action="Create" class="btn btn-success btn-sm">
                         <i class="bi bi-plus-circle"></i> Crear
@@ -141,9 +143,9 @@
         </div>
 
         <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-center h-100 shadow-sm">
+            <div class="card text-center h-100 shadow-sm quick-card">
                 <div class="card-body">
-                    <i class="bi bi-file-earmark-text fa-3x text-info mb-3"></i>
+                    <i class="bi bi-file-earmark-text fa-3x text-info mb-3 quick-icon"></i>
                     <h5 class="card-title">Ver Órdenes</h5>
                     <a asp-controller="Orders" asp-action="Index" class="btn btn-info btn-sm">
                         <i class="bi bi-list-ul"></i> Listar
@@ -155,9 +157,9 @@
         @if (role == "Admin")
         {
             <div class="col-lg-3 col-md-6 mb-3">
-                <div class="card text-center h-100 shadow-sm">
+                <div class="card text-center h-100 shadow-sm quick-card">
                     <div class="card-body">
-                        <i class="bi bi-gear fa-3x text-warning mb-3"></i>
+                        <i class="bi bi-gear fa-3x text-warning mb-3 quick-icon"></i>
                         <h5 class="card-title">Administración</h5>
                         <a asp-controller="Users" asp-action="Index" class="btn btn-warning btn-sm">
                             <i class="bi bi-people"></i> Usuarios
@@ -173,7 +175,7 @@
     {
         <div class="row">
             <div class="col-12">
-                <div class="card shadow mb-4">
+                <div class="card shadow mb-4 recent-orders-card">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">
                             @if (role == "Doctor")
@@ -191,7 +193,7 @@
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover">
+                            <table class="table table-hover orders-table">
                                 <thead>
                                     <tr>
                                         <th>Número Orden</th>
@@ -247,29 +249,3 @@
         </div>
     }
 </div>
-
-<style>
-    .border-left-primary {
-        border-left: 0.25rem solid #4e73df !important;
-    }
-
-    .border-left-success {
-        border-left: 0.25rem solid #1cc88a !important;
-    }
-
-    .border-left-info {
-        border-left: 0.25rem solid #36b9cc !important;
-    }
-
-    .border-left-warning {
-        border-left: 0.25rem solid #f6c23e !important;
-    }
-
-    .text-gray-300 {
-        color: #dddfeb !important;
-    }
-
-    .text-gray-800 {
-        color: #5a5c69 !important;
-    }
-</style>

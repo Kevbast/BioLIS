@@ -1,13 +1,18 @@
 @using System.Security.Claims
 @model List<BioLab.Models.Order>
 
+<link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" />
+
 @{
     ViewData["Title"] = "Gestión de Órdenes";
     var role = User.FindFirstValue(ClaimTypes.Role);
+    var swalType = TempData["SwalType"]?.ToString();
+    var swalTitle = TempData["SwalTitle"]?.ToString();
+    var swalMessage = TempData["SwalMessage"]?.ToString();
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container mt-4 orders-page">
+    <div class="orders-header">
         <h2>
             <i class="fas fa-file-medical text-success"></i> 
             @if (role == "Doctor")
@@ -27,25 +32,9 @@
         }
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
     @if (Model == null || !Model.Any())
     {
-        <div class="alert alert-info text-center">
+        <div class="alert alert-info text-center order-empty py-4">
             <i class="fas fa-info-circle"></i> 
             @if (role == "Doctor")
             {
@@ -59,11 +48,11 @@
     }
     else
     {
-        <div class="card shadow">
+        <div class="card order-list-card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped">
-                        <thead class="table-dark">
+                    <table class="table table-hover orders-table">
+                        <thead>
                             <tr>
                                 <th>Número de Orden</th>
                                 <th>Fecha</th>
@@ -125,7 +114,7 @@
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <div class="btn-group" role="group">
+                                            <div class="btn-group order-table-actions" role="group">
                                             <a asp-action="Details" asp-route-orderId="@order.OrderID"
                                                class="btn btn-sm btn-info" title="Ver detalles">
                                                 <i class="fas fa-eye"></i>
@@ -133,7 +122,9 @@
                                             @if (role == "Admin")
                                             {
                                                 <a asp-action="Delete" asp-route-orderId="@order.OrderID"
-                                                   class="btn btn-sm btn-danger" title="Eliminar">
+                                                   class="btn btn-sm btn-danger js-delete-order"
+                                                   data-order-number="@order.OrderNumber"
+                                                   title="Eliminar">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
                                             }
@@ -162,10 +153,103 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Auto-ocultar alertas después de 5 segundos
-        setTimeout(function () {
-            $('.alert').fadeOut('slow');
-        }, 5000);
+        (function () {
+            const swalType = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalType));
+            const swalTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalTitle));
+            const swalMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalMessage));
+
+            if (swalType && swalTitle && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: swalType,
+                    title: swalTitle,
+                    text: swalMessage ?? '',
+                    confirmButtonColor: '#4e73df',
+                    timer: 2600,
+                    timerProgressBar: true
+                });
+            }
+
+            document.querySelectorAll('.js-delete-order').forEach(function (button) {
+                button.addEventListener('click', async function (event) {
+                    event.preventDefault();
+
+                    const deletePageUrl = button.getAttribute('href');
+                    const orderNumber = button.dataset.orderNumber || 'esta orden';
+
+                    try {
+                        const response = await fetch(deletePageUrl, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('No se pudo cargar la confirmación de eliminación.');
+                        }
+
+                        const html = await response.text();
+                        const parser = new DOMParser();
+                        const documentFromResponse = parser.parseFromString(html, 'text/html');
+                        const deleteForm = documentFromResponse.querySelector('form[action*="/Orders/Delete"]');
+
+                        if (!deleteForm) {
+                            throw new Error('No se encontró el formulario de confirmación.');
+                        }
+
+                        const antiForgery = deleteForm.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                        const orderId = deleteForm.querySelector('input[name="OrderID"], input[name="orderId"]')?.value || '';
+                        const formAction = deleteForm.getAttribute('action') || '/Orders/Delete';
+
+                        const summaryContent = documentFromResponse.querySelector('.delete-order-summary')?.outerHTML
+                            || `<div class="text-start"><p class="mb-2"><strong>Orden:</strong> ${orderNumber}</p><p class="mb-0 text-muted">Esta acción no se puede deshacer.</p></div>`;
+
+                        const result = await Swal.fire({
+                            icon: 'warning',
+                            title: 'Confirmar eliminación',
+                            html: summaryContent,
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, eliminar',
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonColor: '#e74a3b',
+                            cancelButtonColor: '#6c757d'
+                        });
+
+                        if (!result.isConfirmed) {
+                            return;
+                        }
+
+                        const postForm = document.createElement('form');
+                        postForm.method = 'post';
+                        postForm.action = formAction;
+
+                        if (antiForgery) {
+                            const tokenInput = document.createElement('input');
+                            tokenInput.type = 'hidden';
+                            tokenInput.name = '__RequestVerificationToken';
+                            tokenInput.value = antiForgery;
+                            postForm.appendChild(tokenInput);
+                        }
+
+                        const idInput = document.createElement('input');
+                        idInput.type = 'hidden';
+                        idInput.name = 'orderId';
+                        idInput.value = orderId;
+                        postForm.appendChild(idInput);
+
+                        document.body.appendChild(postForm);
+                        postForm.submit();
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'Ocurrió un error al preparar la eliminación.',
+                            confirmButtonColor: '#4e73df'
+                        });
+                    }
+                });
+            });
+        })();
     </script>
 }

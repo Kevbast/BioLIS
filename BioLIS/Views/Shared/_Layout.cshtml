@@ -12,10 +12,72 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .app-navbar {
+            border-radius: 12px;
+            margin: 0.75rem;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        }
+
+        .app-navbar .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .app-navbar .nav-link {
+            position: relative;
+            border-radius: 8px;
+            padding: 0.45rem 0.8rem;
+            color: #334155 !important;
+            transition: background-color 0.25s ease, color 0.25s ease, transform 0.2s ease;
+        }
+
+        .app-navbar .nav-link::after {
+            content: "";
+            position: absolute;
+            left: 0.8rem;
+            right: 0.8rem;
+            bottom: 0.2rem;
+            height: 2px;
+            background-color: #0d6efd;
+            border-radius: 999px;
+            transform: scaleX(0);
+            transform-origin: center;
+            transition: transform 0.25s ease;
+        }
+
+        .app-navbar .nav-link:hover,
+        .app-navbar .nav-link:focus {
+            background-color: #f1f5f9;
+            color: #0f172a !important;
+            transform: translateY(-1px);
+        }
+
+        .app-navbar .nav-link:hover::after,
+        .app-navbar .nav-link:focus::after {
+            transform: scaleX(0.65);
+        }
+
+        .app-navbar .nav-link.active {
+            background-color: #e9f2ff;
+            color: #0d6efd !important;
+            font-weight: 600;
+            transform: translateY(-1px);
+        }
+
+        .app-navbar .nav-link.active::after {
+            transform: scaleX(1);
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        @{
+            var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+            var isAdminSection = currentController is "Users" or "LabTests" or "SampleTypes" or "ReferenceRanges";
+        }
+
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border app-navbar mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
                     <i class="bi bi-heart-pulse-fill text-primary"></i> BioLIS
@@ -28,8 +90,8 @@
                     <ul class="navbar-nav flex-grow-1">
                         @* Dashboard - Todos *@
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
-                                <i class="fas fa-home"></i> Dashboard
+                            <a class="nav-link @(currentController == "Home" ? "active" : string.Empty)" asp-area="" asp-controller="Home" asp-action="Index">
+                                Dashboard
                             </a>
                         </li>
 
@@ -37,23 +99,23 @@
                         @if (User.IsInRole("Admin") || User.IsInRole("Laboratorio"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Patients" asp-action="Index">
-                                    <i class="fas fa-users"></i> Pacientes
+                                <a class="nav-link @(currentController == "Patients" ? "active" : string.Empty)" asp-area="" asp-controller="Patients" asp-action="Index">
+                                    Pacientes
                                 </a>
                             </li>
                         }
 
                         @* Médicos - Todos pueden ver *@
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Doctors" asp-action="Index">
-                                <i class="fas fa-user-md"></i> Médicos
+                            <a class="nav-link @(currentController == "Doctors" ? "active" : string.Empty)" asp-area="" asp-controller="Doctors" asp-action="Index">
+                                Médicos
                             </a>
                         </li>
 
                         @* Órdenes - Todos pueden ver (filtrado por rol en el controller) *@
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Orders" asp-action="Index">
-                                <i class="fas fa-file-medical"></i> Órdenes
+                            <a class="nav-link @(currentController == "Orders" ? "active" : string.Empty)" asp-controller="Orders" asp-action="Index">
+                                Órdenes
                             </a>
                         </li>
 
@@ -61,30 +123,30 @@
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" id="adminDropdown" role="button"
+                                <a class="nav-link dropdown-toggle @(isAdminSection ? "active" : string.Empty)" href="#" id="adminDropdown" role="button"
                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-cog"></i> Administración
+                                    Administración
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="adminDropdown">
                                     <li>
                                         <a class="dropdown-item" asp-controller="Users" asp-action="Index">
-                                            <i class="fas fa-users-cog"></i> Gestión de Usuarios
+                                            Gestión de Usuarios
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
                                         <a class="dropdown-item" asp-controller="LabTests" asp-action="Index">
-                                            <i class="fas fa-flask"></i> Catálogo de Exámenes
+                                            Catálogo de Exámenes
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" asp-controller="SampleTypes" asp-action="Index">
-                                            <i class="fas fa-vial"></i> Tipos de Muestra
+                                            Tipos de Muestra
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" asp-controller="ReferenceRanges" asp-action="Index">
-                                            <i class="fas fa-chart-line"></i> Rangos de Referencia
+                                            Rangos de Referencia
                                         </a>
                                     </li>
                                 </ul>

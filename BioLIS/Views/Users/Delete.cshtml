@@ -4,17 +4,19 @@
     ViewData["Title"] = "Eliminar Usuario";
 }
 
-<div class="container mt-4">
+<link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
+
+<div class="container mt-4 users-page">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow border-danger">
+            <div class="card users-card shadow border-danger">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación de Usuario
                     </h4>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-danger">
+                    <div class="alert alert-danger users-delete-summary">
                         <i class="fas fa-skull-crossbones"></i>
                         <strong>¡ADVERTENCIA!</strong> 
                         Esta acción eliminará permanentemente este usuario del sistema.

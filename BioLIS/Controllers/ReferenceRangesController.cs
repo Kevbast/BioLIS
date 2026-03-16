@@ -69,7 +69,9 @@ namespace BioLIS.Controllers
 
             await catalogRepo.CreateReferenceRangeAsync(testId, gender, minAgeYear, maxAgeYear, minVal, maxVal);
 
-            TempData["SuccessMessage"] = "Rango de referencia creado exitosamente.";
+            TempData["SwalType"] = "success";
+            TempData["SwalTitle"] = "Rango creado";
+            TempData["SwalMessage"] = "Rango de referencia creado exitosamente.";
             return RedirectToAction("Index");
         }
 
@@ -133,12 +135,16 @@ namespace BioLIS.Controllers
 
             if (success)
             {
-                TempData["SuccessMessage"] = "Rango de referencia actualizado exitosamente.";
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Rango actualizado";
+                TempData["SwalMessage"] = "Rango de referencia actualizado exitosamente.";
                 return RedirectToAction("Index");
             }
             else
             {
-                TempData["ErrorMessage"] = "Error al actualizar el rango de referencia.";
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "Error de actualización";
+                TempData["SwalMessage"] = "Error al actualizar el rango de referencia.";
                 return View(range);
             }
         }
@@ -164,11 +170,15 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Rango eliminado";
+                TempData["SwalMessage"] = result.Message;
             }
             else
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo eliminar";
+                TempData["SwalMessage"] = result.Message;
             }
 
             return RedirectToAction("Index");

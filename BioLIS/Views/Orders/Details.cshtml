@@ -1,17 +1,22 @@
 @using System.Security.Claims
 @model BioLab.Models.Order
 
+<link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" />
+
 @{
     ViewData["Title"] = "Detalles de la Orden";
     var results = ViewData["Results"] as List<BioLab.Models.TestResult> ?? new List<BioLab.Models.TestResult>();
     var role = User.FindFirstValue(ClaimTypes.Role);
+    var swalType = TempData["SwalType"]?.ToString();
+    var swalTitle = TempData["SwalTitle"]?.ToString();
+    var swalMessage = TempData["SwalMessage"]?.ToString();
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container mt-4 orders-page">
+    <div class="orders-header">
         <h2>
             <i class="fas fa-file-medical text-primary"></i>
-            Orden: <strong>@Model.OrderNumber</strong>
+            <span class="order-header-title">Orden: <strong>@Model.OrderNumber</strong></span>
         </h2>
         <div>
             <a asp-action="Index" class="btn btn-secondary">
@@ -26,27 +31,11 @@
         </div>
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
     <div class="row">
         <div class="col-md-6 mb-3">
-            <div class="card h-100 shadow">
+            <div class="card h-100 order-details-card">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="fas fa-user"></i> Información del Paciente</h5>
+                    <h5 class="mb-0 order-section-title"><i class="fas fa-user"></i> Información del Paciente</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -99,9 +88,9 @@
         </div>
 
         <div class="col-md-6 mb-3">
-            <div class="card h-100 shadow">
+            <div class="card h-100 order-details-card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-user-md"></i> Médico Solicitante</h5>
+                    <h5 class="mb-0 order-section-title"><i class="fas fa-user-md"></i> Médico Solicitante</h5>
                 </div>
                 <div class="card-body">
                     <dl class="row">
@@ -145,9 +134,9 @@
         </div>
     </div>
 
-    <div class="card shadow mt-3">
+    <div class="card order-details-card mt-3">
         <div class="card-header bg-success text-white">
-            <h5 class="mb-0">
+            <h5 class="mb-0 order-section-title">
                 <i class="fas fa-flask"></i> Exámenes Solicitados
                 <span class="badge bg-light text-dark">@results.Count</span>
             </h5>
@@ -162,7 +151,7 @@
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover order-results-table">
                         <thead class="table-light">
                             <tr>
                                 <th>Examen</th>
@@ -242,9 +231,9 @@
         </div>
     </div>
 
-    <div class="card shadow mt-3 mb-5">
+    <div class="card order-details-card mt-3 mb-5">
         <div class="card-header bg-secondary text-white">
-            <h6 class="mb-0"><i class="fas fa-info-circle"></i> Información Adicional y Acciones</h6>
+            <h6 class="mb-0 order-section-title"><i class="fas fa-info-circle"></i> Información Adicional y Acciones</h6>
         </div>
         <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-center">
             <div class="mb-3 mb-md-0">
@@ -272,7 +261,7 @@
                 }
             </div>
 
-            <div class="d-flex gap-2 flex-wrap justify-content-center">
+            <div class="order-actions">
 
                 @* 1. Botón Ingresar Resultados: Solo Lab/Admin si NO está aprobada *@
                 @if ((role == "Admin" || role == "Laboratorio") && Model.Status != "Aprobada")
@@ -329,6 +318,28 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        (function () {
+            const swalType = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalType));
+            const swalTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalTitle));
+            const swalMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalMessage));
+
+            if (swalType && swalTitle && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: swalType,
+                    title: swalTitle,
+                    text: swalMessage ?? '',
+                    confirmButtonColor: '#4e73df',
+                    timer: 2600,
+                    timerProgressBar: true
+                });
+            }
+        })();
+    </script>
+}
 
 @functions {
     string GetColorBadge(string containerColor)

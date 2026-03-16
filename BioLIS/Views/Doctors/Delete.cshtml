@@ -4,20 +4,26 @@
     ViewData["Title"] = "Eliminar Médico";
 }
 
-<div class="container mt-4">
+<link rel="stylesheet" href="~/css/doctors.css" asp-append-version="true" />
+
+<div class="container mt-4 doctors-page">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow border-danger">
+            <div class="card shadow border-danger doctor-form-card">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
                     </h4>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-warning">
+                    <div class="alert alert-warning delete-doctor-summary">
                         <i class="fas fa-info-circle"></i>
                         <strong>¿Está seguro que desea eliminar este médico?</strong>
                         <p class="mb-0 mt-2">Esta acción no se puede deshacer.</p>
+                        <hr class="my-2" />
+                        <p class="mb-1"><strong>ID:</strong> @Model.DoctorID</p>
+                        <p class="mb-1"><strong>Nombre:</strong> @Model.FullName</p>
+                        <p class="mb-0"><strong>Licencia:</strong> @(string.IsNullOrEmpty(Model.LicenseNumber) ? "Sin licencia registrada" : Model.LicenseNumber)</p>
                     </div>
 
                     <!-- Información del Médico -->

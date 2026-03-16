@@ -106,7 +106,9 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Usuario creado";
+                TempData["SwalMessage"] = result.Message;
                 return RedirectToAction("Index");
             }
             else
@@ -136,8 +138,8 @@ namespace BioLIS.Controllers
                 })
                 .ToList();
 
-            ViewBag.AvailableDoctors = availableDoctors;
-            ViewBag.Roles = UserRoles.GetAll();
+            ViewData["AvailableDoctors"] = availableDoctors;
+            ViewData["Roles"] = UserRoles.GetAll();
         }
 
         // GET: Users/Delete
@@ -163,11 +165,15 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Usuario eliminado";
+                TempData["SwalMessage"] = result.Message;
             }
             else
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo eliminar";
+                TempData["SwalMessage"] = result.Message;
             }
 
             return RedirectToAction("Index");
@@ -205,12 +211,16 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Contraseña actualizada";
+                TempData["SwalMessage"] = result.Message;
                 return RedirectToAction("Index", "Home");
             }
             else
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo cambiar";
+                TempData["SwalMessage"] = result.Message;
                 return View();
             }
         }

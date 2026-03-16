@@ -4,17 +4,26 @@
     ViewData["Title"] = "Registrar Médico";
 }
 
-<div class="container mt-4">
+<link rel="stylesheet" href="~/css/doctors.css" asp-append-version="true" />
+
+<div class="container mt-4 doctors-page">
+    <div class="doctors-header">
+        <h2><i class="fas fa-user-md text-success"></i> Registrar Nuevo Médico</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-user-md"></i> Registrar Nuevo Médico
-                    </h4>
+            <div class="card doctor-form-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold text-success">
+                        Datos del médico
+                    </h6>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Create" method="post">
+                    <form asp-action="Create" method="post" id="doctorCreateForm">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <!-- Nombre Completo -->
@@ -47,11 +56,11 @@
                         </div>
 
                         <!-- Botones -->
-                        <div class="d-flex justify-content-between mt-4">
+                        <div class="doctor-form-actions mt-4">
                             <a asp-action="Index" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-success">
+                            <button type="submit" class="btn btn-success doctors-submit" id="btnCreateDoctor">
                                 <i class="fas fa-save"></i> Guardar Médico
                             </button>
                         </div>
@@ -60,7 +69,7 @@
             </div>
 
             <!-- Información adicional -->
-            <div class="alert alert-info mt-3">
+            <div class="alert alert-info mt-3 doctor-note">
                 <i class="fas fa-info-circle"></i> 
                 <strong>Nota:</strong> 
                 Este médico podrá solicitar órdenes de laboratorio. 
@@ -73,4 +82,19 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        (function () {
+            const form = document.getElementById('doctorCreateForm');
+            const submitButton = document.getElementById('btnCreateDoctor');
+
+            if (!form || !submitButton) {
+                return;
+            }
+
+            form.addEventListener('submit', function () {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+            });
+        })();
+    </script>
 }

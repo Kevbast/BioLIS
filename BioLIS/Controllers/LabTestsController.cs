@@ -50,7 +50,9 @@ namespace BioLIS.Controllers
 
             await catalogRepo.CreateLabTestAsync(testName, units, sampleId);
 
-            TempData["SuccessMessage"] = $"Examen '{testName}' creado exitosamente.";
+            TempData["SwalType"] = "success";
+            TempData["SwalTitle"] = "Examen creado";
+            TempData["SwalMessage"] = $"Examen '{testName}' creado exitosamente.";
             return RedirectToAction("Index");
         }
 
@@ -86,12 +88,16 @@ namespace BioLIS.Controllers
 
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Examen actualizado exitosamente.";
+                    TempData["SwalType"] = "success";
+                    TempData["SwalTitle"] = "Examen actualizado";
+                    TempData["SwalMessage"] = "Examen actualizado exitosamente.";
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Error al actualizar el examen.";
+                    TempData["SwalType"] = "error";
+                    TempData["SwalTitle"] = "Error de actualización";
+                    TempData["SwalMessage"] = "Error al actualizar el examen.";
                 }
             }
 
@@ -127,11 +133,15 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Examen eliminado";
+                TempData["SwalMessage"] = result.Message;
             }
             else
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo eliminar";
+                TempData["SwalMessage"] = result.Message;
             }
 
             return RedirectToAction("Index");

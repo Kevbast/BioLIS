@@ -1,11 +1,16 @@
 @model List<BioLab.Models.LabTest>
 
+<link rel="stylesheet" href="~/css/catalog-modules.css" asp-append-version="true" />
+
 @{
     ViewData["Title"] = "Catálogo de Exámenes";
+    var swalType = TempData["SwalType"]?.ToString();
+    var swalTitle = TempData["SwalTitle"]?.ToString();
+    var swalMessage = TempData["SwalMessage"]?.ToString();
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container mt-4 catalog-page">
+    <div class="catalog-header">
         <h2>
             <i class="fas fa-flask text-success"></i> Catálogo de Exámenes de Laboratorio
         </h2>
@@ -14,25 +19,9 @@
         </a>
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle"></i> @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
     @if (Model == null || !Model.Any())
     {
-        <div class="alert alert-info text-center">
+        <div class="alert alert-info text-center catalog-empty py-4">
             <i class="fas fa-info-circle"></i> 
             No hay exámenes registrados. 
             <a asp-action="Create" class="alert-link">Registrar el primero</a>
@@ -40,11 +29,11 @@
     }
     else
     {
-        <div class="card shadow">
+        <div class="card catalog-list-card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped">
-                        <thead class="table-dark">
+                    <table class="table table-hover catalog-table">
+                        <thead>
                             <tr>
                                 <th>ID</th>
                                 <th>Nombre del Examen</th>
@@ -85,7 +74,9 @@
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <a asp-action="Delete" asp-route-testId="@test.TestID"
-                                               class="btn btn-sm btn-danger" title="Eliminar">
+                                               class="btn btn-sm btn-danger js-delete-labtest"
+                                               data-test-name="@test.TestName"
+                                               title="Eliminar">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </div>
@@ -116,11 +107,80 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Auto-ocultar alertas después de 5 segundos
-        setTimeout(function () {
-            $('.alert').fadeOut('slow');
-        }, 5000);
+        (function () {
+            const swalType = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalType));
+            const swalTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalTitle));
+            const swalMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalMessage));
+
+            if (swalType && swalTitle && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: swalType,
+                    title: swalTitle,
+                    text: swalMessage ?? '',
+                    confirmButtonColor: '#4e73df',
+                    timer: 2600,
+                    timerProgressBar: true
+                });
+            }
+
+            document.querySelectorAll('.js-delete-labtest').forEach(function (button) {
+                button.addEventListener('click', async function (event) {
+                    event.preventDefault();
+
+                    const response = await fetch(button.getAttribute('href'));
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const html = await response.text();
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const deleteForm = doc.querySelector('form[action*="/LabTests/Delete"]');
+                    if (!deleteForm) {
+                        return;
+                    }
+
+                    const result = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Confirmar eliminación',
+                        html: doc.querySelector('.catalog-delete-summary')?.outerHTML || `<div class="text-start"><p class="mb-0"><strong>Examen:</strong> ${button.dataset.testName || 'Seleccionado'}</p></div>`,
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#e74a3b',
+                        cancelButtonColor: '#6c757d'
+                    });
+
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    const postForm = document.createElement('form');
+                    postForm.method = 'post';
+                    postForm.action = deleteForm.getAttribute('action') || '/LabTests/Delete';
+
+                    const antiForgery = deleteForm.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    if (antiForgery) {
+                        const tokenInput = document.createElement('input');
+                        tokenInput.type = 'hidden';
+                        tokenInput.name = '__RequestVerificationToken';
+                        tokenInput.value = antiForgery;
+                        postForm.appendChild(tokenInput);
+                    }
+
+                    const testId = deleteForm.querySelector('input[name="TestID"], input[name="testId"]')?.value || '';
+                    const idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'testId';
+                    idInput.value = testId;
+                    postForm.appendChild(idInput);
+
+                    document.body.appendChild(postForm);
+                    postForm.submit();
+                });
+            });
+        })();
     </script>
 }
 

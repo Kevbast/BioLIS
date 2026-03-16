@@ -1,15 +1,20 @@
 @model List<BioLab.Models.User>
 
+<link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
+
 @{
     ViewData["Title"] = "Gestión de Usuarios";
     var doctorNames = ViewData["Doctors"] as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var swalType = TempData["SwalType"]?.ToString();
+    var swalTitle = TempData["SwalTitle"]?.ToString();
+    var swalMessage = TempData["SwalMessage"]?.ToString();
 }
 
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid mt-4 users-page">
+    <div class="users-header">
         <h2>
             <i class="fas fa-users"></i> Gestión de Usuarios
-            <span class="badge bg-info">@Model.Count usuarios</span>
+            <span class="badge bg-info">@(Model?.Count ?? 0) usuarios</span>
         </h2>
         <div>
             <a asp-action="Create" class="btn btn-success">
@@ -21,27 +26,19 @@
         </div>
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
+    @if (Model == null || !Model.Any())
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i> <strong>Éxito:</strong> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-info text-center users-empty py-4">
+            <i class="fas fa-info-circle"></i> No hay usuarios registrados.
         </div>
     }
-
-    @if (TempData["ErrorMessage"] != null)
+    else
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    <div class="card shadow">
+    <div class="card users-list-card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover table-striped">
-                    <thead class="table-dark">
+                <table class="table table-hover users-table">
+                    <thead>
                         <tr>
                             <th>ID</th>
                             <th>Foto</th>
@@ -60,8 +57,7 @@
                                 <td>
                                     <img src="~/images/users/@user.PhotoFilename" 
                                          alt="@user.Username" 
-                                         class="rounded-circle" 
-                                         style="width: 40px; height: 40px; object-fit: cover;" 
+                                         class="users-avatar" 
                                          onerror="this.src='/images/users/default-user.png'" />
                                 </td>
                                 <td>
@@ -123,7 +119,8 @@
                                     @if (user.Role != "Admin" || Model.Count(u => u.Role == "Admin") > 1)
                                     {
                                         <a asp-action="Delete" asp-route-id="@user.UserID" 
-                                           class="btn btn-sm btn-danger"
+                                           class="btn btn-sm btn-danger js-delete-user"
+                                           data-username="@user.Username"
                                            title="Eliminar usuario">
                                             <i class="fas fa-trash"></i>
                                         </a>
@@ -159,13 +156,83 @@
             </div>
         </div>
     </div>
+    }
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Auto-ocultar alertas después de 5 segundos
-        setTimeout(function () {
-            $('.alert').fadeOut('slow');
-        }, 5000);
+        (function () {
+            const swalType = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalType));
+            const swalTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalTitle));
+            const swalMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalMessage));
+
+            if (swalType && swalTitle && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: swalType,
+                    title: swalTitle,
+                    text: swalMessage ?? '',
+                    confirmButtonColor: '#4e73df',
+                    timer: 2600,
+                    timerProgressBar: true
+                });
+            }
+
+            document.querySelectorAll('.js-delete-user').forEach(function (button) {
+                button.addEventListener('click', async function (event) {
+                    event.preventDefault();
+
+                    const response = await fetch(button.getAttribute('href'));
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const html = await response.text();
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const deleteForm = doc.querySelector('form[action*="/Users/Delete"]');
+                    if (!deleteForm) {
+                        return;
+                    }
+
+                    const result = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Confirmar eliminación',
+                        html: doc.querySelector('.users-delete-summary')?.outerHTML || `<div class="text-start"><p class="mb-0"><strong>Usuario:</strong> ${button.dataset.username || 'Seleccionado'}</p></div>`,
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#e74a3b',
+                        cancelButtonColor: '#6c757d'
+                    });
+
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    const postForm = document.createElement('form');
+                    postForm.method = 'post';
+                    postForm.action = deleteForm.getAttribute('action') || '/Users/Delete';
+
+                    const antiForgery = deleteForm.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    if (antiForgery) {
+                        const tokenInput = document.createElement('input');
+                        tokenInput.type = 'hidden';
+                        tokenInput.name = '__RequestVerificationToken';
+                        tokenInput.value = antiForgery;
+                        postForm.appendChild(tokenInput);
+                    }
+
+                    const userId = deleteForm.querySelector('input[name="UserID"], input[name="id"]')?.value || '';
+                    const idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'id';
+                    idInput.value = userId;
+                    postForm.appendChild(idInput);
+
+                    document.body.appendChild(postForm);
+                    postForm.submit();
+                });
+            });
+        })();
     </script>
 }

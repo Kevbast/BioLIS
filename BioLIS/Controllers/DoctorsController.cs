@@ -43,7 +43,9 @@ namespace BioLIS.Controllers
                     doctor.Email
                 );
 
-                TempData["SuccessMessage"] = "Doctor registrado exitosamente.";
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Médico registrado";
+                TempData["SwalMessage"] = "El médico se registró exitosamente.";
                 return RedirectToAction("Index");
             }
 
@@ -75,7 +77,9 @@ namespace BioLIS.Controllers
 
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Doctor actualizado exitosamente.";
+                    TempData["SwalType"] = "success";
+                    TempData["SwalTitle"] = "Médico actualizado";
+                    TempData["SwalMessage"] = "Los datos del médico fueron actualizados correctamente.";
                     return RedirectToAction("Index");
                 }
                 else
@@ -110,11 +114,15 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Médico eliminado";
+                TempData["SwalMessage"] = result.Message;
             }
             else
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo eliminar";
+                TempData["SwalMessage"] = result.Message;
             }
 
             return RedirectToAction("Index");

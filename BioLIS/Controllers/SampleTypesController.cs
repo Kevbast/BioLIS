@@ -52,7 +52,9 @@ namespace BioLIS.Controllers
 
             await catalogRepo.CreateSampleTypeAsync(sampleName, containerColor);
 
-            TempData["SuccessMessage"] = $"Tipo de muestra '{sampleName}' creado exitosamente.";
+            TempData["SwalType"] = "success";
+            TempData["SwalTitle"] = "Tipo de muestra creado";
+            TempData["SwalMessage"] = $"Tipo de muestra '{sampleName}' creado exitosamente.";
             return RedirectToAction("Index");
         }
 
@@ -79,12 +81,16 @@ namespace BioLIS.Controllers
 
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Tipo de muestra actualizado exitosamente.";
+                    TempData["SwalType"] = "success";
+                    TempData["SwalTitle"] = "Tipo de muestra actualizado";
+                    TempData["SwalMessage"] = "Tipo de muestra actualizado exitosamente.";
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Error al actualizar el tipo de muestra.";
+                    TempData["SwalType"] = "error";
+                    TempData["SwalTitle"] = "Error de actualización";
+                    TempData["SwalMessage"] = "Error al actualizar el tipo de muestra.";
                 }
             }
 
@@ -116,11 +122,15 @@ namespace BioLIS.Controllers
 
             if (result.Success)
             {
-                TempData["SuccessMessage"] = result.Message;
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Tipo de muestra eliminado";
+                TempData["SwalMessage"] = result.Message;
             }
             else
             {
-                TempData["ErrorMessage"] = result.Message;
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo eliminar";
+                TempData["SwalMessage"] = result.Message;
             }
 
             return RedirectToAction("Index");

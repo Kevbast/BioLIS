@@ -3,10 +3,19 @@
     var labTests = ViewData["LabTests"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
 }
 
-<div class="container mt-4">
+<link rel="stylesheet" href="~/css/catalog-modules.css" asp-append-version="true" />
+
+<div class="container mt-4 catalog-page">
+    <div class="catalog-header">
+        <h2><i class="fas fa-chart-line text-success"></i> Crear Nuevo Rango de Referencia</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-10">
-            <div class="card shadow">
+            <div class="card catalog-card">
                 <div class="card-header bg-success text-white">
                     <h4 class="mb-0">
                         <i class="fas fa-plus-circle"></i> Crear Nuevo Rango de Referencia
@@ -21,7 +30,7 @@
                         </div>
                     }
 
-                    <form asp-action="Create" method="post">
+                    <form asp-action="Create" method="post" class="catalog-form" id="rangeCreateForm">
                         @Html.AntiForgeryToken()
 
                         <div class="row">
@@ -57,7 +66,7 @@
                         </div>
 
                         <!-- Rango de Edad -->
-                        <div class="card mb-3">
+                        <div class="card mb-3 catalog-card">
                             <div class="card-header bg-info text-white">
                                 <h6 class="mb-0"><i class="fas fa-birthday-cake"></i> Rango de Edad</h6>
                             </div>
@@ -84,7 +93,7 @@
                         </div>
 
                         <!-- Rango de Valores -->
-                        <div class="card mb-3">
+                        <div class="card mb-3 catalog-card">
                             <div class="card-header bg-warning text-dark">
                                 <h6 class="mb-0"><i class="fas fa-chart-line"></i> Valores del Rango</h6>
                             </div>
@@ -111,11 +120,11 @@
                         </div>
 
                         <!-- Botones -->
-                        <div class="d-flex justify-content-between mt-4">
+                        <div class="catalog-actions mt-4 d-flex justify-content-between">
                             <a asp-action="Index" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-success btn-lg">
+                            <button type="submit" class="btn btn-success btn-lg" id="btnCreateRange">
                                 <i class="fas fa-save"></i> Crear Rango
                             </button>
                         </div>
@@ -138,26 +147,47 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Validar que minAge < maxAge
-        $('form').on('submit', function(e) {
-            var minAge = parseInt($('#minAgeYear').val());
-            var maxAge = parseInt($('#maxAgeYear').val());
-            
-            if (minAge >= maxAge) {
-                e.preventDefault();
-                alert('La edad mínima debe ser menor que la edad máxima.');
-                return false;
+        (function () {
+            const form = document.getElementById('rangeCreateForm');
+            const submitButton = document.getElementById('btnCreateRange');
+
+            if (!form || !submitButton) {
+                return;
             }
-            
-            var minVal = parseFloat($('#minVal').val());
-            var maxVal = parseFloat($('#maxVal').val());
-            
-            if (minVal >= maxVal) {
-                e.preventDefault();
-                alert('El valor mínimo debe ser menor que el valor máximo.');
-                return false;
-            }
-        });
+
+            form.addEventListener('submit', function (e) {
+                const minAge = parseInt(document.getElementById('minAgeYear').value || '0', 10);
+                const maxAge = parseInt(document.getElementById('maxAgeYear').value || '0', 10);
+                const minVal = parseFloat(document.getElementById('minVal').value || '0');
+                const maxVal = parseFloat(document.getElementById('maxVal').value || '0');
+
+                if (minAge >= maxAge) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Rango de edad inválido',
+                        text: 'La edad mínima debe ser menor que la edad máxima.',
+                        confirmButtonColor: '#4e73df'
+                    });
+                    return;
+                }
+
+                if (minVal >= maxVal) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Rango de valores inválido',
+                        text: 'El valor mínimo debe ser menor que el valor máximo.',
+                        confirmButtonColor: '#4e73df'
+                    });
+                    return;
+                }
+
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+            });
+        })();
     </script>
 }

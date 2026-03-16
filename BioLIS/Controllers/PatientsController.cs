@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeUsers(Policy = "AdminOrLab")] // Solo Admin y Laboratorio pueden gestionar pacientes
+    [AuthorizeUsers] // Solo Admin y Laboratorio pueden gestionar pacientes (Policy = "AdminOrLab") y doctores tmb
     public class PatientsController : Controller
     {
         private CatalogRepository repo;
@@ -62,6 +62,10 @@ namespace BioLIS.Controllers
                 nombreImagen // Pasamos solo el nombre del archivo
             );
 
+            TempData["SwalType"] = "success";
+            TempData["SwalTitle"] = "Paciente registrado";
+            TempData["SwalMessage"] = $"Se registró correctamente a {patient.FirstName} {patient.LastName}.";
+
             return RedirectToAction("Index");
         }
 
@@ -104,6 +108,9 @@ namespace BioLIS.Controllers
 
             if (exito)
             {
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Paciente actualizado";
+                TempData["SwalMessage"] = $"Los datos de {patient.FirstName} {patient.LastName} fueron actualizados.";
                 return RedirectToAction("Index");
             }
             else
@@ -140,6 +147,16 @@ namespace BioLIS.Controllers
                         System.IO.File.Delete(path);
                     }
                 }
+
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Paciente eliminado";
+                TempData["SwalMessage"] = "El paciente fue eliminado correctamente.";
+            }
+            else
+            {
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo eliminar";
+                TempData["SwalMessage"] = result.Message;
             }
 
             return RedirectToAction("Index");

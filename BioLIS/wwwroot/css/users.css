@@ -1,0 +1,104 @@
+.users-page {
+    --users-primary: #4e73df;
+    --users-success: #1cc88a;
+    --users-info: #36b9cc;
+    --users-warning: #f6c23e;
+    --users-danger: #e74a3b;
+    --users-surface: #f8faff;
+    --users-border: #e8eefc;
+
+    padding: 0.5rem 0;
+}
+
+.users-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.users-header h2 {
+    margin-bottom: 0;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.users-card,
+.users-list-card {
+    border: 0;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 0.7rem 1.5rem rgba(15, 23, 42, 0.08) !important;
+}
+
+.users-form .form-control,
+.users-form .form-select {
+    border-radius: 10px;
+    border-color: #d8e1f4;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.users-form .form-control:focus,
+.users-form .form-select:focus {
+    border-color: #9ab3f5;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.18);
+}
+
+.users-table thead th {
+    background-color: #f8f9fc;
+    color: #374151;
+    font-weight: 700;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.users-table tbody tr {
+    vertical-align: middle;
+    transition: background-color 0.18s ease;
+}
+
+.users-table tbody tr:hover {
+    background-color: #f8faff;
+}
+
+.users-avatar {
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #e8eefc;
+}
+
+.users-actions {
+    display: flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+.users-actions .btn {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.users-empty {
+    border: 1px dashed #c7d7f8;
+    border-radius: 14px;
+    background-color: #f8faff;
+}
+
+.users-delete-summary {
+    border-radius: 12px;
+}
+
+@media (max-width: 767.98px) {
+    .users-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .users-header .btn,
+    .users-actions .btn {
+        width: 100%;
+    }
+}

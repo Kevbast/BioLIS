@@ -1,62 +1,110 @@
 ﻿@model BioLab.Models.Patient
 
-<div class="container mt-4">
-    <h2>Registrar Nuevo Paciente</h2>
-    <hr />
+<link rel="stylesheet" href="~/css/patients.css" asp-append-version="true" />
 
-    <form method="post" enctype="multipart/form-data">
+<div class="container mt-4 patients-page">
+    <div class="patients-header">
+        <h2><i class="fas fa-user-edit text-warning"></i> Actualizar Paciente</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group mb-3">
-                    <label>PatientId</label>
-                    <input type="text" name="PatientId" class="form-control" value="@Model.PatientID" readonly  />
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group mb-3">
-                    <label>Nombre</label>
-                    <input type="text" name="FirstName" class="form-control" value="@Model.FirstName" required />
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group mb-3">
-                    <label>Apellidos</label>
-                    <input type="text" name="LastName" class="form-control" value="@Model.LastName" required />
-                </div>
-            </div>
+    <div class="card patient-form-card">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold text-warning">Editar información del paciente</h6>
         </div>
+        <div class="card-body p-4">
+            <form asp-action="Update" method="post" enctype="multipart/form-data" class="patient-form" id="patientUpdateForm">
+                <input type="hidden" name="PatientID" value="@Model.PatientID" />
+                <input type="hidden" name="PhotoFilename" value="@Model.PhotoFilename" />
 
-        <div class="row">
-            <div class="col-md-4">
-                <div class="form-group mb-3">
-                    <label>Género</label>
-                    <select name="Gender" class="form-control" value="@Model.Gender">
-                        <option value="M">Masculino</option>
-                        <option value="F">Femenino</option>
-                    </select>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="form-label">PatientId</label>
+                            <input type="text" name="PatientId" class="form-control" value="@Model.PatientID" readonly />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" name="FirstName" class="form-control" value="@Model.FirstName" required />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Apellidos</label>
+                            <input type="text" name="LastName" class="form-control" value="@Model.LastName" required />
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group mb-3">
-                    <label>Fecha Nacimiento</label>
-                    <input type="date" name="BirthDate" class="form-control" value="@Model.BirthDate" required />
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Género</label>
+                            <select name="Gender" class="form-select">
+                                @if (Model.Gender == "M")
+                                {
+                                    <option value="M" selected>Masculino</option>
+                                    <option value="F">Femenino</option>
+                                }
+                                else
+                                {
+                                    <option value="M">Masculino</option>
+                                    <option value="F" selected>Femenino</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Fecha Nacimiento</label>
+                            <input type="date" name="BirthDate" class="form-control" value="@Model.BirthDate.ToString("yyyy-MM-dd")" required />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="Email" class="form-control" value="@Model.Email" />
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group mb-3">
-                    <label>Email</label>
-                    <input type="email" name="Email" class="form-control" value="@Model.Email" />
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('patientUpdateForm');
+            const submitButton = document.getElementById('btnUpdatePatient');
+
+            if (!form || !submitButton) {
+                return;
+            }
+
+            form.addEventListener('submit', function () {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Actualizando...';
+            });
+        })();
+    </script>
+}
+
+                <div class="form-group mb-4">
+                    <label class="form-label">Fotografía del Paciente</label>
+                    <input type="file" name="fichero" class="form-control" accept="image/*" />
+                    <small class="text-muted">Si no subes una nueva imagen, se conserva la fotografía actual.</small>
                 </div>
-            </div>
+
+                <div class="patients-actions">
+                    <button type="submit" class="btn btn-warning patients-submit" id="btnUpdatePatient">
+                        <i class="fas fa-save"></i> Actualizar Paciente
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                </div>
+            </form>
         </div>
-
-        <div class="form-group mb-3">
-            <label>Fotografía del Paciente</label>
-            <input type="file" name="fichero" class="form-control" accept="image/*" value="@Model.PhotoFilename" />
-        </div>
-
-        <button type="submit" class="btn btn-primary">Actualizar Paciente</button>
-        <a asp-action="Index" class="btn btn-secondary">Volver</a>
-    </form>
+    </div>
 </div>
