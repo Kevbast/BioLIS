@@ -13,18 +13,18 @@
 }
 
 <div class="container mt-4 orders-page">
-    <div class="orders-header">
+    <div class="orders-header animate-fade-up">
         <h2>
             <i class="fas fa-file-medical text-primary"></i>
             <span class="order-header-title">Orden: <strong>@Model.OrderNumber</strong></span>
         </h2>
         <div>
-            <a asp-action="Index" class="btn btn-secondary">
+            <a asp-action="Index" class="btn btn-secondary hover-pulse">
                 <i class="fas fa-arrow-left"></i> Volver
             </a>
             @if (role == "Admin")
             {
-                <a asp-action="Delete" asp-route-orderId="@Model.OrderID" class="btn btn-danger">
+                <a asp-action="Delete" asp-route-orderId="@Model.OrderID" class="btn btn-danger hover-pulse">
                     <i class="fas fa-trash"></i> Eliminar
                 </a>
             }
@@ -32,7 +32,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-6 mb-3">
+        <div class="col-md-6 mb-3 animate-fade-up delay-100">
             <div class="card h-100 order-details-card">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0 order-section-title"><i class="fas fa-user"></i> Información del Paciente</h5>
@@ -87,7 +87,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 mb-3">
+        <div class="col-md-6 mb-3 animate-fade-up delay-200">
             <div class="card h-100 order-details-card">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0 order-section-title"><i class="fas fa-user-md"></i> Médico Solicitante</h5>
@@ -134,7 +134,7 @@
         </div>
     </div>
 
-    <div class="card order-details-card mt-3">
+    <div class="card order-details-card mt-3 animate-fade-up delay-300">
         <div class="card-header bg-success text-white">
             <h5 class="mb-0 order-section-title">
                 <i class="fas fa-flask"></i> Exámenes Solicitados
@@ -160,6 +160,7 @@
                                 <th>Resultado</th>
                                 <th>Estado</th>
                                 <th>Observaciones</th>
+                                <th>Auditoría</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -170,7 +171,7 @@
                                         <strong>@result.LabTest.TestName</strong>
                                     </td>
                                     <td>
-                                        <span class="badge" style="background-color: @GetColorBadge(result.LabTest.SampleType.ContainerColor)">
+                                        <span class="badge" style="background-color: @GetColorBadge(result.LabTest.SampleType.ContainerColor); color: #fff; border: 1px solid rgba(0,0,0,0.1);">
                                             <i class="fas fa-vial"></i> @result.LabTest.SampleType.SampleName
                                         </span>
                                     </td>
@@ -222,6 +223,40 @@
                                             <span class="text-muted">-</span>
                                         }
                                     </td>
+                                    <td>
+                                        <small class="text-muted d-block">
+                                            Ingreso:
+                                            @if (result.EnteredByUser != null)
+                                            {
+                                                <span>@result.EnteredByUser.DisplayName</span>
+                                            }
+                                            else
+                                            {
+                                                <span>N/D</span>
+                                            }
+                                        </small>
+                                        <small class="text-muted d-block">
+                                            Fecha: @result.EnteredDate.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+
+                                        @if (result.ModifiedByUser != null || result.ModifiedDate.HasValue)
+                                        {
+                                            <small class="text-muted d-block mt-1">
+                                                Modif:
+                                                @if (result.ModifiedByUser != null)
+                                                {
+                                                    <span>@result.ModifiedByUser.DisplayName</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>N/D</span>
+                                                }
+                                            </small>
+                                            <small class="text-muted d-block">
+                                                Fecha: @(result.ModifiedDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/D")
+                                            </small>
+                                        }
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -231,7 +266,7 @@
         </div>
     </div>
 
-    <div class="card order-details-card mt-3 mb-5">
+    <div class="card order-details-card mt-3 mb-5 animate-fade-up delay-400">
         <div class="card-header bg-secondary text-white">
             <h6 class="mb-0 order-section-title"><i class="fas fa-info-circle"></i> Información Adicional y Acciones</h6>
         </div>
@@ -241,7 +276,7 @@
                 <p class="mb-1"><i class="fas fa-calendar-alt"></i> <strong>Fecha de Creación:</strong> @Model.OrderDate.ToString("dddd, dd MMMM yyyy HH:mm:ss")</p>
                 <p class="mb-0">
                     <i class="fas fa-flag"></i> <strong>Estado Actual:</strong>
-                    <span class="badge @(Model.Status == "Aprobada" ? "bg-success" : Model.Status == "Completada" ? "bg-info text-dark" : "bg-warning text-dark") fs-6">
+                    <span class="badge @(Model.Status == "Aprobada" ? "bg-success" : Model.Status == "Completada" ? "bg-info text-dark" : Model.Status == "EnProceso" ? "bg-warning text-dark" : "bg-secondary") fs-6">
                         @Model.Status
                     </span>
                 </p>
@@ -259,37 +294,41 @@
                         }
                     </p>
                 }
+
+                @if (Model.CompletedDate.HasValue)
+                {
+                    <p class="mb-0 mt-2">
+                        <i class="fas fa-calendar-check"></i> <strong>Fecha de cierre laboratorio:</strong>
+                        <span>@Model.CompletedDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                    </p>
+                }
             </div>
 
             <div class="order-actions">
-
-                @* 1. Botón Ingresar Resultados: Solo Lab/Admin si NO está aprobada *@
                 @if ((role == "Admin" || role == "Laboratorio") && Model.Status != "Aprobada")
                 {
-                    <a asp-action="EnterResults" asp-route-orderId="@Model.OrderID" class="btn btn-primary">
+                    <a asp-action="EnterResults" asp-route-orderId="@Model.OrderID" class="btn btn-primary hover-pulse">
                         <i class="fas fa-edit"></i> Ingresar Resultados
                     </a>
                 }
 
-                @* 2. Botón Completar: Solo Lab/Admin si está EnProceso *@
-                @if ((role == "Admin" || role == "Laboratorio") && (Model.Status == "EnProceso" || Model.Status == "Pendiente"))
+                @if ((role == "Admin" || role == "Laboratorio") && Model.Status == "EnProceso")
                 {
                     <form asp-action="ChangeStatus" asp-controller="Orders" method="post">
                         <input type="hidden" name="orderId" value="@Model.OrderID" />
                         <input type="hidden" name="status" value="Completada" />
-                        <button type="submit" class="btn btn-info text-white" title="Indica que el laboratorio finalizó los análisis">
+                        <button type="submit" class="btn btn-info text-white hover-pulse" title="Indica que el laboratorio finalizó los análisis">
                             <i class="fas fa-check-double"></i> Marcar Completada
                         </button>
                     </form>
                 }
 
-                @* 3. Botón Aprobar: Solo Doctor (dueño de la orden) si está Completada *@
                 @if (role == "Doctor" && Model.Status == "Completada")
                 {
                     <form asp-action="ChangeStatus" asp-controller="Orders" method="post">
                         <input type="hidden" name="orderId" value="@Model.OrderID" />
                         <input type="hidden" name="status" value="Aprobada" />
-                        <button type="submit" class="btn btn-success" title="El médico valida y cierra los resultados">
+                        <button type="submit" class="btn btn-success hover-pulse" title="El médico valida y cierra los resultados">
                             <i class="fas fa-user-check"></i> Aprobar Orden
                         </button>
                     </form>
@@ -301,10 +340,9 @@
                     </button>
                 }
 
-                @* 4. Botón Imprimir: Lógica de bloqueo por Estado *@
                 @if (Model.Status == "Aprobada")
                 {
-                    <a asp-action="Print" asp-route-orderId="@Model.OrderID" target="_blank" class="btn btn-dark">
+                    <a asp-action="Print" asp-route-orderId="@Model.OrderID" target="_blank" class="btn btn-dark hover-pulse">
                         <i class="fas fa-print"></i> Imprimir Orden
                     </a>
                 }
@@ -354,8 +392,8 @@
             "celeste" => "#0dcaf0",
             "gris" => "#6c757d",
             "negro" => "#212529",
-            "blanco" => "#f8f9fa", // Blanco (necesitará texto oscuro)
-            "transparente" => "#e9ecef", // Un gris muy clarito simulando transparencia
+            "blanco" => "#9ca3af", // Un gris más oscuro para texto visible en fondo claro
+            "transparente" => "#adb5bd",
             _ => "#17a2b8"
         };
     }

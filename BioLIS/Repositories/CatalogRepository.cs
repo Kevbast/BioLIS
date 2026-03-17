@@ -114,7 +114,7 @@ namespace BioLIS.Repositories
         //1.Obtener doctores
         public async Task<List<Doctor>> GetDoctorsAsync()
         {
-            return await this.context.Doctors.OrderBy(d => d.FullName).ToListAsync();
+            return await this.context.Doctors.OrderBy(d => d.DoctorID).ToListAsync();
         }
         
         //2.Obtener doctor por ID

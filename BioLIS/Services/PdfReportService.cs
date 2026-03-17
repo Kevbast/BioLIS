@@ -177,10 +177,29 @@ namespace BioLIS.Services
                     .Distinct()
                     .ToList();
 
+                var firstEntryDate = results
+                    .Where(x => x.EnteredBy.HasValue)
+                    .Select(x => (DateTime?)x.EnteredDate)
+                    .OrderBy(d => d)
+                    .FirstOrDefault();
+
+                var lastModifiedDate = results
+                    .Where(x => x.ModifiedDate.HasValue)
+                    .Select(x => x.ModifiedDate)
+                    .OrderByDescending(d => d)
+                    .FirstOrDefault();
+
                 column.Item().PaddingTop(8).Column(auditColumn =>
                 {
                     auditColumn.Item().Text($"Ingresado por: {(enteredByNames.Any() ? string.Join(", ", enteredByNames) : "N/D")}").FontSize(9);
-                    auditColumn.Item().Text($"Modificado por: {(modifiedByNames.Any() ? string.Join(", ", modifiedByNames) : "N/D")}").FontSize(9);
+                    auditColumn.Item().Text($"Fecha ingreso: {(firstEntryDate.HasValue ? firstEntryDate.Value.ToString("dd/MM/yyyy HH:mm") : "N/D")}").FontSize(9);
+
+                    if (modifiedByNames.Any() || lastModifiedDate.HasValue)
+                    {
+                        auditColumn.Item().Text($"Modificado por: {string.Join(", ", modifiedByNames)}").FontSize(9);
+                        auditColumn.Item().Text($"Última modificación: {(lastModifiedDate.HasValue ? lastModifiedDate.Value.ToString("dd/MM/yyyy HH:mm") : "N/D")}").FontSize(9);
+                    }
+
                     if (order.Status == "Aprobada")
                     {
                         var approverName = order.ApprovedByUser?.DisplayName ?? "N/D";

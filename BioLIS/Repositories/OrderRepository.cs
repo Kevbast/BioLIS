@@ -246,15 +246,15 @@ namespace BioLIS.Repositories
                 return false;
 
             // 1. AUDITORÍA INTELIGENTE: ¿Es ingreso por primera vez o modificación?
+            bool hasPreviousValue = testResult.ResultValue.HasValue;
+            decimal? previousValue = testResult.ResultValue;
+            string? previousAlertLevel = testResult.AlertLevel;
+            string previousNotes = testResult.Notes ?? string.Empty;
+
             if (!testResult.ResultValue.HasValue)
             {
                 testResult.EnteredBy = currentUserId;
                 testResult.EnteredDate = DateTime.Now;
-            }
-            else if (testResult.ResultValue != resultValue)
-            {
-                testResult.ModifiedBy = currentUserId;
-                testResult.ModifiedDate = DateTime.Now;
             }
 
             // 2. Normalizar AlertLevel para el CHECK constraint
@@ -279,6 +279,18 @@ namespace BioLIS.Repositories
             else
             {
                 testResult.Notes = notes;
+            }
+
+            // 6. Si no es ingreso inicial, registrar modificación al cambiar valor/alerta/notas
+            bool hasAnyChange =
+                previousValue != resultValue ||
+                previousAlertLevel != normalizedAlertLevel ||
+                previousNotes != (testResult.Notes ?? string.Empty);
+
+            if (hasPreviousValue && hasAnyChange)
+            {
+                testResult.ModifiedBy = currentUserId;
+                testResult.ModifiedDate = DateTime.Now;
             }
 
             await this.context.SaveChangesAsync();
@@ -388,29 +400,71 @@ namespace BioLIS.Repositories
         }
 
         /// <summary>
-        /// Cambiar estado de una orden
+        /// Cambiar estado de una orden aplicando máquina de estados:
+        /// Pendiente -> EnProceso -> Completada -> Aprobada
         /// </summary>
-        public async Task<bool> ChangeOrderStatusAsync(int orderId, string newStatus, int? approvedBy = null)
+        public async Task<(bool Success, string Message)> ChangeOrderStatusAsync(int orderId, string newStatus, int? approvedBy = null)
         {
             var order = await this.context.Orders.FindAsync(orderId);
             if (order == null)
-                return false;
+                return (false, "Orden no encontrada.");
 
-            order.Status = newStatus;
+            var targetStatus = NormalizeOrderStatus(newStatus);
+            if (string.IsNullOrEmpty(targetStatus))
+                return (false, "Estado de destino inválido.");
 
-            // Si tienes una clase OrderStatus, úsala aquí. Dejo los strings directos para asegurar compilación
-            if (newStatus == "Completada")
+            var currentStatus = string.IsNullOrWhiteSpace(order.Status)
+                ? OrderStatus.Pendiente
+                : order.Status;
+
+            if (currentStatus == targetStatus)
+                return (true, $"La orden ya estaba en estado '{targetStatus}'.");
+
+            if (!IsValidStatusTransition(currentStatus, targetStatus))
+            {
+                return (false, $"Transición inválida: {currentStatus} -> {targetStatus}. Flujo permitido: Pendiente -> EnProceso -> Completada -> Aprobada.");
+            }
+
+            order.Status = targetStatus;
+
+            if (targetStatus == OrderStatus.Completada)
             {
                 order.CompletedDate = DateTime.Now;
             }
 
-            if (newStatus == "Aprobada" && approvedBy.HasValue)
+            if (targetStatus == OrderStatus.Aprobada && approvedBy.HasValue)
             {
                 order.ApprovedBy = approvedBy.Value;
             }
 
             await this.context.SaveChangesAsync();
-            return true;
+            return (true, $"Estado actualizado a '{targetStatus}'.");
+        }
+
+        private static string? NormalizeOrderStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+                return null;
+
+            return status.Trim().ToUpperInvariant() switch
+            {
+                "PENDIENTE" => OrderStatus.Pendiente,
+                "ENPROCESO" or "EN_PROCESO" or "EN PROCESO" => OrderStatus.EnProceso,
+                "COMPLETADA" => OrderStatus.Completada,
+                "APROBADA" => OrderStatus.Aprobada,
+                _ => null
+            };
+        }
+
+        private static bool IsValidStatusTransition(string currentStatus, string targetStatus)
+        {
+            return (currentStatus, targetStatus) switch
+            {
+                (OrderStatus.Pendiente, OrderStatus.EnProceso) => true,
+                (OrderStatus.EnProceso, OrderStatus.Completada) => true,
+                (OrderStatus.Completada, OrderStatus.Aprobada) => true,
+                _ => false
+            };
         }
 
         #endregion

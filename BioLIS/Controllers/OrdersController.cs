@@ -355,19 +355,19 @@ namespace BioLIS.Controllers
                 return RedirectToAction("Details", new { orderId });
             }
 
-            bool success = await orderRepo.ChangeOrderStatusAsync(orderId, status, userId);
+            var statusResult = await orderRepo.ChangeOrderStatusAsync(orderId, status, userId);
 
-            if (success)
+            if (statusResult.Success)
             {
                 TempData["SwalType"] = "success";
                 TempData["SwalTitle"] = "Estado actualizado";
-                TempData["SwalMessage"] = $"Estado de la orden actualizado a: {status}";
+                TempData["SwalMessage"] = statusResult.Message;
             }
             else
             {
                 TempData["SwalType"] = "error";
                 TempData["SwalTitle"] = "Error de actualización";
-                TempData["SwalMessage"] = "No se pudo actualizar el estado de la orden.";
+                TempData["SwalMessage"] = statusResult.Message;
             }
 
             return RedirectToAction("Details", new { orderId });
