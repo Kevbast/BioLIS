@@ -10,6 +10,7 @@
     var swalType = TempData["SwalType"]?.ToString();
     var swalTitle = TempData["SwalTitle"]?.ToString();
     var swalMessage = TempData["SwalMessage"]?.ToString();
+    var pendingResultsCount = results.Count(r => !r.ResultValue.HasValue);
 }
 
 <div class="container mt-4 orders-page">
@@ -314,13 +315,22 @@
 
                 @if ((role == "Admin" || role == "Laboratorio") && Model.Status == "EnProceso")
                 {
-                    <form asp-action="ChangeStatus" asp-controller="Orders" method="post">
-                        <input type="hidden" name="orderId" value="@Model.OrderID" />
-                        <input type="hidden" name="status" value="Completada" />
-                        <button type="submit" class="btn btn-info text-white hover-pulse" title="Indica que el laboratorio finalizó los análisis">
-                            <i class="fas fa-check-double"></i> Marcar Completada
+                    @if (pendingResultsCount == 0)
+                    {
+                        <form asp-action="ChangeStatus" asp-controller="Orders" method="post">
+                            <input type="hidden" name="orderId" value="@Model.OrderID" />
+                            <input type="hidden" name="status" value="Completada" />
+                            <button type="submit" class="btn btn-info text-white hover-pulse" title="Indica que el laboratorio finalizó los análisis">
+                                <i class="fas fa-check-double"></i> Marcar Completada
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-secondary" disabled title="Complete todos los exámenes antes de marcar completada">
+                            <i class="fas fa-lock"></i> Completar (faltan @pendingResultsCount)
                         </button>
-                    </form>
+                    }
                 }
 
                 @if (role == "Doctor" && Model.Status == "Completada")

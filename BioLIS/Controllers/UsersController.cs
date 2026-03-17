@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeUsers(Policy = "AdminOnly")] // CAMBIADO de [AuthorizeRole("Admin")]
+    [AuthorizeUsers] // Base: requiere autenticación
     public class UsersController : Controller
     {
         private readonly AuthRepository authRepo;
@@ -24,6 +24,7 @@ namespace BioLIS.Controllers
         }
 
         // GET: Users
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Index()
         {
             var users = await this.authRepo.GetAllUsersAsync();
@@ -44,6 +45,7 @@ namespace BioLIS.Controllers
         }
 
         // GET: Users/Create
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Create()
         {
             var existingUsers = await this.authRepo.GetAllUsersAsync();
@@ -70,6 +72,7 @@ namespace BioLIS.Controllers
         // POST: Users/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Create(string username, string password, string email,
                                                  string role, int? doctorId, IFormFile? photoFile)
         {
@@ -143,6 +146,7 @@ namespace BioLIS.Controllers
         }
 
         // GET: Users/Delete
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var user = await this.authRepo.GetUserByIdAsync(id);
@@ -159,6 +163,7 @@ namespace BioLIS.Controllers
         // POST: Users/Delete
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var result = await this.authRepo.DeleteUserAsync(id);
@@ -311,6 +316,7 @@ namespace BioLIS.Controllers
         }
 
         // GET: Users/Stats
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Stats()
         {
             var stats = await this.authRepo.CountUsersByRoleAsync();

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BioLIS.Filters
 {
@@ -15,6 +16,8 @@ namespace BioLIS.Filters
         public void OnAuthorization(AuthorizationFilterContext context)
         {
             var user = context.HttpContext.User;
+
+            var authService = context.HttpContext.RequestServices.GetRequiredService<IAuthorizationService>();
 
             // Guardar en TempData para redirigir después del login
             ITempDataProvider provider = context.HttpContext.RequestServices.GetService<ITempDataProvider>();
@@ -29,6 +32,37 @@ namespace BioLIS.Filters
             if (user.Identity?.IsAuthenticated != true)
             {
                 context.Result = GetRoute("Auth", "Login");
+                return;
+            }
+
+            // Verificar Policy (si existe)
+            if (!string.IsNullOrWhiteSpace(this.Policy))
+            {
+                var policyResult = authService
+                    .AuthorizeAsync(user, null, this.Policy)
+                    .GetAwaiter()
+                    .GetResult();
+
+                if (!policyResult.Succeeded)
+                {
+                    context.Result = GetRoute("Auth", "ErrorAcceso");
+                    return;
+                }
+            }
+
+            // Verificar Roles (si existen)
+            if (!string.IsNullOrWhiteSpace(this.Roles))
+            {
+                var roles = this.Roles
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(r => r.Trim())
+                    .ToList();
+
+                if (roles.Any() && !roles.Any(user.IsInRole))
+                {
+                    context.Result = GetRoute("Auth", "ErrorAcceso");
+                    return;
+                }
             }
         }
 

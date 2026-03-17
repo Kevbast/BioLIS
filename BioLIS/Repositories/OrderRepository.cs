@@ -425,6 +425,23 @@ namespace BioLIS.Repositories
                 return (false, $"Transición inválida: {currentStatus} -> {targetStatus}. Flujo permitido: Pendiente -> EnProceso -> Completada -> Aprobada.");
             }
 
+            // Regla de negocio: no se puede completar si hay resultados pendientes
+            if (targetStatus == OrderStatus.Completada)
+            {
+                var totalResults = await this.context.TestResults.CountAsync(tr => tr.OrderID == orderId);
+                var pendingResults = await this.context.TestResults.CountAsync(tr => tr.OrderID == orderId && !tr.ResultValue.HasValue);
+
+                if (totalResults == 0)
+                {
+                    return (false, "La orden no tiene exámenes asociados para completar.");
+                }
+
+                if (pendingResults > 0)
+                {
+                    return (false, $"No se puede marcar como completada. Faltan {pendingResults} resultado(s) por registrar.");
+                }
+            }
+
             order.Status = targetStatus;
 
             if (targetStatus == OrderStatus.Completada)
