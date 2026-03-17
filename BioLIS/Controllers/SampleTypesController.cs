@@ -73,10 +73,22 @@ namespace BioLIS.Controllers
         // POST: SampleTypes/Update/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Update(SampleType sampleType)
+        public async Task<IActionResult> Update(int sampleId, string sampleName, string? containerColor)
         {
+            if (string.IsNullOrWhiteSpace(sampleName))
+            {
+                ModelState.AddModelError(nameof(sampleName), "El nombre del tipo de muestra es obligatorio.");
+            }
+
             if (ModelState.IsValid)
             {
+                var sampleType = new SampleType
+                {
+                    SampleID = sampleId,
+                    SampleName = sampleName.Trim(),
+                    ContainerColor = containerColor?.Trim() ?? string.Empty
+                };
+
                 bool success = await catalogRepo.UpdateSampleTypeAsync(sampleType);
 
                 if (success)
@@ -94,7 +106,16 @@ namespace BioLIS.Controllers
                 }
             }
 
-            return View(sampleType);
+            var existingSampleType = await catalogRepo.GetSampleTypeByIdAsync(sampleId);
+            if (existingSampleType == null)
+            {
+                return NotFound();
+            }
+
+            existingSampleType.SampleName = sampleName;
+            existingSampleType.ContainerColor = containerColor ?? string.Empty;
+
+            return View(existingSampleType);
         }
 
         // GET: SampleTypes/Delete/5
