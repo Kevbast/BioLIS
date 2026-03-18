@@ -97,8 +97,8 @@
                             </a>
                         </li>
 
-                        @* Pacientes - Admin y Laboratorio *@
-                        @if (User.IsInRole("Admin") || User.IsInRole("Laboratorio"))
+                        @* Pacientes - Admin ,doctor y Laboratorio *@
+                        @if (User.IsInRole("Admin") || User.IsInRole("Laboratorio") || User.IsInRole("Doctor"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link @(currentController == "Patients" ? "active" : string.Empty)" asp-area="" asp-controller="Patients" asp-action="Index">
