@@ -1,0 +1,694 @@
+USE [LABORATORIO]
+GO
+/****** Object:  Table [dbo].[Users]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Users](
+	[UserID] [int] NOT NULL,
+	[Username] [nvarchar](50) NOT NULL,
+	[Email] [nvarchar](100) NULL,
+	[PhotoFilename] [nvarchar](200) NULL,
+	[PasswordText] [nvarchar](100) NOT NULL,
+	[Role] [nvarchar](20) NOT NULL,
+	[DoctorID] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[UserID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Users_Security]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Users_Security](
+	[UserID] [int] NOT NULL,
+	[Salt] [nvarchar](100) NOT NULL,
+	[PasswordHash] [varbinary](max) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[UserID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[V_UserValidation]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE VIEW [dbo].[V_UserValidation] AS
+SELECT 
+    U.UserID,
+    U.Username,
+    U.Email,
+    U.Role,
+    U.DoctorID,
+    S.Salt,
+    S.PasswordHash
+FROM Users U
+INNER JOIN Users_Security S ON U.UserID = S.UserID;
+GO
+/****** Object:  Table [dbo].[Doctors]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Doctors](
+	[DoctorID] [int] NOT NULL,
+	[FullName] [nvarchar](100) NOT NULL,
+	[LicenseNumber] [nvarchar](50) NULL,
+	[Email] [nvarchar](100) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[DoctorID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[LabTests]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[LabTests](
+	[TestID] [int] NOT NULL,
+	[TestName] [nvarchar](100) NOT NULL,
+	[Units] [nvarchar](20) NULL,
+	[SampleID] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[TestID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Orders]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Orders](
+	[OrderID] [int] NOT NULL,
+	[PatientID] [int] NOT NULL,
+	[DoctorID] [int] NOT NULL,
+	[OrderDate] [datetime] NULL,
+	[OrderNumber] [nvarchar](20) NULL,
+	[Status] [nvarchar](20) NULL,
+	[CompletedDate] [datetime] NULL,
+	[ApprovedBy] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[OrderID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Patients]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Patients](
+	[PatientID] [int] NOT NULL,
+	[FirstName] [nvarchar](50) NOT NULL,
+	[LastName] [nvarchar](50) NOT NULL,
+	[Gender] [char](1) NOT NULL,
+	[BirthDate] [date] NOT NULL,
+	[Email] [nvarchar](100) NULL,
+	[PhotoFilename] [nvarchar](200) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[PatientID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ReferenceRanges]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ReferenceRanges](
+	[RangeID] [int] NOT NULL,
+	[TestID] [int] NOT NULL,
+	[Gender] [char](1) NOT NULL,
+	[MinAgeYear] [int] NOT NULL,
+	[MaxAgeYear] [int] NOT NULL,
+	[MinVal] [decimal](10, 2) NOT NULL,
+	[MaxVal] [decimal](10, 2) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[RangeID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[SampleTypes]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[SampleTypes](
+	[SampleID] [int] NOT NULL,
+	[SampleName] [nvarchar](50) NOT NULL,
+	[ContainerColor] [nvarchar](20) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[SampleID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TestResults]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TestResults](
+	[ResultID] [int] NOT NULL,
+	[OrderID] [int] NOT NULL,
+	[TestID] [int] NOT NULL,
+	[ResultValue] [decimal](10, 2) NULL,
+	[IsAbnormal] [bit] NULL,
+	[Notes] [nvarchar](500) NULL,
+	[EnteredBy] [int] NULL,
+	[EnteredDate] [datetime] NULL,
+	[ModifiedBy] [int] NULL,
+	[ModifiedDate] [datetime] NULL,
+	[AlertLevel] [nvarchar](20) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ResultID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+INSERT [dbo].[Doctors] ([DoctorID], [FullName], [LicenseNumber], [Email]) VALUES (1, N'Dr. Gregory House', N'MED-001', N'house@hospital.com')
+INSERT [dbo].[Doctors] ([DoctorID], [FullName], [LicenseNumber], [Email]) VALUES (2, N'Dra. Lisa Cuddy', N'MED-002', N'cuddy@hospital.com')
+INSERT [dbo].[Doctors] ([DoctorID], [FullName], [LicenseNumber], [Email]) VALUES (3, N'Dr. Derek Shepherd', N'MED-003', N'shepherd@hospital.com')
+INSERT [dbo].[Doctors] ([DoctorID], [FullName], [LicenseNumber], [Email]) VALUES (4, N'Dra. Meredith Grey', N'MED-004', N'grey@hospital.com')
+INSERT [dbo].[Doctors] ([DoctorID], [FullName], [LicenseNumber], [Email]) VALUES (5, N'Dr. Shaun Murphy', N'MED-005', N'murphy@hospital.com')
+INSERT [dbo].[Doctors] ([DoctorID], [FullName], [LicenseNumber], [Email]) VALUES (6, N'Dra. Allison Cameron', N'MED-006', N'cameron@hospital.com')
+GO
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (10, N'Hemoglobina', N'g/dL', 2)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (20, N'Glucosa', N'mg/dL', 1)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (30, N'Colesterol Total', N'mg/dL', 1)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (40, N'Triglicéridos', N'mg/dL', 1)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (50, N'Ácido Úrico', N'mg/dL', 1)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (60, N'Creatinina', N'mg/dL', 1)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (70, N'Bilirrubina Total', N'mg/dL', 1)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (80, N'Leucocitos (Glóbulos Blancos)', N'K/uL', 2)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (90, N'Plaquetas', N'K/uL', 2)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (100, N'pH en Orina', N'pH', 3)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (110, N'Tiempo de Protrombina (TP)', N'seg', 5)
+INSERT [dbo].[LabTests] ([TestID], [TestName], [Units], [SampleID]) VALUES (111, N'Prueba de sangre oculta en heces', N'mg/dL', 6)
+GO
+INSERT [dbo].[Orders] ([OrderID], [PatientID], [DoctorID], [OrderDate], [OrderNumber], [Status], [CompletedDate], [ApprovedBy]) VALUES (1, 103, 2, CAST(N'2026-03-16T19:28:32.860' AS DateTime), N'ORD-20260316-0001', N'Aprobada', CAST(N'2026-03-16T19:33:10.917' AS DateTime), 2)
+INSERT [dbo].[Orders] ([OrderID], [PatientID], [DoctorID], [OrderDate], [OrderNumber], [Status], [CompletedDate], [ApprovedBy]) VALUES (2, 100, 2, CAST(N'2026-03-16T19:28:51.520' AS DateTime), N'ORD-20260316-0002', N'Completada', CAST(N'2026-03-17T18:59:16.550' AS DateTime), NULL)
+INSERT [dbo].[Orders] ([OrderID], [PatientID], [DoctorID], [OrderDate], [OrderNumber], [Status], [CompletedDate], [ApprovedBy]) VALUES (3, 102, 2, CAST(N'2026-03-16T19:29:30.443' AS DateTime), N'ORD-20260316-0003', N'Completada', CAST(N'2026-03-16T19:31:40.817' AS DateTime), NULL)
+INSERT [dbo].[Orders] ([OrderID], [PatientID], [DoctorID], [OrderDate], [OrderNumber], [Status], [CompletedDate], [ApprovedBy]) VALUES (4, 101, 2, CAST(N'2026-03-16T19:34:07.793' AS DateTime), N'ORD-20260316-0004', N'Pendiente', NULL, NULL)
+INSERT [dbo].[Orders] ([OrderID], [PatientID], [DoctorID], [OrderDate], [OrderNumber], [Status], [CompletedDate], [ApprovedBy]) VALUES (5, 103, 2, CAST(N'2026-03-16T22:46:55.143' AS DateTime), N'ORD-20260316-0005', N'EnProceso', NULL, NULL)
+INSERT [dbo].[Orders] ([OrderID], [PatientID], [DoctorID], [OrderDate], [OrderNumber], [Status], [CompletedDate], [ApprovedBy]) VALUES (6, 102, 2, CAST(N'2026-03-17T19:04:50.073' AS DateTime), N'ORD-20260317-0001', N'Aprobada', CAST(N'2026-03-17T19:05:35.267' AS DateTime), 2)
+INSERT [dbo].[Orders] ([OrderID], [PatientID], [DoctorID], [OrderDate], [OrderNumber], [Status], [CompletedDate], [ApprovedBy]) VALUES (7, 104, 2, CAST(N'2026-03-17T22:44:02.637' AS DateTime), N'ORD-20260317-0002', N'EnProceso', NULL, NULL)
+GO
+INSERT [dbo].[Patients] ([PatientID], [FirstName], [LastName], [Gender], [BirthDate], [Email], [PhotoFilename]) VALUES (100, N'Carlos', N'Pérez', N'M', CAST(N'1985-05-20' AS Date), N'carlos@mail.com', N'carlos.png')
+INSERT [dbo].[Patients] ([PatientID], [FirstName], [LastName], [Gender], [BirthDate], [Email], [PhotoFilename]) VALUES (101, N'Ana', N'Gómez', N'F', CAST(N'1990-08-15' AS Date), N'ana@mail.com', N'ana.png')
+INSERT [dbo].[Patients] ([PatientID], [FirstName], [LastName], [Gender], [BirthDate], [Email], [PhotoFilename]) VALUES (102, N'Pedrito', N'López', N'M', CAST(N'2023-01-10' AS Date), N'pedro@mail.com', N'pedrito.png')
+INSERT [dbo].[Patients] ([PatientID], [FirstName], [LastName], [Gender], [BirthDate], [Email], [PhotoFilename]) VALUES (103, N'KEVIN', N'BAYAS', N'M', CAST(N'2004-08-14' AS Date), N'kevbast936@gmail.com', N'photomode_02022023_224456.png')
+INSERT [dbo].[Patients] ([PatientID], [FirstName], [LastName], [Gender], [BirthDate], [Email], [PhotoFilename]) VALUES (104, N'S', N'S', N'M', CAST(N'2026-03-17' AS Date), N'AAS@G.COM', N'default.png')
+INSERT [dbo].[Patients] ([PatientID], [FirstName], [LastName], [Gender], [BirthDate], [Email], [PhotoFilename]) VALUES (105, N'Joaquín ', N'Domínguez Portela', N'M', CAST(N'1991-04-13' AS Date), N'foquita@gmail.com', N'xoquitas.jpg')
+GO
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (1001, 10, N'M', 0, 1, CAST(9.50 AS Decimal(10, 2)), CAST(13.50 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (1002, 10, N'M', 2, 12, CAST(11.50 AS Decimal(10, 2)), CAST(15.50 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (1003, 10, N'M', 13, 17, CAST(13.00 AS Decimal(10, 2)), CAST(16.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (1004, 10, N'M', 18, 120, CAST(13.50 AS Decimal(10, 2)), CAST(17.50 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (1005, 10, N'F', 0, 1, CAST(9.50 AS Decimal(10, 2)), CAST(13.50 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (1006, 10, N'F', 2, 12, CAST(11.50 AS Decimal(10, 2)), CAST(15.50 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (1007, 10, N'F', 13, 17, CAST(12.00 AS Decimal(10, 2)), CAST(16.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (1008, 10, N'F', 18, 120, CAST(12.00 AS Decimal(10, 2)), CAST(15.50 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (2001, 20, N'A', 0, 1, CAST(40.00 AS Decimal(10, 2)), CAST(60.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (2002, 20, N'A', 2, 12, CAST(60.00 AS Decimal(10, 2)), CAST(100.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (2003, 20, N'A', 13, 120, CAST(70.00 AS Decimal(10, 2)), CAST(100.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (3001, 30, N'A', 0, 19, CAST(120.00 AS Decimal(10, 2)), CAST(170.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (3002, 30, N'A', 20, 120, CAST(125.00 AS Decimal(10, 2)), CAST(200.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (4001, 40, N'A', 0, 120, CAST(0.00 AS Decimal(10, 2)), CAST(150.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (5001, 50, N'M', 0, 17, CAST(2.00 AS Decimal(10, 2)), CAST(5.50 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (5002, 50, N'M', 18, 120, CAST(3.40 AS Decimal(10, 2)), CAST(7.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (5003, 50, N'F', 0, 17, CAST(2.00 AS Decimal(10, 2)), CAST(5.50 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (5004, 50, N'F', 18, 120, CAST(2.40 AS Decimal(10, 2)), CAST(6.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (6001, 60, N'M', 0, 120, CAST(0.70 AS Decimal(10, 2)), CAST(1.30 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (6002, 60, N'F', 0, 120, CAST(0.60 AS Decimal(10, 2)), CAST(1.10 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (7001, 70, N'A', 0, 120, CAST(0.10 AS Decimal(10, 2)), CAST(1.20 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (8001, 80, N'A', 0, 120, CAST(4.50 AS Decimal(10, 2)), CAST(11.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (9001, 90, N'A', 0, 120, CAST(150.00 AS Decimal(10, 2)), CAST(400.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (10001, 100, N'A', 0, 120, CAST(4.60 AS Decimal(10, 2)), CAST(8.00 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (11001, 110, N'A', 0, 120, CAST(11.00 AS Decimal(10, 2)), CAST(13.50 AS Decimal(10, 2)))
+INSERT [dbo].[ReferenceRanges] ([RangeID], [TestID], [Gender], [MinAgeYear], [MaxAgeYear], [MinVal], [MaxVal]) VALUES (11002, 111, N'A', 1, 120, CAST(1.00 AS Decimal(10, 2)), CAST(10.00 AS Decimal(10, 2)))
+GO
+INSERT [dbo].[SampleTypes] ([SampleID], [SampleName], [ContainerColor]) VALUES (1, N'Suero', N'Rojo')
+INSERT [dbo].[SampleTypes] ([SampleID], [SampleName], [ContainerColor]) VALUES (2, N'Sangre Total', N'Lila')
+INSERT [dbo].[SampleTypes] ([SampleID], [SampleName], [ContainerColor]) VALUES (3, N'Orina', N'Amarillo')
+INSERT [dbo].[SampleTypes] ([SampleID], [SampleName], [ContainerColor]) VALUES (4, N'Glucosa', N'Gris')
+INSERT [dbo].[SampleTypes] ([SampleID], [SampleName], [ContainerColor]) VALUES (5, N'Plasma', N'Celeste')
+INSERT [dbo].[SampleTypes] ([SampleID], [SampleName], [ContainerColor]) VALUES (6, N'Heces', N'Blanco')
+INSERT [dbo].[SampleTypes] ([SampleID], [SampleName], [ContainerColor]) VALUES (7, N'Saliva', N'Transparente')
+GO
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (1, 1, 30, CAST(166.00 AS Decimal(10, 2)), 0, NULL, 4, CAST(N'2026-03-16T19:33:00.990' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (2, 1, 20, CAST(78.00 AS Decimal(10, 2)), 0, NULL, 4, CAST(N'2026-03-16T19:33:01.010' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (3, 1, 10, CAST(190.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 4, CAST(N'2026-03-16T19:33:01.023' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (4, 2, 30, CAST(143.00 AS Decimal(10, 2)), 0, NULL, 4, CAST(N'2026-03-16T19:32:12.270' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (5, 2, 20, CAST(78.00 AS Decimal(10, 2)), 0, NULL, 4, CAST(N'2026-03-16T19:32:12.280' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (6, 3, 30, CAST(121.00 AS Decimal(10, 2)), 0, NULL, 4, CAST(N'2026-03-16T19:31:13.347' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (7, 3, 10, CAST(77.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 4, CAST(N'2026-03-16T19:31:13.367' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (8, 4, 30, NULL, 0, NULL, NULL, CAST(N'2026-03-16T19:34:07.803' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (9, 5, 10, CAST(55.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-16T22:49:08.437' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (10, 5, 80, CAST(25.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-16T22:49:08.447' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (11, 5, 90, CAST(350.00 AS Decimal(10, 2)), 0, NULL, 1, CAST(N'2026-03-16T22:49:08.463' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (12, 5, 20, CAST(44.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-16T22:49:08.430' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (13, 5, 30, CAST(200.00 AS Decimal(10, 2)), 0, NULL, 1, CAST(N'2026-03-16T22:49:08.410' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (14, 5, 40, CAST(341.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-16T22:49:08.497' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (15, 5, 50, CAST(102.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-16T22:49:08.380' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (16, 5, 60, CAST(233.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-16T22:49:08.420' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (17, 5, 70, CAST(25.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-16T22:49:08.400' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (18, 5, 100, CAST(13.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-16T22:49:08.453' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (19, 5, 110, CAST(400.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-16T22:49:08.483' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (20, 5, 111, CAST(122.00 AS Decimal(10, 2)), 0, NULL, 1, CAST(N'2026-03-16T22:49:08.473' AS DateTime), NULL, NULL, N'SIN_RANGO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (21, 6, 111, CAST(1.00 AS Decimal(10, 2)), 0, NULL, 1, CAST(N'2026-03-17T19:05:10.347' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (22, 7, 10, CAST(50.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-17T22:45:00.940' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (23, 7, 80, CAST(22.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-17T22:45:00.950' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (24, 7, 90, CAST(44.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-17T22:45:00.970' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (25, 7, 20, CAST(121.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-17T22:45:00.933' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (26, 7, 30, CAST(4.00 AS Decimal(10, 2)), 1, N'URGENTE: siuuu', 1, CAST(N'2026-03-17T22:45:56.610' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (27, 7, 40, CAST(150.00 AS Decimal(10, 2)), 0, NULL, 1, CAST(N'2026-03-17T22:45:01.003' AS DateTime), NULL, NULL, N'NORMAL')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (28, 7, 50, CAST(1.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-17T22:44:12.643' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (29, 7, 60, CAST(45.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-17T22:45:00.923' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (30, 7, 70, CAST(22.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-17T22:45:00.910' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (31, 7, 100, CAST(123.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-17T22:45:00.960' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (32, 7, 110, CAST(75.00 AS Decimal(10, 2)), 1, N'Requiere atención médica inmediata', 1, CAST(N'2026-03-17T22:45:00.993' AS DateTime), NULL, NULL, N'CRITICO')
+INSERT [dbo].[TestResults] ([ResultID], [OrderID], [TestID], [ResultValue], [IsAbnormal], [Notes], [EnteredBy], [EnteredDate], [ModifiedBy], [ModifiedDate], [AlertLevel]) VALUES (33, 7, 111, CAST(152.00 AS Decimal(10, 2)), 0, NULL, 1, CAST(N'2026-03-17T22:45:00.980' AS DateTime), NULL, NULL, N'SIN_RANGO')
+GO
+INSERT [dbo].[Users] ([UserID], [Username], [Email], [PhotoFilename], [PasswordText], [Role], [DoctorID]) VALUES (1, N'admin', N'admin@biolablis.com', N'default.png', N'12345', N'Admin', NULL)
+INSERT [dbo].[Users] ([UserID], [Username], [Email], [PhotoFilename], [PasswordText], [Role], [DoctorID]) VALUES (2, N'aida', N'paty_sa14@hotmail.es', N'Logo.png', N'12345', N'Doctor', 2)
+INSERT [dbo].[Users] ([UserID], [Username], [Email], [PhotoFilename], [PasswordText], [Role], [DoctorID]) VALUES (3, N'kevbast', N'kevbast936@gmail.com', N'cyberpunk.png', N'12345', N'Admin', NULL)
+INSERT [dbo].[Users] ([UserID], [Username], [Email], [PhotoFilename], [PasswordText], [Role], [DoctorID]) VALUES (4, N'ericbasa', N'kevin.bayas.sarzosa@outlook.com', N'kratos.png', N'12345', N'Laboratorio', NULL)
+INSERT [dbo].[Users] ([UserID], [Username], [Email], [PhotoFilename], [PasswordText], [Role], [DoctorID]) VALUES (5, N'Mateo', N'house@hospital.com', N'default-user.png', N'12345', N'Doctor', 1)
+GO
+INSERT [dbo].[Users_Security] ([UserID], [Salt], [PasswordHash]) VALUES (1, N'N3otTZaJxUmryWImgkNMx2Z2yPEFwXDn5NbIOBrgFmIpa5k/stWnKgeSBoB3ejiyetM=', 0x7F450A43FAE8356A2948ADBA1DF738DA30265CEDA7627A940D9194BD96B64186F8E60C356AB405B5DE4D75BD5079E8EBA377EAE011733EE89E16CE23051026CB)
+INSERT [dbo].[Users_Security] ([UserID], [Salt], [PasswordHash]) VALUES (2, N'NVBtjvYDNc8Spb56CYYp7NCjeXQiy9zK7bXfCiYtwtyfyETjBtRXfnmOMeYIjEYR+jo=', 0x27BE52FCDBE44DDA939749890D272D56C4BA9FB3DCFDA2F8AD6794460F2E9EB53E87554F1E359CCC45A77D21F6D7AEB4F087D85FE15A158B9E2000E42FEFCF1A)
+INSERT [dbo].[Users_Security] ([UserID], [Salt], [PasswordHash]) VALUES (3, N'sRDY5XbqrgLCzk9fIp2tsgAAqiTfOIzRYI4t5d1x29Z5+9Udn4CQURRpyTWlywMZ+/I=', 0x4513EFF2DDCB68E93209E0050FE541790724FF263814EA7792E3147C861E53887ECA734937704D6C747402E7A03D2D0F2B55F97FC63CF5FD5D5EBE72E12811F7)
+INSERT [dbo].[Users_Security] ([UserID], [Salt], [PasswordHash]) VALUES (4, N'dNui/LgTNKbodvp3f/F82IG8WKmhoCHfbMtbkscdU9AakjObPf36BScFbk6rN2GzMqo=', 0xEAA472B401AA8E1B1A2634BCAC713F3B0F3E9C5A6504A6FBA2474C599E91D331A6C65229944389509401A4B7F19A94F78D5249C3F191271565DE1D5B1688E30C)
+INSERT [dbo].[Users_Security] ([UserID], [Salt], [PasswordHash]) VALUES (5, N'VHWLaqqkKOfmATehLFwIbmAYqrF0DQhcmCM0h78jXPJam/Ep9dVr9pMlfovTdU6d5/w=', 0x96189E76E81C5742E47C2BA1246DD8B0B18E91247A6B5EDDAEBD6CA1D29695B041F455184CF6806AF1B98B9D260EEA7567F7EC13F3A7626449FACA1CA5FD29E5)
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UQ__Orders__CAC5E743B3C43D93]    Script Date: 17/03/2026 22:49:39 ******/
+ALTER TABLE [dbo].[Orders] ADD UNIQUE NONCLUSTERED 
+(
+	[OrderNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UQ__Users__536C85E46EDEEB23]    Script Date: 17/03/2026 22:49:39 ******/
+ALTER TABLE [dbo].[Users] ADD UNIQUE NONCLUSTERED 
+(
+	[Username] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Orders] ADD  DEFAULT (getdate()) FOR [OrderDate]
+GO
+ALTER TABLE [dbo].[Orders] ADD  DEFAULT ('Pendiente') FOR [Status]
+GO
+ALTER TABLE [dbo].[TestResults] ADD  DEFAULT ((0)) FOR [IsAbnormal]
+GO
+ALTER TABLE [dbo].[TestResults] ADD  DEFAULT (getdate()) FOR [EnteredDate]
+GO
+ALTER TABLE [dbo].[LabTests]  WITH CHECK ADD  CONSTRAINT [FK_LabTests_SampleTypes] FOREIGN KEY([SampleID])
+REFERENCES [dbo].[SampleTypes] ([SampleID])
+GO
+ALTER TABLE [dbo].[LabTests] CHECK CONSTRAINT [FK_LabTests_SampleTypes]
+GO
+ALTER TABLE [dbo].[Orders]  WITH CHECK ADD  CONSTRAINT [FK_Orders_ApprovedBy] FOREIGN KEY([ApprovedBy])
+REFERENCES [dbo].[Users] ([UserID])
+GO
+ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_ApprovedBy]
+GO
+ALTER TABLE [dbo].[Orders]  WITH CHECK ADD  CONSTRAINT [FK_Orders_Doctors] FOREIGN KEY([DoctorID])
+REFERENCES [dbo].[Doctors] ([DoctorID])
+GO
+ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_Doctors]
+GO
+ALTER TABLE [dbo].[Orders]  WITH CHECK ADD  CONSTRAINT [FK_Orders_Patients] FOREIGN KEY([PatientID])
+REFERENCES [dbo].[Patients] ([PatientID])
+GO
+ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_Patients]
+GO
+ALTER TABLE [dbo].[ReferenceRanges]  WITH CHECK ADD  CONSTRAINT [FK_ReferenceRanges_LabTests] FOREIGN KEY([TestID])
+REFERENCES [dbo].[LabTests] ([TestID])
+GO
+ALTER TABLE [dbo].[ReferenceRanges] CHECK CONSTRAINT [FK_ReferenceRanges_LabTests]
+GO
+ALTER TABLE [dbo].[TestResults]  WITH CHECK ADD  CONSTRAINT [FK_TestResults_EnteredBy] FOREIGN KEY([EnteredBy])
+REFERENCES [dbo].[Users] ([UserID])
+GO
+ALTER TABLE [dbo].[TestResults] CHECK CONSTRAINT [FK_TestResults_EnteredBy]
+GO
+ALTER TABLE [dbo].[TestResults]  WITH CHECK ADD  CONSTRAINT [FK_TestResults_LabTests] FOREIGN KEY([TestID])
+REFERENCES [dbo].[LabTests] ([TestID])
+GO
+ALTER TABLE [dbo].[TestResults] CHECK CONSTRAINT [FK_TestResults_LabTests]
+GO
+ALTER TABLE [dbo].[TestResults]  WITH CHECK ADD  CONSTRAINT [FK_TestResults_ModifiedBy] FOREIGN KEY([ModifiedBy])
+REFERENCES [dbo].[Users] ([UserID])
+GO
+ALTER TABLE [dbo].[TestResults] CHECK CONSTRAINT [FK_TestResults_ModifiedBy]
+GO
+ALTER TABLE [dbo].[TestResults]  WITH CHECK ADD  CONSTRAINT [FK_TestResults_Orders] FOREIGN KEY([OrderID])
+REFERENCES [dbo].[Orders] ([OrderID])
+GO
+ALTER TABLE [dbo].[TestResults] CHECK CONSTRAINT [FK_TestResults_Orders]
+GO
+ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [FK_Users_Doctors] FOREIGN KEY([DoctorID])
+REFERENCES [dbo].[Doctors] ([DoctorID])
+GO
+ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [FK_Users_Doctors]
+GO
+ALTER TABLE [dbo].[Users_Security]  WITH CHECK ADD  CONSTRAINT [FK_UsersSecurity_Users] FOREIGN KEY([UserID])
+REFERENCES [dbo].[Users] ([UserID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[Users_Security] CHECK CONSTRAINT [FK_UsersSecurity_Users]
+GO
+ALTER TABLE [dbo].[Orders]  WITH CHECK ADD CHECK  (([Status]='Entregada' OR [Status]='Aprobada' OR [Status]='Completada' OR [Status]='EnProceso' OR [Status]='Pendiente'))
+GO
+ALTER TABLE [dbo].[Patients]  WITH CHECK ADD CHECK  (([Gender]='F' OR [Gender]='M'))
+GO
+ALTER TABLE [dbo].[TestResults]  WITH CHECK ADD CHECK  (([AlertLevel]='SIN_RANGO' OR [AlertLevel]='CRITICO' OR [AlertLevel]='ANORMAL' OR [AlertLevel]='NORMAL'))
+GO
+ALTER TABLE [dbo].[Users]  WITH CHECK ADD CHECK  (([Role]='Laboratorio' OR [Role]='Doctor' OR [Role]='Admin'))
+GO
+/****** Object:  StoredProcedure [dbo].[SP_CanDelete]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SP_CanDelete]
+    @TableName NVARCHAR(50),
+    @RecordID INT,
+    @CanDelete BIT OUTPUT,
+    @Message NVARCHAR(200) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @Count INT = 0;
+    
+    IF @TableName = 'Patients'
+    BEGIN
+        SELECT @Count = COUNT(*) FROM Orders WHERE PatientID = @RecordID;
+        SET @Message = CASE WHEN @Count > 0 
+            THEN 'No se puede eliminar. El paciente tiene ' + CAST(@Count AS NVARCHAR(10)) + ' órdenes.'
+            ELSE 'El paciente puede ser eliminado.' END;
+    END
+    ELSE IF @TableName = 'Doctors'
+    BEGIN
+        SELECT @Count = COUNT(*) FROM Orders WHERE DoctorID = @RecordID;
+        SET @Message = CASE WHEN @Count > 0 
+            THEN 'No se puede eliminar. El médico tiene ' + CAST(@Count AS NVARCHAR(10)) + ' órdenes.'
+            ELSE 'El médico puede ser eliminado.' END;
+    END
+    ELSE IF @TableName = 'SampleTypes'
+    BEGIN
+        SELECT @Count = COUNT(*) FROM LabTests WHERE SampleID = @RecordID;
+        SET @Message = CASE WHEN @Count > 0 
+            THEN 'No se puede eliminar. El tipo tiene ' + CAST(@Count AS NVARCHAR(10)) + ' exámenes.'
+            ELSE 'El tipo de muestra puede ser eliminado.' END;
+    END
+    ELSE IF @TableName = 'LabTests'
+    BEGIN
+        SELECT @Count = COUNT(*) FROM TestResults WHERE TestID = @RecordID;
+        SET @Message = CASE WHEN @Count > 0 
+            THEN 'No se puede eliminar. El examen tiene ' + CAST(@Count AS NVARCHAR(10)) + ' resultados.'
+            ELSE 'El examen puede ser eliminado.' END;
+    END
+    ELSE IF @TableName = 'Orders'
+    BEGIN
+        SELECT @Count = COUNT(*) FROM TestResults WHERE OrderID = @RecordID;
+        SET @Message = CASE WHEN @Count > 0 
+            THEN 'No se puede eliminar. La orden tiene ' + CAST(@Count AS NVARCHAR(10)) + ' resultados.'
+            ELSE 'La orden puede ser eliminada.' END;
+    END
+    
+    SET @CanDelete = CASE WHEN @Count = 0 THEN 1 ELSE 0 END;
+END
+GO
+/****** Object:  StoredProcedure [dbo].[SP_GenerateOrderNumber]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SP_GenerateOrderNumber]
+    @NewOrderNumber NVARCHAR(20) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @Date NVARCHAR(8) = CONVERT(NVARCHAR(8), GETDATE(), 112);
+    DECLARE @Sequence INT;
+    
+    SELECT @Sequence = ISNULL(MAX(CAST(RIGHT(OrderNumber, 4) AS INT)), 0)
+    FROM Orders
+    WHERE OrderNumber LIKE 'ORD-' + @Date + '-%';
+    
+    SET @Sequence = @Sequence + 1;
+    SET @NewOrderNumber = 'ORD-' + @Date + '-' + RIGHT('0000' + CAST(@Sequence AS NVARCHAR(4)), 4);
+END
+GO
+/****** Object:  StoredProcedure [dbo].[SP_GetNextID]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SP_GetNextID]
+    @TableName NVARCHAR(50),
+    @NextID INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF @TableName = 'Patients'
+        SELECT @NextID = ISNULL(MAX(PatientID), 0) + 1 FROM Patients;
+    ELSE IF @TableName = 'Doctors'
+        SELECT @NextID = ISNULL(MAX(DoctorID), 0) + 1 FROM Doctors;
+    ELSE IF @TableName = 'Orders'
+        SELECT @NextID = ISNULL(MAX(OrderID), 0) + 1 FROM Orders;
+    ELSE IF @TableName = 'LabTests'
+        SELECT @NextID = ISNULL(MAX(TestID), 0) + 1 FROM LabTests;
+    ELSE IF @TableName = 'SampleTypes'
+        SELECT @NextID = ISNULL(MAX(SampleID), 0) + 1 FROM SampleTypes;
+    ELSE IF @TableName = 'TestResults'
+        SELECT @NextID = ISNULL(MAX(ResultID), 0) + 1 FROM TestResults;
+    ELSE IF @TableName = 'ReferenceRanges'
+        SELECT @NextID = ISNULL(MAX(RangeID), 0) + 1 FROM ReferenceRanges;
+    ELSE IF @TableName = 'Users'
+        SELECT @NextID = ISNULL(MAX(UserID), 0) + 1 FROM Users;
+    ELSE
+        SET @NextID = 1;
+END
+
+GO
+/****** Object:  StoredProcedure [dbo].[SP_GetOrderDetails]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SP_GetOrderDetails]
+    @OrderID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        O.OrderID,
+        O.OrderNumber,
+        O.OrderDate,
+        P.PatientID,
+        P.FirstName,
+        P.LastName,
+        P.FirstName + ' ' + P.LastName AS PatientName,
+        P.Gender,
+        P.BirthDate,
+        DATEDIFF(YEAR, P.BirthDate, GETDATE()) - 
+            CASE WHEN DATEADD(YEAR, DATEDIFF(YEAR, P.BirthDate, GETDATE()), P.BirthDate) > GETDATE() 
+                 THEN 1 ELSE 0 END AS PatientAge,
+        P.Email AS PatientEmail,
+        P.PhotoFilename,
+        D.DoctorID,
+        D.FullName AS DoctorName,
+        D.LicenseNumber,
+        D.Email AS DoctorEmail,
+        TR.ResultID,
+        TR.TestID,
+        LT.TestName,
+        LT.Units,
+        TR.ResultValue,
+        TR.IsAbnormal,
+        TR.Notes,
+        ST.SampleName,
+        ST.ContainerColor,
+        RR.MinVal,
+        RR.MaxVal,
+        CASE WHEN RR.MinVal IS NOT NULL THEN 
+            CAST(RR.MinVal AS NVARCHAR(10)) + ' - ' + CAST(RR.MaxVal AS NVARCHAR(10))
+        ELSE 'Sin rango definido' END AS ReferenceRange,
+        CASE 
+            WHEN TR.ResultValue IS NULL THEN 'Pendiente'
+            WHEN RR.MinVal IS NULL THEN 'Sin Rango'
+            WHEN TR.ResultValue >= RR.MinVal AND TR.ResultValue <= RR.MaxVal THEN 'Normal'
+            WHEN TR.ResultValue < (RR.MinVal - (RR.MaxVal - RR.MinVal) * 0.2) OR 
+                 TR.ResultValue > (RR.MaxVal + (RR.MaxVal - RR.MinVal) * 0.2) THEN 'Critico'
+            ELSE 'Anormal'
+        END AS ValidationStatus
+    FROM Orders O
+    INNER JOIN Patients P ON O.PatientID = P.PatientID
+    INNER JOIN Doctors D ON O.DoctorID = D.DoctorID
+    INNER JOIN TestResults TR ON O.OrderID = TR.OrderID
+    INNER JOIN LabTests LT ON TR.TestID = LT.TestID
+    INNER JOIN SampleTypes ST ON LT.SampleID = ST.SampleID
+    LEFT JOIN ReferenceRanges RR ON TR.TestID = RR.TestID
+        AND (RR.Gender = P.Gender OR RR.Gender = 'A')
+        AND DATEDIFF(YEAR, P.BirthDate, GETDATE()) BETWEEN RR.MinAgeYear AND RR.MaxAgeYear
+    WHERE O.OrderID = @OrderID
+    ORDER BY LT.TestName;
+END
+GO
+/****** Object:  StoredProcedure [dbo].[SP_GetReferenceRange]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SP_GetReferenceRange]
+    @PatientID INT,
+    @TestID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @Gender CHAR(1);
+    DECLARE @Age INT;
+    
+    SELECT 
+        @Gender = Gender, 
+        @Age = DATEDIFF(YEAR, BirthDate, GETDATE()) - 
+               CASE 
+                   WHEN DATEADD(YEAR, DATEDIFF(YEAR, BirthDate, GETDATE()), BirthDate) > GETDATE() 
+                   THEN 1 
+                   ELSE 0 
+               END
+    FROM Patients 
+    WHERE PatientID = @PatientID;
+    
+    IF @Gender IS NULL
+    BEGIN
+        SELECT NULL AS RangeID, NULL AS MinVal, NULL AS MaxVal, 'Paciente no encontrado' AS ErrorMessage;
+        RETURN;
+    END
+    
+    SELECT TOP 1
+        RangeID,
+        TestID,
+        Gender,
+        MinAgeYear,
+        MaxAgeYear,
+        MinVal,
+        MaxVal
+    FROM ReferenceRanges
+    WHERE TestID = @TestID
+      AND (Gender = @Gender OR Gender = 'A')
+      AND @Age BETWEEN MinAgeYear AND MaxAgeYear
+    ORDER BY 
+        CASE WHEN Gender = @Gender THEN 0 ELSE 1 END,
+        (MaxAgeYear - MinAgeYear) ASC;
+END
+GO
+/****** Object:  StoredProcedure [dbo].[SP_GetRequiredTubes]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SP_GetRequiredTubes]
+    @OrderID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        ST.SampleID,
+        ST.SampleName,
+        ST.ContainerColor,
+        COUNT(DISTINCT TR.TestID) AS TestCount,
+        STRING_AGG(LT.TestName, ', ') AS TestNames
+    FROM TestResults TR
+    INNER JOIN LabTests LT ON TR.TestID = LT.TestID
+    INNER JOIN SampleTypes ST ON LT.SampleID = ST.SampleID
+    WHERE TR.OrderID = @OrderID
+    GROUP BY ST.SampleID, ST.SampleName, ST.ContainerColor
+    ORDER BY ST.SampleName;
+END
+GO
+/****** Object:  StoredProcedure [dbo].[SP_ValidateResult]    Script Date: 17/03/2026 22:49:39 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[SP_ValidateResult]
+    @TestID INT,
+    @PatientID INT,
+    @ResultValue DECIMAL(10,2),
+    @Status NVARCHAR(20) OUTPUT,
+    @IsAbnormal BIT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @MinVal DECIMAL(10,2);
+    DECLARE @MaxVal DECIMAL(10,2);
+    DECLARE @RangeTable TABLE (RangeID INT, TestID INT, Gender CHAR(1), MinAgeYear INT, MaxAgeYear INT, MinVal DECIMAL(10,2), MaxVal DECIMAL(10,2));
+    
+    INSERT INTO @RangeTable
+    EXEC SP_GetReferenceRange @PatientID, @TestID;
+    
+    SELECT @MinVal = MinVal, @MaxVal = MaxVal FROM @RangeTable;
+    
+    IF @MinVal IS NULL OR @MaxVal IS NULL
+    BEGIN
+        SET @Status = 'Sin Rango';
+        SET @IsAbnormal = 0;
+        RETURN;
+    END
+    
+    DECLARE @RangeSpan DECIMAL(10,2) = @MaxVal - @MinVal;
+    DECLARE @CriticalThreshold DECIMAL(10,2) = @RangeSpan * 0.2;
+    
+    IF @ResultValue >= @MinVal AND @ResultValue <= @MaxVal
+    BEGIN
+        SET @Status = 'Normal';
+        SET @IsAbnormal = 0;
+    END
+    ELSE IF @ResultValue < (@MinVal - @CriticalThreshold) OR 
+            @ResultValue > (@MaxVal + @CriticalThreshold)
+    BEGIN
+        SET @Status = 'Critico';
+        SET @IsAbnormal = 1;
+    END
+    ELSE
+    BEGIN
+        SET @Status = 'Anormal';
+        SET @IsAbnormal = 1;
+    END
+END
+GO
+
