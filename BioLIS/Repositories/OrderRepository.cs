@@ -75,6 +75,7 @@ namespace BioLIS.Repositories
         }
 
         // 4. Actualizar órden
+        // Sin uso por ahora: reservado para edición completa de órdenes desde administración.
         public async Task<bool> UpdateOrderAsync(Order order)
         {
             var existing = await this.context.Orders.FindAsync(order.OrderID);
@@ -170,6 +171,7 @@ namespace BioLIS.Repositories
         }
 
         // 2. Obtener un resultado específico
+        // Sin uso por ahora: reservado para edición puntual de resultados por ID.
         public async Task<TestResult?> GetTestResultByIdAsync(int resultId)
         {
             return await this.context.TestResults
@@ -298,6 +300,7 @@ namespace BioLIS.Repositories
         }
 
         // 6. Eliminar resultado
+        // Sin uso por ahora: reservado para escenarios de corrección/eliminación manual de resultados.
         public async Task<(bool Success, string Message)> DeleteTestResultAsync(int resultId)
         {
             var testResult = await this.context.TestResults.FindAsync(resultId);
@@ -346,6 +349,7 @@ namespace BioLIS.Repositories
             return results;
         }
 
+        // Sin uso por ahora: reservado para consultas directas de rango por stored procedure en módulos futuros.
         public async Task<ReferenceRangeDTO?> GetReferenceRangeAsync(int patientId, int testId)
         {
             var paramPatient = new SqlParameter("@PatientID", patientId);
@@ -361,6 +365,7 @@ namespace BioLIS.Repositories
         #region MÉTODOS ESPECIALES
 
         // Verificar si todos los resultados de una orden tienen valores
+        // Sin uso por ahora: reservado para validaciones rápidas de completitud fuera del flujo actual.
         public async Task<bool> AreAllResultsCompleteAsync(int orderId)
         {
             var results = await this.context.TestResults

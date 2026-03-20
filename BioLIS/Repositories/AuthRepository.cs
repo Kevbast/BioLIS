@@ -57,6 +57,7 @@ namespace BioLIS.Repositories
         /// <summary>
         /// Obtener usuario por username
         /// </summary>
+        // Sin uso por ahora: reservado para búsquedas por usuario en flujos futuros.
         public async Task<User?> GetUserByUsernameAsync(string username)
         {
             return await this.context.Users
@@ -81,6 +82,7 @@ namespace BioLIS.Repositories
         /// <summary>
         /// Obtener usuarios por rol
         /// </summary>
+        // Sin uso por ahora: reservado para filtros administrativos futuros.
         public async Task<List<UserValidation>> GetUsersByRoleAsync(string role)
         {
             return await this.context.Usersvalidations

@@ -1,3 +1,30 @@
-﻿<h1>Error acceso</h1>
-<h2 style="color:red"> NO TIENES PERMISOS PARA ACCEDER A ESTA ZONA</h2>
-<img src="https://th.bing.com/th/id/OIP.kw0fqsNT18cLnHO2Av-r6QHaFM?o=7rm=3&rs=1&pid=ImgDetMain&o=7&rm=3" alt="DENIED" />
+﻿@{
+    ViewData["Title"] = "Acceso denegado";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center p-5">
+                    <div class="mb-3">
+                        <i class="fas fa-user-lock text-danger" style="font-size: 3rem;"></i>
+                    </div>
+                    <h2 class="fw-bold mb-2">Acceso denegado</h2>
+                    <p class="text-muted mb-4">
+                        No tienes permisos para acceder a esta sección del sistema.
+                        Si crees que es un error, contacta con un administrador.
+                    </p>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                            <i class="fas fa-home me-1"></i> Ir al inicio
+                        </a>
+                        <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-secondary">
+                            <i class="fas fa-sign-in-alt me-1"></i> Iniciar sesión con otra cuenta
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

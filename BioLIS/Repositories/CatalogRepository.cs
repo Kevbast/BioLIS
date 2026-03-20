@@ -93,6 +93,7 @@ namespace BioLIS.Repositories
         }
 
         // 6.Buscar pacientes por nombre o apellido
+        // Sin uso por ahora: reservado para búsqueda avanzada de pacientes en próximos filtros.
         public async Task<List<Patient>> SearchPatientsAsync(string searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
@@ -344,6 +345,7 @@ public async Task<List<ReferenceRange>> GetAllReferenceRangesAsync()
                 .FirstOrDefaultAsync(rr => rr.RangeID == id);
         }
         //3.Obtener rangos de referencia por examen
+        // Sin uso por ahora: reservado para consultas especializadas por examen en módulos futuros.
         public async Task<List<ReferenceRange>> GetReferenceRangesByTestAsync(int testId)
         {
             return await this.context.ReferenceRanges
@@ -410,6 +412,7 @@ public async Task<List<ReferenceRange>> GetAllReferenceRangesAsync()
         /// <summary>
         /// Obtener todas las órdenes con información completa (Include Patient, Doctor)
         /// </summary>
+        // Sin uso por ahora: reservado para paneles globales de órdenes desde catálogo.
         public async Task<List<Order>> GetOrdersAsync()
         {
             return await this.context.Orders
@@ -423,6 +426,7 @@ public async Task<List<ReferenceRange>> GetAllReferenceRangesAsync()
         /// <summary>
         /// Obtener órdenes por estado
         /// </summary>
+        // Sin uso por ahora: reservado para filtros por estado desde catálogo.
         public async Task<List<Order>> GetOrdersByStatusAsync(string status)
         {
             return await this.context.Orders
@@ -450,6 +454,7 @@ public async Task<List<ReferenceRange>> GetAllReferenceRangesAsync()
         /// <summary>
         /// Obtener doctores que NO tienen usuario asignado
         /// </summary>
+        // Sin uso por ahora: reservado para asistentes de alta de usuarios con vínculo médico.
         public async Task<List<Doctor>> GetDoctorsWithoutUserAsync()
         {
             var doctorsWithUser = await this.context.Users
