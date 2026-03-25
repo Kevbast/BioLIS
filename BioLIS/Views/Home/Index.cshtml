@@ -169,7 +169,7 @@
         }
     </div>
 
-    @if (ViewBag.RecentOrders != null && ((List<BioLab.Models.Order>)ViewBag.RecentOrders).Any())
+    @if (ViewBag.RecentOrders != null && ((List<BioLIS.Models.Order>)ViewBag.RecentOrders).Any())
     {
         <div class="row animate-fade-up delay-400">
             <div class="col-12">
@@ -204,7 +204,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var order in (List<BioLab.Models.Order>)ViewBag.RecentOrders)
+                                    @foreach (var order in (List<BioLIS.Models.Order>)ViewBag.RecentOrders)
                                     {
                                         <tr>
                                             <td>

@@ -1,11 +1,11 @@
 @using System.Security.Claims
-@model BioLab.Models.Order
+@model BioLIS.Models.Order
 
 <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" />
 
 @{
     ViewData["Title"] = "Detalles de la Orden";
-    var results = ViewData["Results"] as List<BioLab.Models.TestResult> ?? new List<BioLab.Models.TestResult>();
+    var results = ViewData["Results"] as List<BioLIS.Models.TestResult> ?? new List<BioLIS.Models.TestResult>();
     var role = User.FindFirstValue(ClaimTypes.Role);
     var swalType = TempData["SwalType"]?.ToString();
     var swalTitle = TempData["SwalTitle"]?.ToString();
@@ -196,9 +196,9 @@
                                         }
                                         else if (!string.IsNullOrEmpty(result.AlertLevel))
                                         {
-                                            <span class="@BioLab.Models.AlertLevels.GetBadgeClass(result.AlertLevel)">
+                                            <span class="@BioLIS.Models.AlertLevels.GetBadgeClass(result.AlertLevel)">
                                                 <i class="fas @GetIconForAlertLevel(result.AlertLevel)"></i>
-                                                @BioLab.Models.AlertLevels.GetDisplayName(result.AlertLevel)
+                                                @BioLIS.Models.AlertLevels.GetDisplayName(result.AlertLevel)
                                             </span>
                                         }
                                         else if (result.IsAbnormal)

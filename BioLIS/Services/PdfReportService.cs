@@ -1,4 +1,4 @@
-using BioLab.Models;
+using BioLIS.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -119,15 +119,15 @@ namespace BioLIS.Services
                     foreach (var result in results)
                     {
                         var resultColor = Colors.Black;
-                        var estado = BioLab.Models.AlertLevels.GetDisplayName(result.AlertLevel);
+                        var estado = BioLIS.Models.AlertLevels.GetDisplayName(result.AlertLevel);
                         var referenceRange = ResolveReferenceRange(result, order.Patient);
                         var referenceRangeText = referenceRange != null
                             ? $"{referenceRange.MinVal:0.##}-{referenceRange.MaxVal:0.##}"
                             : "Sin rango";
                         
-                        if (result.AlertLevel == BioLab.Models.AlertLevels.Anormal)
+                        if (result.AlertLevel == BioLIS.Models.AlertLevels.Anormal)
                             resultColor = Colors.Orange.Medium;
-                        else if (result.AlertLevel == BioLab.Models.AlertLevels.Critico)
+                        else if (result.AlertLevel == BioLIS.Models.AlertLevels.Critico)
                             resultColor = Colors.Red.Medium;
 
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)

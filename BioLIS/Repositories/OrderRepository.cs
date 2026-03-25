@@ -1,4 +1,4 @@
-﻿using BioLab.Models;
+﻿using BioLIS.Models;
 using BioLIS.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;

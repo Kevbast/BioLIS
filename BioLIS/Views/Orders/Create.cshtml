@@ -1,11 +1,11 @@
-@model BioLab.Models.Order
+@model BioLIS.Models.Order
 @using System.Security.Claims
 
 @{
     ViewData["Title"] = "Nueva Orden de Laboratorio";
     var patients = ViewData["Patients"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
     var doctors = ViewData["Doctors"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-    var labTests = ViewData["LabTests"] as List<BioLab.Models.LabTest> ?? new List<BioLab.Models.LabTest>();
+    var labTests = ViewData["LabTests"] as List<BioLIS.Models.LabTest> ?? new List<BioLIS.Models.LabTest>();
     var isDoctor = User.IsInRole("Doctor");
     var preselectedDoctorId = ViewData["PreselectedDoctorId"]?.ToString();
     var preselectedDoctorName = doctors.FirstOrDefault(d => d.Value == preselectedDoctorId)?.Text;

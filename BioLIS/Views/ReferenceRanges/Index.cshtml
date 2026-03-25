@@ -1,10 +1,10 @@
-@model List<BioLab.Models.ReferenceRange>
+@model List<BioLIS.Models.ReferenceRange>
 
 <link rel="stylesheet" href="~/css/catalog-modules.css" asp-append-version="true" />
 
 @{
     ViewData["Title"] = "Rangos de Referencia";
-    var groupedRanges = ViewData["GroupedRanges"] as IEnumerable<IGrouping<string, BioLab.Models.ReferenceRange>>;
+    var groupedRanges = ViewData["GroupedRanges"] as IEnumerable<IGrouping<string, BioLIS.Models.ReferenceRange>>;
     var swalType = TempData["SwalType"]?.ToString();
     var swalTitle = TempData["SwalTitle"]?.ToString();
     var swalMessage = TempData["SwalMessage"]?.ToString();

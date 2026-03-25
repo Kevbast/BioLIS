@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace BioLab.Models // Cambia a BioLIS.Models si es tu namespace
+namespace BioLIS.Models
 {
     [Table("Users")]
     public class User

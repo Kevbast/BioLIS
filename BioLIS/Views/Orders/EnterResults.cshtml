@@ -1,8 +1,8 @@
-@model BioLab.Models.Order
+@model BioLIS.Models.Order
 
 @{
     ViewData["Title"] = "Ingresar Resultados";
-    var results = ViewData["Results"] as List<BioLab.Models.TestResult> ?? new List<BioLab.Models.TestResult>();
+    var results = ViewData["Results"] as List<BioLIS.Models.TestResult> ?? new List<BioLIS.Models.TestResult>();
     var summary = ViewData["Summary"] as BioLIS.Repositories.OrderResultsSummary;
 }
 
@@ -152,14 +152,14 @@
                                         <td>
                                             @if (result.ResultValue.HasValue)
                                             {
-                                                <span class="@BioLab.Models.AlertLevels.GetBadgeClass(result.AlertLevel)">
+                                                <span class="@BioLIS.Models.AlertLevels.GetBadgeClass(result.AlertLevel)">
                                                     @result.ResultValue.Value
                                                 </span>
                                                 @if (!string.IsNullOrEmpty(result.AlertLevel))
                                                 {
                                                     <br />
                                                     <small class="text-muted">
-                                                        @BioLab.Models.AlertLevels.GetDisplayName(result.AlertLevel)
+                                                        @BioLIS.Models.AlertLevels.GetDisplayName(result.AlertLevel)
                                                     </small>
                                                 }
                                             }

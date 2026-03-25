@@ -1,4 +1,4 @@
-using BioLab.Models;
+using BioLIS.Models;
 using BioLIS.Filters;
 using BioLIS.Repositories;
 using Microsoft.AspNetCore.Mvc;

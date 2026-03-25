@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace BioLab.Models // Cambia "BioLab" por el nombre de tu proyecto
+namespace BioLIS.Models
 {
     [Table("Doctors")]
     public class Doctor

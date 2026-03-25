@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace BioLab.Models
+namespace BioLIS.Models
 {
     [Table("ReferenceRanges")]
     public class ReferenceRange

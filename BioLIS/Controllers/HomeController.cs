@@ -47,7 +47,7 @@ namespace BioLIS.Controllers
                 ViewBag.TotalTests = labTests.Count;
 
                 // Si es Doctor, mostrar solo SUS órdenes recientes
-                List<BioLab.Models.Order> chartOrders;
+                List<BioLIS.Models.Order> chartOrders;
                 if (role == "Doctor")
                 {
                     var doctorIdClaim = HttpContext.User.FindFirstValue("DoctorID");
@@ -60,7 +60,7 @@ namespace BioLIS.Controllers
                     }
                     else
                     {
-                        chartOrders = new List<BioLab.Models.Order>();
+                        chartOrders = new List<BioLIS.Models.Order>();
                     }
                 }
                 else
@@ -99,7 +99,7 @@ namespace BioLIS.Controllers
                 ViewBag.TotalPatients = 0;
                 ViewBag.TotalDoctors = 0;
                 ViewBag.TotalTests = 0;
-                ViewBag.RecentOrders = new List<BioLab.Models.Order>();
+                ViewBag.RecentOrders = new List<BioLIS.Models.Order>();
                 return View();
             }
         }
