@@ -1,0 +1,174 @@
+﻿@model BioLIS.Models.Patient
+@{
+    ViewData["Title"] = "Historial Clínico";
+    var availableTests = ViewData["AvailableTests"] as List<string> ?? new List<string>();
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-line text-primary"></i> Historial y Predicción Clínica</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-left-primary">
+        <div class="card-body d-flex align-items-center">
+            <img src="~/images/pacientes/@(Model.PhotoFilename ?? "default.png")" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;" onerror="this.src='/images/pacientes/default.png'" />
+            <div>
+                <h5 class="mb-0">@Model.FullName</h5>
+                <small class="text-muted">ID: @Model.PatientID | Edad: @Model.Age años | Género: @Model.Gender</small>
+            </div>
+        </div>
+    </div>
+
+    @if (!availableTests.Any())
+    {
+        <div class="alert alert-warning"><i class="fas fa-exclamation-circle"></i> Este paciente no tiene resultados aprobados en su historial.</div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h6 class="mb-0"><i class="fas fa-filter"></i> Seleccionar Examen</h6>
+                    </div>
+                    <div class="card-body">
+                        <select id="testSelector" class="form-select">
+                            <option value="">-- Elige una prueba --</option>
+                            @foreach (var test in availableTests)
+                            {
+                                <option value="@test">@test</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div id="aiAlertPanel" class="alert alert-info" style="display:none;">
+                    <h5><i class="fas fa-robot"></i> Análisis IA</h5>
+                    <p id="aiAlertText" class="mb-0 small"></p>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0 text-primary" id="chartTitle">Gráfico de Evolución</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="trendChart" style="min-height: 350px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const rawData = @Html.Raw(ViewData["HistoryJson"]);
+        let currentChart = null;
+
+        document.getElementById('testSelector')?.addEventListener('change', function (e) {
+            drawChart(e.target.value);
+        });
+
+        function drawChart(testName) {
+            if (!testName) return;
+
+            // 1. Filtrar datos por el examen seleccionado
+            const filteredData = rawData.filter(d => d.TestName === testName);
+            const labels = filteredData.map(d => d.Date);
+            const values = filteredData.map(d => d.Value);
+            const units = filteredData[0].Units;
+
+            // 2. MATEMÁTICA: Algoritmo de Regresión Lineal (y = mx + b)
+            let n = values.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += i;
+                sumY += values[i];
+                sumXY += (i * values[i]);
+                sumXX += (i * i);
+            }
+
+            let slope = 0, intercept = values[0];
+            if (n > 1) {
+                slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+                intercept = (sumY - slope * sumX) / n;
+            }
+
+            // Generar la línea de tendencia exacta
+            const trendline = values.map((_, i) => (slope * i) + intercept);
+
+            // Predicción: Calcular el próximo valor en el futuro (+1)
+            const predictedValue = (slope * n) + intercept;
+
+            // Añadir el punto futuro al gráfico
+            labels.push("Próxima Consulta (Predicción)");
+            values.push(null); // No hay valor real
+            trendline.push(predictedValue);
+
+            // 3. Actualizar Panel de Alerta IA
+            const panel = document.getElementById('aiAlertPanel');
+            const text = document.getElementById('aiAlertText');
+            panel.style.display = 'block';
+
+            if (n < 2) {
+                panel.className = 'alert alert-secondary';
+                text.innerHTML = "Se necesitan más datos para generar una predicción fiable.";
+            } else if (slope > 0.5) {
+                panel.className = 'alert alert-danger';
+                text.innerHTML = `<strong>Tendencia al alza detectada.</strong> El próximo valor proyectado es <strong>${predictedValue.toFixed(2)} ${units}</strong>. Recomendado seguimiento preventivo.`;
+            } else if (slope < -0.5) {
+                panel.className = 'alert alert-warning';
+                text.innerHTML = `<strong>Tendencia a la baja detectada.</strong> Proyección: <strong>${predictedValue.toFixed(2)} ${units}</strong>. Evaluar si es el efecto deseado del tratamiento.`;
+            } else {
+                panel.className = 'alert alert-success';
+                text.innerHTML = `<strong>Estabilidad clínica.</strong> Los niveles se mantienen constantes a lo largo del tiempo.`;
+            }
+
+            // 4. Dibujar Gráfico con Chart.js
+            document.getElementById('chartTitle').innerText = `Evolución de ${testName}`;
+            const ctx = document.getElementById('trendChart').getContext('2d');
+
+            if (currentChart) currentChart.destroy();
+
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: `Resultados Reales (${units})`,
+                            data: values,
+                            borderColor: '#4e73df',
+                            backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                            pointBackgroundColor: '#4e73df',
+                            pointRadius: 5,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Línea de Tendencia (IA)',
+                            data: trendline,
+                            borderColor: '#e74a3b',
+                            borderDash: [5, 5], // Línea punteada
+                            pointBackgroundColor: '#e74a3b',
+                            pointRadius: 3,
+                            fill: false,
+                            tension: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+        }
+    </script>
+}

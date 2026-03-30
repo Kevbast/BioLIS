@@ -3,20 +3,21 @@ using BioLIS.Filters;
 using BioLIS.Helpers;
 using BioLIS.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeUsers] // Solo Admin y Laboratorio pueden gestionar pacientes (Policy = "AdminOrLab") y doctores tmb
+    [AuthorizeUsers]
     public class PatientsController : Controller
     {
         private CatalogRepository repo;
+        private OrderRepository orderRepo;
         private HelperPathProvider pathHelper;
 
-        public PatientsController(CatalogRepository repo, HelperPathProvider pathHelper)
+        public PatientsController(CatalogRepository repo, OrderRepository orderRepo, HelperPathProvider pathHelper)
         {
             this.repo = repo;
+            this.orderRepo = orderRepo;
             this.pathHelper = pathHelper;
         }
 
@@ -26,7 +27,13 @@ namespace BioLIS.Controllers
             return View(pacientes);
         }
 
-        // GET: Mostrar el formulario de creación
+        [AuthorizeUsers(Policy = "AdminOnly")]
+        public async Task<IActionResult> Inactive()
+        {
+            var pacientes = await this.repo.GetInactivePatientsAsync();
+            return View(pacientes);
+        }
+
         public IActionResult Create()
         {
             return View();
@@ -35,23 +42,22 @@ namespace BioLIS.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(Patient patient, IFormFile fichero)
         {
-            // 1. Gestión de la Imagen (Requisito clave)
-            string nombreImagen = "default.png"; // Imagen por defecto si no suben nada
+            string nombreImagen = "default.png";
 
             if (fichero != null)
             {
-                // Generamos un nombre limpio o usamos el original
                 nombreImagen = fichero.FileName;
-
-                // Usamos HelperPathProvider para obtener la ruta física
                 string path = this.pathHelper.MapPath(nombreImagen, Folders.Pacientes);
 
-                // Subimos el archivo físicamente
                 using (var stream = new FileStream(path, FileMode.Create))
                 {
                     await fichero.CopyToAsync(stream);
                 }
             }
+
+            // Extraer el ID del usuario actual para la Auditoría
+            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
 
             await this.repo.CreatePatientAsync(
                 patient.FirstName,
@@ -59,7 +65,9 @@ namespace BioLIS.Controllers
                 patient.Gender,
                 patient.BirthDate,
                 patient.Email,
-                nombreImagen // Pasamos solo el nombre del archivo
+                nombreImagen,
+                patient.PhoneNumber, // NUEVO: Teléfono
+                currentUserId        // NUEVO: Auditoría
             );
 
             TempData["SwalType"] = "success";
@@ -72,29 +80,28 @@ namespace BioLIS.Controllers
         public async Task<IActionResult> Update(int patientId)
         {
             Patient paciente = await this.repo.GetPatientByIdAsync(patientId);
+            if (paciente == null) return RedirectToAction("Index");
             return View(paciente);
         }
 
-        [HttpPost]//REVISAR EN EL UPDATE LOS FILES SUBIDOS NO SÉ BORRAN LOS ANTIGUOS
+        [HttpPost]
         public async Task<IActionResult> Update(Patient patient, IFormFile fichero)
         {
-            // 1. Gestión de la Imagen (Requisito clave)
-            string nombreImagen = patient.PhotoFilename ?? "default.png"; // Mantener imagen actual si no se sube nueva
+            string nombreImagen = patient.PhotoFilename ?? "default.png";
 
             if (fichero != null)
             {
-                // Generamos un nombre limpio o usamos el original
                 nombreImagen = fichero.FileName;
-
-                // Usamos HelperPathProvider para obtener la ruta física
                 string path = this.pathHelper.MapPath(nombreImagen, Folders.Pacientes);
 
-                // Subimos el archivo físicamente
                 using (var stream = new FileStream(path, FileMode.Create))
                 {
                     await fichero.CopyToAsync(stream);
                 }
             }
+
+            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
 
             bool exito = await this.repo.UpdatePatientAsync(
                 patient.PatientID,
@@ -103,7 +110,9 @@ namespace BioLIS.Controllers
                 patient.Gender,
                 patient.BirthDate,
                 patient.Email,
-                nombreImagen // Pasamos solo el nombre del archivo
+                nombreImagen,
+                patient.PhoneNumber, // NUEVO: Teléfono
+                currentUserId        // NUEVO: Auditoría
             );
 
             if (exito)
@@ -116,41 +125,30 @@ namespace BioLIS.Controllers
             else
             {
                 ViewData["MENSAJE"] = "Error al actualizar al paciente";
-                return View();
+                return View(patient);
             }
         }
 
-        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede eliminar pacientes
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int patientId)
         {
             Patient paciente = await this.repo.GetPatientByIdAsync(patientId);
             if (paciente == null)
             {
-                return RedirectToAction("Index"); // O mostrar una vista de error
+                return RedirectToAction("Index");
             }
 
-            string nombreImagen = paciente.PhotoFilename;
+            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
 
-            var result = await this.repo.DeletePatientAsync(patientId);
+            var result = await this.repo.DeletePatientAsync(patientId, currentUserId);
 
-            // 3. Si se borró de la BD exitosamente, procedemos a borrar el archivo físico
             if (result.Success)
             {
-                // Validamos que tenga foto y que no estemos borrando la foto por defecto
-                if (!string.IsNullOrEmpty(nombreImagen) && nombreImagen != "default.png")
-                {
-                    // Usamos HelperPathProvider para obtener la ruta física
-                    string path = this.pathHelper.MapPath(nombreImagen, Folders.Pacientes);
-
-                    if (System.IO.File.Exists(path))
-                    {
-                        System.IO.File.Delete(path);
-                    }
-                }
-
+                // NOTA: Borrado de archivo físico omitido por ser Soft Delete
                 TempData["SwalType"] = "success";
-                TempData["SwalTitle"] = "Paciente eliminado";
-                TempData["SwalMessage"] = "El paciente fue eliminado correctamente.";
+                TempData["SwalTitle"] = "Paciente desactivado";
+                TempData["SwalMessage"] = "El paciente fue desactivado correctamente.";
             }
             else
             {
@@ -160,6 +158,65 @@ namespace BioLIS.Controllers
             }
 
             return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AuthorizeUsers(Policy = "AdminOnly")]
+        public async Task<IActionResult> Reactivate(int patientId)
+        {
+            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
+
+            var result = await this.repo.ReactivatePatientAsync(patientId, currentUserId);
+
+            if (result.Success)
+            {
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Paciente reactivado";
+                TempData["SwalMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo reactivar";
+                TempData["SwalMessage"] = result.Message;
+            }
+
+            return RedirectToAction("Inactive");
+        }
+
+        [AuthorizeUsers(Policy = "AllRoles")] // Médicos, Labs y Admins pueden ver el historial
+        public async Task<IActionResult> History(int patientId)
+        {
+            var patient = await this.repo.GetPatientByIdAsync(patientId);
+            if (patient == null) return NotFound();
+
+            var rawHistory = await this.orderRepo.GetPatientHistoryAsync(patientId) ?? new List<TestResult>();
+
+            // Formateamos los datos para enviarlos limpios al JavaScript de la Vista
+            var historyData = rawHistory
+                .Where(h => h?.Order != null && h.LabTest != null)
+                .Select(h => new
+                {
+                    Date = h.Order.OrderDate.ToString("dd/MM/yyyy"),
+                    TestName = h.LabTest.TestName,
+                    Value = h.ResultValue,
+                    Units = h.LabTest.Units
+                })
+                .ToList();
+
+            // Sacamos una lista única de los exámenes que se ha hecho este paciente
+            ViewData["AvailableTests"] = historyData
+                .Where(h => !string.IsNullOrWhiteSpace(h.TestName))
+                .Select(h => h.TestName)
+                .Distinct()
+                .ToList();
+
+            // Serializamos los datos a JSON
+            ViewData["HistoryJson"] = System.Text.Json.JsonSerializer.Serialize(historyData);
+
+            return View(patient);
         }
     }
 }

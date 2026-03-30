@@ -11,6 +11,20 @@ namespace BioLIS.Models
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int OrderID { get; set; }
 
+        // --- NUEVOS CAMPOS ---
+        [Column("PublicId")]
+        public Guid PublicId { get; set; }
+
+        [Column("AISummary")]
+        public string? AISummary { get; set; }
+
+        [Column("IsActive")]
+        public bool IsActive { get; set; } = true;
+
+        [Column("CreatedBy")]
+        public int? CreatedBy { get; set; }
+        // ---------------------
+
         [Column("PatientID")]
         public int PatientID { get; set; }
 
@@ -42,13 +56,9 @@ namespace BioLIS.Models
         public User? ApprovedByUser { get; set; }
 
         //-----NAVEGACIÓN INVERSA (Relaciones)----------
-        // Resultados de pruebas de esta orden
         public virtual ICollection<TestResult> TestResults { get; set; } = new List<TestResult>();
     }
 
-    /// <summary>
-    /// Estados posibles de una orden
-    /// </summary>
     public static class OrderStatus
     {
         public const string Pendiente = "Pendiente";
@@ -57,14 +67,8 @@ namespace BioLIS.Models
         public const string Aprobada = "Aprobada";
         public const string Entregada = "Entregada";
 
-        public static List<string> GetAll() => new List<string> 
-        { 
-            Pendiente, 
-            EnProceso, 
-            Completada, 
-            Aprobada, 
-            Entregada 
-        };
+        public static List<string> GetAll() => new List<string>
+        { Pendiente, EnProceso, Completada, Aprobada, Entregada };
 
         public static string GetDisplayName(string status)
         {

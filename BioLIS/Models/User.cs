@@ -14,39 +14,54 @@ namespace BioLIS.Models
 
         [Column("Username")]
         public string Username { get; set; } = null!;
+
         [Column("Email")]
-        public string Email { get; set; } = null!;
+        public string? Email { get; set; }
 
         [Column("PhotoFilename")]
-        public string PhotoFilename { get; set; } = null!;
+        public string? PhotoFilename { get; set; }
+
         [Column("PasswordText")]
         public string PasswordText { get; set; } = null!;
 
-        [Column("Role")]
-        public string Role { get; set; } = null!; // 'Admin', 'Doctor', 'Laboratorio'
+        // --- CAMBIO A ROLES (RBAC) ---
+        [Column("RoleID")]
+        public int RoleID { get; set; }
+
+        [ForeignKey("RoleID")]
+        public virtual Role? Role { get; set; }
+        // -----------------------------
 
         [Column("DoctorID")]
-        public int? DoctorID { get; set; } // El '?' significa que puede ser NULL (para el Admin)
+        public int? DoctorID { get; set; }
 
         [ForeignKey("DoctorID")]
         public Doctor? Doctor { get; set; }
 
+        // --- CAMPOS ENTERPRISE ---
+        [Column("IsActive")]
+        public bool IsActive { get; set; } = true;
+
+        [Column("CreatedAt")]
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        // -------------------------
+
         // Relación con Users_Security (1 a 1)
         public virtual UserSecurity? UserSecurity { get; set; }
 
-        // Propiedades calculadas
+        // Propiedades calculadas actualizadas para leer desde RoleID o RoleName
         [NotMapped]
-        public bool IsAdmin => Role == "Admin";
+        public bool IsAdmin => Role?.RoleName == "Admin" || RoleID == 1;
 
         [NotMapped]
-        public bool IsDoctor => Role == "Doctor";
+        public bool IsDoctor => Role?.RoleName == "Doctor" || RoleID == 3;
 
         [NotMapped]
         public string DisplayName => Doctor?.FullName ?? Username;
     }
 
     /// <summary>
-    /// Roles disponibles
+    /// Roles disponibles (Constantes para validaciones rápidas)
     /// </summary>
     public static class UserRoles
     {
@@ -56,5 +71,4 @@ namespace BioLIS.Models
 
         public static List<string> GetAll() => new List<string> { Admin, Doctor, Laboratorio };
     }
-
 }

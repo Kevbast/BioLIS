@@ -2,6 +2,7 @@ using BioLIS.Models;
 using BioLIS.Filters;
 using BioLIS.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BioLIS.Controllers
 {
@@ -15,32 +16,41 @@ namespace BioLIS.Controllers
             this.repo = repo;
         }
 
-        // GET: Doctors
         public async Task<IActionResult> Index()
         {
             List<Doctor> doctors = await this.repo.GetDoctorsAsync();
             return View(doctors);
         }
 
-        // GET: Doctors/Create
-        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede crear doctores
+        [AuthorizeUsers(Policy = "AdminOnly")]
+        public async Task<IActionResult> Inactive()
+        {
+            var doctors = await this.repo.GetInactiveDoctorsAsync();
+            return View(doctors);
+        }
+
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Doctors/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede crear doctores
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Create(Doctor doctor)
         {
             if (ModelState.IsValid)
             {
+                var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
+
                 await this.repo.CreateDoctorAsync(
                     doctor.FullName,
                     doctor.LicenseNumber,
-                    doctor.Email
+                    doctor.Email,
+                    doctor.PhoneNumber, // NUEVO: Teléfono
+                    currentUserId       // NUEVO: Auditoría
                 );
 
                 TempData["SwalType"] = "success";
@@ -52,8 +62,7 @@ namespace BioLIS.Controllers
             return View(doctor);
         }
 
-        // GET: Doctors/Update/5
-        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede editar doctores
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int doctorId)
         {
             Doctor doctor = await this.repo.GetDoctorByIdAsync(doctorId);
@@ -65,15 +74,17 @@ namespace BioLIS.Controllers
             return View(doctor);
         }
 
-        // POST: Doctors/Update/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede editar doctores
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(Doctor doctor)
         {
             if (ModelState.IsValid)
             {
-                bool success = await this.repo.UpdateDoctorAsync(doctor);
+                var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
+
+                bool success = await this.repo.UpdateDoctorAsync(doctor, currentUserId);
 
                 if (success)
                 {
@@ -91,8 +102,7 @@ namespace BioLIS.Controllers
             return View(doctor);
         }
 
-        // GET: Doctors/Delete/5
-        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede eliminar doctores
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int doctorId)
         {
             Doctor doctor = await this.repo.GetDoctorByIdAsync(doctorId);
@@ -104,18 +114,20 @@ namespace BioLIS.Controllers
             return View(doctor);
         }
 
-        // POST: Doctors/DeleteConfirmed/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede eliminar doctores
+        [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> DeleteConfirmed(int doctorId)
         {
-            var result = await this.repo.DeleteDoctorAsync(doctorId);
+            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
+
+            var result = await this.repo.DeleteDoctorAsync(doctorId, currentUserId);
 
             if (result.Success)
             {
                 TempData["SwalType"] = "success";
-                TempData["SwalTitle"] = "Médico eliminado";
+                TempData["SwalTitle"] = "Médico desactivado";
                 TempData["SwalMessage"] = result.Message;
             }
             else
@@ -126,6 +138,32 @@ namespace BioLIS.Controllers
             }
 
             return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AuthorizeUsers(Policy = "AdminOnly")]
+        public async Task<IActionResult> Reactivate(int doctorId)
+        {
+            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
+
+            var result = await this.repo.ReactivateDoctorAsync(doctorId, currentUserId);
+
+            if (result.Success)
+            {
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Médico reactivado";
+                TempData["SwalMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo reactivar";
+                TempData["SwalMessage"] = result.Message;
+            }
+
+            return RedirectToAction("Inactive");
         }
     }
 }

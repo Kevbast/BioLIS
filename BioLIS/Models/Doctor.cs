@@ -15,10 +15,30 @@ namespace BioLIS.Models
         public string FullName { get; set; }
 
         [Column("LicenseNumber")]
-        public string LicenseNumber { get; set; }
+        public string? LicenseNumber { get; set; }
 
         [Column("Email")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
+
+        // --- NUEVOS CAMPOS ENTERPRISE ---
+        [Column("PhoneNumber")]
+        public string? PhoneNumber { get; set; } // Para alertas automáticas (n8n/WhatsApp)
+
+        [Column("IsActive")]
+        public bool IsActive { get; set; } = true; // Para borrado lógico (Soft Delete)
+
+        [Column("CreatedAt")]
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        [Column("CreatedBy")]
+        public int? CreatedBy { get; set; }
+
+        [Column("UpdatedAt")]
+        public DateTime? UpdatedAt { get; set; }
+
+        [Column("UpdatedBy")]
+        public int? UpdatedBy { get; set; }
+        // --------------------------------
 
         //--------NAVEGACIÓN INVERSA (Relaciones)-----------
         //Órdenes creadas por este doctor

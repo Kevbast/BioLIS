@@ -17,6 +17,9 @@
             <span class="badge bg-info">@(Model?.Count ?? 0) usuarios</span>
         </h2>
         <div class="users-actions">
+            <a asp-action="Inactive" class="btn btn-outline-secondary">
+                <i class="fas fa-user-clock"></i> Usuarios desactivados
+            </a>
             <a asp-action="Create" class="btn btn-success">
                 <i class="fas fa-user-plus"></i> Crear Nuevo Usuario
             </a>
@@ -31,128 +34,129 @@
     }
     else
     {
-    <div class="card users-list-card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle users-table">
-                    <thead>
-                        <tr>
-                            <th class="text-nowrap">ID</th>
-                            <th class="text-nowrap">Foto</th>
-                            <th>Usuario</th>
-                            <th>Email</th>
-                            <th class="text-nowrap">Rol</th>
-                            <th>Médico Vinculado</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var user in Model)
-                        {
+        <div class="card users-list-card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle users-table">
+                        <thead>
                             <tr>
-                                <td><strong>@user.UserID</strong></td>
-                                <td>
-                                    <img src="~/images/users/@user.PhotoFilename" 
-                                         alt="@user.Username" 
-                                         class="users-avatar" 
-                                         onerror="this.src='/images/users/default-user.png'" />
-                                </td>
-                                <td>
-                                    <strong>@user.Username</strong>
-                                </td>
-                                <td>
-                                    @if (!string.IsNullOrEmpty(user.Email))
-                                    {
-                                        <span><i class="fas fa-envelope text-secondary"></i> @user.Email</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">Sin email</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (user.Role == "Admin")
-                                    {
-                                        <span class="badge bg-danger"><i class="fas fa-crown"></i> @user.Role</span>
-                                    }
-                                    else if (user.Role == "Doctor")
-                                    {
-                                        <span class="badge bg-primary"><i class="fas fa-user-md"></i> @user.Role</span>
-                                    }
-                                    else if (user.Role == "Laboratorio")
-                                    {
-                                        <span class="badge bg-success"><i class="fas fa-flask"></i> @user.Role</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">@user.Role</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (user.DoctorID.HasValue)
-                                    {
-                                        @if (doctorNames.ContainsKey(user.DoctorID.Value))
+                                <th class="text-nowrap">ID</th>
+                                <th class="text-nowrap">Foto</th>
+                                <th>Usuario</th>
+                                <th>Email</th>
+                                <th class="text-nowrap">Rol</th>
+                                <th>Médico Vinculado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model)
+                            {
+                                <tr>
+                                    <td><strong>@user.UserID</strong></td>
+                                    <td>
+                                        <img src="~/images/users/@user.PhotoFilename"
+                                             alt="@user.Username"
+                                             class="users-avatar"
+                                             onerror="this.src='/images/users/default-user.png'" />
+                                    </td>
+                                    <td>
+                                        <strong>@user.Username</strong>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(user.Email))
                                         {
-                                            <span class="text-success">
-                                                <i class="fas fa-stethoscope"></i> 
-                                                @doctorNames[user.DoctorID.Value]
-                                            </span>
+                                            <span><i class="fas fa-envelope text-secondary"></i> @user.Email</span>
                                         }
                                         else
                                         {
-                                            <span class="text-warning">
-                                                <i class="fas fa-question-circle"></i> 
-                                                ID: @user.DoctorID
-                                            </span>
+                                            <span class="text-muted">Sin email</span>
                                         }
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">N/A</span>
-                                    }
-                                </td>
-                                <td class="text-center">
-                                    @* Solo permitir eliminar si no es el último admin *@
-                                    @if (user.Role != "Admin" || Model.Count(u => u.Role == "Admin") > 1)
-                                    {
-                                        <a asp-action="Delete" asp-route-id="@user.UserID" 
-                                           class="btn btn-sm btn-danger js-delete-user"
-                                           data-username="@user.Username"
-                                           title="Eliminar usuario">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <button class="btn btn-sm btn-secondary" disabled 
-                                                title="No se puede eliminar el único administrador">
-                                            <i class="fas fa-lock"></i>
-                                        </button>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                    </td>
+                                    <td>
+                                        @* Cambio clave: Evaluamos el RoleID en lugar del Role como texto *@
+                                        @if (user.RoleID == 1)
+                                        {
+                                            <span class="badge bg-danger"><i class="fas fa-crown"></i> Admin</span>
+                                        }
+                                        else if (user.RoleID == 3)
+                                        {
+                                            <span class="badge bg-primary"><i class="fas fa-user-md"></i> Doctor</span>
+                                        }
+                                        else if (user.RoleID == 2)
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-flask"></i> Laboratorio</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">ID: @user.RoleID</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (user.DoctorID.HasValue)
+                                        {
+                                            if (doctorNames.ContainsKey(user.DoctorID.Value))
+                                            {
+                                                <span class="text-success">
+                                                    <i class="fas fa-stethoscope"></i>
+                                                    @doctorNames[user.DoctorID.Value]
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-warning">
+                                                    <i class="fas fa-question-circle"></i>
+                                                    ID: @user.DoctorID
+                                                </span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/A</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @* Solo permitir eliminar si no es el último admin (evaluando RoleID) *@
+                                        @if (user.RoleID != 1 || Model.Count(u => u.RoleID == 1) > 1)
+                                        {
+                                            <a asp-action="Delete" asp-route-id="@user.UserID"
+                                               class="btn btn-sm btn-danger js-delete-user"
+                                               data-username="@user.Username"
+                                               title="Eliminar usuario">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-secondary" disabled
+                                                    title="No se puede eliminar el único administrador">
+                                                <i class="fas fa-lock"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                <div class="row">
+                    <div class="col-md-4">
+                        <i class="fas fa-crown text-danger"></i>
+                        Admins: <strong>@Model.Count(u => u.RoleID == 1)</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <i class="fas fa-user-md text-primary"></i>
+                        Doctores: <strong>@Model.Count(u => u.RoleID == 3)</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <i class="fas fa-flask text-success"></i>
+                        Laboratorio: <strong>@Model.Count(u => u.RoleID == 2)</strong>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="card-footer text-muted">
-            <div class="row">
-                <div class="col-md-4">
-                    <i class="fas fa-crown text-danger"></i> 
-                    Admins: <strong>@Model.Count(u => u.Role == "Admin")</strong>
-                </div>
-                <div class="col-md-4">
-                    <i class="fas fa-user-md text-primary"></i> 
-                    Doctores: <strong>@Model.Count(u => u.Role == "Doctor")</strong>
-                </div>
-                <div class="col-md-4">
-                    <i class="fas fa-flask text-success"></i> 
-                    Laboratorio: <strong>@Model.Count(u => u.Role == "Laboratorio")</strong>
-                </div>
-            </div>
-        </div>
-    </div>
     }
 </div>
 

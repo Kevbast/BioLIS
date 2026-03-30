@@ -3,18 +3,8 @@ using BioLIS.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
-#region STORED PROCEDURES REFERENCIA
-/*
- * 1. SP_GetOrderDetails
- * 2. SP_GetRequiredTubes
- * 3. SP_GetReferenceRange
- */
-#endregion
-
 namespace BioLIS.Repositories
 {
-    // --------- Repositorio para gestión de Órdenes y Resultados ----------
-    // Incluye lógica avanzada: tubos necesarios, validación automática de resultados y auditoría
     public class OrderRepository
     {
         private readonly LaboratorioContext context;
@@ -28,17 +18,16 @@ namespace BioLIS.Repositories
 
         #region CRUD GESTIÓN DE ÓRDENES
 
-        // 1. Obtener todas las órdenes
         public async Task<List<Order>> GetAllOrdersAsync()
         {
             return await this.context.Orders
                 .Include(o => o.Patient)
                 .Include(o => o.Doctor)
+                .Where(o => o.IsActive) // Filtro de activos
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
         }
 
-        // 2. Obtener órden por ID
         public async Task<Order?> GetOrderByIdAsync(int orderId)
         {
             return await this.context.Orders
@@ -49,11 +38,10 @@ namespace BioLIS.Repositories
                 .Include(o => o.TestResults)
                     .ThenInclude(tr => tr.LabTest)
                         .ThenInclude(lt => lt.SampleType)
-                .FirstOrDefaultAsync(o => o.OrderID == orderId);
+                .FirstOrDefaultAsync(o => o.OrderID == orderId && o.IsActive);
         }
 
-        // 3. Crear una órden
-        public async Task<Order> CreateOrderAsync(int patientId, int doctorId)
+        public async Task<Order> CreateOrderAsync(int patientId, int doctorId, int? currentUserId = null)
         {
             int newId = await helper.GetNextIdAsync("Orders");
             string orderNumber = await helper.GenerateOrderNumberAsync();
@@ -61,11 +49,14 @@ namespace BioLIS.Repositories
             Order order = new Order
             {
                 OrderID = newId,
+                PublicId = Guid.NewGuid(), // Genera GUID para Azure
                 PatientID = patientId,
                 DoctorID = doctorId,
                 OrderDate = DateTime.Now,
                 OrderNumber = orderNumber,
-                Status = "Pendiente" // Valor por defecto
+                Status = "Pendiente",
+                IsActive = true,
+                CreatedBy = currentUserId // Auditoría
             };
 
             this.context.Orders.Add(order);
@@ -74,13 +65,10 @@ namespace BioLIS.Repositories
             return order;
         }
 
-        // 4. Actualizar órden
-        // Sin uso por ahora: reservado para edición completa de órdenes desde administración.
         public async Task<bool> UpdateOrderAsync(Order order)
         {
-            var existing = await this.context.Orders.FindAsync(order.OrderID);
-            if (existing == null)
-                return false;
+            var existing = await this.context.Orders.FirstOrDefaultAsync(o => o.OrderID == order.OrderID && o.IsActive);
+            if (existing == null) return false;
 
             existing.PatientID = order.PatientID;
             existing.DoctorID = order.DoctorID;
@@ -91,63 +79,57 @@ namespace BioLIS.Repositories
             return true;
         }
 
-        // 5. Delete órden (con eliminación en cascada de resultados)
         public async Task<(bool Success, string Message)> DeleteOrderAsync(int orderId)
         {
-            var order = await this.context.Orders
-                .Include(o => o.TestResults)
-                .FirstOrDefaultAsync(o => o.OrderID == orderId);
+            var order = await this.context.Orders.FirstOrDefaultAsync(o => o.OrderID == orderId && o.IsActive);
+            if (order == null) return (false, "Orden no encontrada.");
 
-            if (order == null)
-                return (false, "Orden no encontrada.");
-
-            int resultsCount = order.TestResults?.Count ?? 0;
-
-            if (order.TestResults != null && order.TestResults.Any())
-            {
-                this.context.TestResults.RemoveRange(order.TestResults);
-            }
-
-            this.context.Orders.Remove(order);
+            // SOFT DELETE
+            order.IsActive = false;
             await this.context.SaveChangesAsync();
 
-            string message = resultsCount > 0
-                ? $"Orden eliminada exitosamente junto con {resultsCount} resultado(s) asociado(s)."
-                : "Orden eliminada exitosamente.";
-
-            return (true, message);
+            return (true, "Orden desactivada exitosamente (Soft Delete).");
         }
 
-        // 6. Obtener órdenes de hoy
         public async Task<List<Order>> GetTodayOrdersAsync()
         {
             var today = DateTime.Today;
             return await this.context.Orders
                 .Include(o => o.Patient)
                 .Include(o => o.Doctor)
-                .Where(o => o.OrderDate.Date == today)
+                .Where(o => o.OrderDate.Date == today && o.IsActive)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
         }
 
-        // 7. Obtener órdenes por paciente
         public async Task<List<Order>> GetOrdersByPatientAsync(int patientId)
         {
             return await this.context.Orders
                 .Include(o => o.Doctor)
-                .Where(o => o.PatientID == patientId)
+                .Where(o => o.PatientID == patientId && o.IsActive)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
         }
 
-        // 8. Obtener órdenes por doctor
         public async Task<List<Order>> GetOrdersByDoctorAsync(int doctorId)
         {
             return await this.context.Orders
                 .Include(o => o.Patient)
                 .Include(o => o.Doctor)
-                .Where(o => o.DoctorID == doctorId)
+                .Where(o => o.DoctorID == doctorId && o.IsActive)
                 .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+        public async Task<List<TestResult>> GetPatientHistoryAsync(int patientId)
+        {
+            return await this.context.TestResults
+                .Include(tr => tr.LabTest)
+                .Include(tr => tr.Order)
+                .Where(tr => tr.Order.PatientID == patientId &&
+                             tr.ResultValue.HasValue &&
+                             tr.Order.IsActive &&
+                             tr.Order.Status == "Aprobada") // Solo resultados validados
+                .OrderBy(tr => tr.Order.OrderDate)
                 .ToListAsync();
         }
 
@@ -155,7 +137,6 @@ namespace BioLIS.Repositories
 
         #region GESTIÓN DE RESULTADOS (CRUD Y AUDITORÍA)
 
-        // 1. Obtener todos los resultados de una orden
         public async Task<List<TestResult>> GetResultsByOrderAsync(int orderId)
         {
             return await this.context.TestResults
@@ -163,15 +144,13 @@ namespace BioLIS.Repositories
                     .ThenInclude(lt => lt.SampleType)
                 .Include(tr => tr.LabTest)
                     .ThenInclude(lt => lt.ReferenceRanges)
-                .Include(tr => tr.EnteredByUser) // <-- ADDED for audit
-                .Include(tr => tr.ModifiedByUser) // <-- ADDED for audit
+                .Include(tr => tr.EnteredByUser)
+                .Include(tr => tr.ModifiedByUser)
                 .Where(tr => tr.OrderID == orderId)
                 .OrderBy(tr => tr.LabTest.TestName)
                 .ToListAsync();
         }
 
-        // 2. Obtener un resultado específico
-        // Sin uso por ahora: reservado para edición puntual de resultados por ID.
         public async Task<TestResult?> GetTestResultByIdAsync(int resultId)
         {
             return await this.context.TestResults
@@ -182,25 +161,19 @@ namespace BioLIS.Repositories
                 .FirstOrDefaultAsync(tr => tr.ResultID == resultId);
         }
 
-        // 3. Obtener órdenes con resultados pendientes
         public async Task<List<Order>> GetOrdersWithPendingResultsAsync()
         {
             return await this.context.Orders
                 .Include(o => o.Patient)
                 .Include(o => o.Doctor)
-                .Where(o => o.Status == "Pendiente" || o.Status == "EnProceso")
+                .Where(o => o.IsActive && (o.Status == "Pendiente" || o.Status == "EnProceso"))
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
         }
 
-        // 4. Agregar resultado a una orden CON VALIDACIÓN AUTOMÁTICA Y AUDITORÍA (SOLO UNA VEZ)
-        public async Task<TestResult> AddTestResultAsync(int orderId, int testId,
-                                                         decimal? resultValue = null,
-                                                         string? notes = null,
-                                                         int? userId = null)
+        public async Task<TestResult> AddTestResultAsync(int orderId, int testId, decimal? resultValue = null, string? notes = null, int? userId = null)
         {
             int newId = await helper.GetNextIdAsync("TestResults");
-
             bool isAbnormal = false;
             string? alertLevel = null;
 
@@ -226,7 +199,6 @@ namespace BioLIS.Repositories
                 Notes = notes
             };
 
-            // Auditoría de primer ingreso (solo si viene con valor y usuario)
             if (resultValue.HasValue && userId.HasValue)
             {
                 testResult.EnteredBy = userId.Value;
@@ -235,19 +207,14 @@ namespace BioLIS.Repositories
 
             this.context.TestResults.Add(testResult);
             await this.context.SaveChangesAsync();
-
             return testResult;
         }
 
-        // 5. Actualizar resultado con auditoría INTELIGENTE (EnteredBy o ModifiedBy) (SOLO UNA VEZ)
-        public async Task<bool> UpdateTestResultWithAuditAsync(
-            int resultId, decimal resultValue, string? alertLevel, int currentUserId, string? notes = null)
+        public async Task<bool> UpdateTestResultWithAuditAsync(int resultId, decimal resultValue, string? alertLevel, int currentUserId, string? notes = null)
         {
             var testResult = await this.context.TestResults.FindAsync(resultId);
-            if (testResult == null)
-                return false;
+            if (testResult == null) return false;
 
-            // 1. AUDITORÍA INTELIGENTE: ¿Es ingreso por primera vez o modificación?
             bool hasPreviousValue = testResult.ResultValue.HasValue;
             decimal? previousValue = testResult.ResultValue;
             string? previousAlertLevel = testResult.AlertLevel;
@@ -259,17 +226,11 @@ namespace BioLIS.Repositories
                 testResult.EnteredDate = DateTime.Now;
             }
 
-            // 2. Normalizar AlertLevel para el CHECK constraint
             string normalizedAlertLevel = NormalizeAlertLevel(alertLevel);
-
-            // 3. Sincronizar IsAbnormal
             testResult.IsAbnormal = (normalizedAlertLevel == AlertLevels.Anormal || normalizedAlertLevel == AlertLevels.Critico);
-
-            // 4. Actualizar valores
             testResult.ResultValue = resultValue;
             testResult.AlertLevel = normalizedAlertLevel;
 
-            // 5. Automatización extra: Si es CRÍTICO
             if (normalizedAlertLevel == AlertLevels.Critico && string.IsNullOrWhiteSpace(notes))
             {
                 testResult.Notes = "Requiere atención médica inmediata";
@@ -283,11 +244,7 @@ namespace BioLIS.Repositories
                 testResult.Notes = notes;
             }
 
-            // 6. Si no es ingreso inicial, registrar modificación al cambiar valor/alerta/notas
-            bool hasAnyChange =
-                previousValue != resultValue ||
-                previousAlertLevel != normalizedAlertLevel ||
-                previousNotes != (testResult.Notes ?? string.Empty);
+            bool hasAnyChange = previousValue != resultValue || previousAlertLevel != normalizedAlertLevel || previousNotes != (testResult.Notes ?? string.Empty);
 
             if (hasPreviousValue && hasAnyChange)
             {
@@ -299,26 +256,19 @@ namespace BioLIS.Repositories
             return true;
         }
 
-        // 6. Eliminar resultado
-        // Sin uso por ahora: reservado para escenarios de corrección/eliminación manual de resultados.
         public async Task<(bool Success, string Message)> DeleteTestResultAsync(int resultId)
         {
             var testResult = await this.context.TestResults.FindAsync(resultId);
-            if (testResult == null)
-                return (false, "Resultado no encontrado.");
+            if (testResult == null) return (false, "Resultado no encontrado.");
 
             this.context.TestResults.Remove(testResult);
             await this.context.SaveChangesAsync();
-
             return (true, "Resultado eliminado exitosamente.");
         }
 
-        // Normalizador de Alertas (Privado)
         private string NormalizeAlertLevel(string? alertLevel)
         {
-            if (string.IsNullOrWhiteSpace(alertLevel))
-                return AlertLevels.Normal;
-
+            if (string.IsNullOrWhiteSpace(alertLevel)) return AlertLevels.Normal;
             return alertLevel.ToUpper() switch
             {
                 "NORMAL" => AlertLevels.Normal,
@@ -337,19 +287,16 @@ namespace BioLIS.Repositories
         {
             var param = new SqlParameter("@OrderID", orderId);
             var sql = "EXEC SP_GetOrderDetails @OrderID";
-            var results = await this.context.Database.SqlQueryRaw<OrderDetailDTO>(sql, param).ToListAsync();
-            return results;
+            return await this.context.Database.SqlQueryRaw<OrderDetailDTO>(sql, param).ToListAsync();
         }
 
         public async Task<List<RequiredTubeDTO>> GetRequiredTubesAsync(int orderId)
         {
             var param = new SqlParameter("@OrderID", orderId);
             var sql = "EXEC SP_GetRequiredTubes @OrderID";
-            var results = await this.context.Database.SqlQueryRaw<RequiredTubeDTO>(sql, param).ToListAsync();
-            return results;
+            return await this.context.Database.SqlQueryRaw<RequiredTubeDTO>(sql, param).ToListAsync();
         }
 
-        // Sin uso por ahora: reservado para consultas directas de rango por stored procedure en módulos futuros.
         public async Task<ReferenceRangeDTO?> GetReferenceRangeAsync(int patientId, int testId)
         {
             var paramPatient = new SqlParameter("@PatientID", patientId);
@@ -364,18 +311,12 @@ namespace BioLIS.Repositories
 
         #region MÉTODOS ESPECIALES
 
-        // Verificar si todos los resultados de una orden tienen valores
-        // Sin uso por ahora: reservado para validaciones rápidas de completitud fuera del flujo actual.
         public async Task<bool> AreAllResultsCompleteAsync(int orderId)
         {
-            var results = await this.context.TestResults
-                .Where(tr => tr.OrderID == orderId)
-                .ToListAsync();
-
+            var results = await this.context.TestResults.Where(tr => tr.OrderID == orderId).ToListAsync();
             return results.Any() && results.All(r => r.ResultValue.HasValue);
         }
 
-        // Obtener resultados anormales de una orden
         public async Task<List<TestResult>> GetAbnormalResultsAsync(int orderId)
         {
             return await this.context.TestResults
@@ -385,12 +326,9 @@ namespace BioLIS.Repositories
                 .ToListAsync();
         }
 
-        // Contar resultados por estado
         public async Task<OrderResultsSummary> GetOrderSummaryAsync(int orderId)
         {
-            var results = await this.context.TestResults
-                .Where(tr => tr.OrderID == orderId)
-                .ToListAsync();
+            var results = await this.context.TestResults.Where(tr => tr.OrderID == orderId).ToListAsync();
 
             return new OrderResultsSummary
             {
@@ -404,60 +342,33 @@ namespace BioLIS.Repositories
             };
         }
 
-        /// <summary>
-        /// Cambiar estado de una orden aplicando máquina de estados:
-        /// Pendiente -> EnProceso -> Completada -> Aprobada
-        /// </summary>
         public async Task<(bool Success, string Message)> ChangeOrderStatusAsync(int orderId, string newStatus, int? approvedBy = null)
         {
-            var order = await this.context.Orders.FindAsync(orderId);
-            if (order == null)
-                return (false, "Orden no encontrada.");
+            var order = await this.context.Orders.FirstOrDefaultAsync(o => o.OrderID == orderId && o.IsActive);
+            if (order == null) return (false, "Orden no encontrada.");
 
             var targetStatus = NormalizeOrderStatus(newStatus);
-            if (string.IsNullOrEmpty(targetStatus))
-                return (false, "Estado de destino inválido.");
+            if (string.IsNullOrEmpty(targetStatus)) return (false, "Estado de destino inválido.");
 
-            var currentStatus = string.IsNullOrWhiteSpace(order.Status)
-                ? OrderStatus.Pendiente
-                : order.Status;
-
-            if (currentStatus == targetStatus)
-                return (true, $"La orden ya estaba en estado '{targetStatus}'.");
+            var currentStatus = string.IsNullOrWhiteSpace(order.Status) ? OrderStatus.Pendiente : order.Status;
+            if (currentStatus == targetStatus) return (true, $"La orden ya estaba en estado '{targetStatus}'.");
 
             if (!IsValidStatusTransition(currentStatus, targetStatus))
-            {
                 return (false, $"Transición inválida: {currentStatus} -> {targetStatus}. Flujo permitido: Pendiente -> EnProceso -> Completada -> Aprobada.");
-            }
 
-            // Regla de negocio: no se puede completar si hay resultados pendientes
             if (targetStatus == OrderStatus.Completada)
             {
                 var totalResults = await this.context.TestResults.CountAsync(tr => tr.OrderID == orderId);
                 var pendingResults = await this.context.TestResults.CountAsync(tr => tr.OrderID == orderId && !tr.ResultValue.HasValue);
 
-                if (totalResults == 0)
-                {
-                    return (false, "La orden no tiene exámenes asociados para completar.");
-                }
-
-                if (pendingResults > 0)
-                {
-                    return (false, $"No se puede marcar como completada. Faltan {pendingResults} resultado(s) por registrar.");
-                }
+                if (totalResults == 0) return (false, "La orden no tiene exámenes asociados para completar.");
+                if (pendingResults > 0) return (false, $"No se puede marcar como completada. Faltan {pendingResults} resultado(s) por registrar.");
             }
 
             order.Status = targetStatus;
 
-            if (targetStatus == OrderStatus.Completada)
-            {
-                order.CompletedDate = DateTime.Now;
-            }
-
-            if (targetStatus == OrderStatus.Aprobada && approvedBy.HasValue)
-            {
-                order.ApprovedBy = approvedBy.Value;
-            }
+            if (targetStatus == OrderStatus.Completada) order.CompletedDate = DateTime.Now;
+            if (targetStatus == OrderStatus.Aprobada && approvedBy.HasValue) order.ApprovedBy = approvedBy.Value;
 
             await this.context.SaveChangesAsync();
             return (true, $"Estado actualizado a '{targetStatus}'.");
@@ -465,9 +376,7 @@ namespace BioLIS.Repositories
 
         private static string? NormalizeOrderStatus(string? status)
         {
-            if (string.IsNullOrWhiteSpace(status))
-                return null;
-
+            if (string.IsNullOrWhiteSpace(status)) return null;
             return status.Trim().ToUpperInvariant() switch
             {
                 "PENDIENTE" => OrderStatus.Pendiente,
@@ -498,6 +407,12 @@ namespace BioLIS.Repositories
         public int OrderID { get; set; }
         public string OrderNumber { get; set; } = string.Empty;
         public DateTime OrderDate { get; set; }
+
+        // ¡NUEVO! Resumen IA y Teléfonos desde el SP
+        public string? AISummary { get; set; }
+        public string? PatientPhone { get; set; }
+        public string? DoctorPhone { get; set; }
+
         public int PatientID { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
@@ -546,11 +461,9 @@ namespace BioLIS.Repositories
         public decimal? MaxVal { get; set; }
         public string? ErrorMessage { get; set; }
     }
-
     #endregion
 
     #region CLASES AUXILIARES
-
     public class OrderResultsSummary
     {
         public int TotalResults { get; set; }
@@ -561,11 +474,8 @@ namespace BioLIS.Repositories
         public int CriticalResults { get; set; }
         public int NoRangeResults { get; set; }
 
-        public decimal CompletionPercentage =>
-            TotalResults > 0 ? (decimal)CompletedResults / TotalResults * 100 : 0;
-
+        public decimal CompletionPercentage => TotalResults > 0 ? (decimal)CompletedResults / TotalResults * 100 : 0;
         public bool IsComplete => CompletedResults == TotalResults && TotalResults > 0;
     }
-
     #endregion
 }

@@ -26,9 +26,14 @@
         </h2>
         @if (role == "Admin")
         {
-            <a asp-action="Create" class="btn btn-success">
-                <i class="fas fa-plus"></i> Registrar Médico
-            </a>
+            <div class="d-flex gap-2">
+                <a asp-action="Inactive" class="btn btn-outline-secondary">
+                    <i class="fas fa-user-clock"></i> Médicos desactivados
+                </a>
+                <a asp-action="Create" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Registrar Médico
+                </a>
+            </div>
         }
     </div>
 

@@ -55,6 +55,14 @@
                             <small class="form-text text-muted">Opcional. Para notificaciones y contacto.</small>
                         </div>
 
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label">
+                                <i class="fas fa-phone"></i> Teléfono
+                            </label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="Ej: +34 600 123 456" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+
                         <!-- Botones -->
                         <div class="doctor-form-actions mt-4">
                             <a asp-action="Index" class="btn btn-secondary">

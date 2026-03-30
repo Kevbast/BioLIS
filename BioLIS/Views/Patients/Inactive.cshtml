@@ -1,0 +1,88 @@
+@model IEnumerable<BioLIS.Models.Patient>
+
+<link rel="stylesheet" href="~/css/patients.css" asp-append-version="true" />
+
+@{
+    ViewData["Title"] = "Pacientes desactivados";
+    var swalType = TempData["SwalType"]?.ToString();
+    var swalTitle = TempData["SwalTitle"]?.ToString();
+    var swalMessage = TempData["SwalMessage"]?.ToString();
+}
+
+<div class="container mt-4 patients-page">
+    <div class="patients-header">
+        <h2><i class="fas fa-user-clock text-secondary"></i> Pacientes desactivados</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a pacientes activos
+        </a>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center py-4">
+            <i class="fas fa-info-circle"></i> No hay pacientes desactivados.
+        </div>
+    }
+    else
+    {
+        <div class="card patient-list-card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover patient-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var patient in Model)
+                            {
+                                <tr>
+                                    <td>@patient.PatientID</td>
+                                    <td>@patient.FirstName</td>
+                                    <td>@patient.LastName</td>
+                                    <td>@(string.IsNullOrWhiteSpace(patient.Email) ? "Sin email" : patient.Email)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(patient.PhoneNumber) ? "Sin teléfono" : patient.PhoneNumber)</td>
+                                    <td class="text-center">
+                                        <form asp-action="Reactivate" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="patientId" value="@patient.PatientID" />
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-rotate-left"></i> Reactivar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        (function () {
+            const swalType = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalType));
+            const swalTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalTitle));
+            const swalMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalMessage));
+
+            if (swalType && swalTitle && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: swalType,
+                    title: swalTitle,
+                    text: swalMessage ?? '',
+                    confirmButtonColor: '#4e73df'
+                });
+            }
+        })();
+    </script>
+}

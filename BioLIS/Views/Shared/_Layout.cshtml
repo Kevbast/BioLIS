@@ -76,7 +76,7 @@
     <header>
         @{
             var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-            var isAdminSection = currentController is "Users" or "LabTests" or "SampleTypes" or "ReferenceRanges";
+            var isAdminSection = currentController is "Users" or "Patients" or "Doctors" or "Orders" or "LabTests" or "SampleTypes" or "ReferenceRanges";
         }
 
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border app-navbar mb-3">
@@ -133,6 +133,21 @@
                                     <li>
                                         <a class="dropdown-item" asp-controller="Users" asp-action="Index">
                                             Gestión de Usuarios
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Users" asp-action="Inactive">
+                                            Usuarios desactivados
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Patients" asp-action="Inactive">
+                                            Pacientes desactivados
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Doctors" asp-action="Inactive">
+                                            Médicos desactivados
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider" /></li>

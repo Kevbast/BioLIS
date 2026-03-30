@@ -3,10 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BioLIS.Data
 {
-    public class LaboratorioContext:DbContext
+    public class LaboratorioContext : DbContext
     {
         public LaboratorioContext(DbContextOptions<LaboratorioContext> options) : base(options) { }
 
+        public DbSet<Role> Roles { get; set; }
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Patient> Patients { get; set; }
         public DbSet<SampleType> SampleTypes { get; set; }
@@ -17,11 +18,20 @@ namespace BioLIS.Data
         public DbSet<User> Users { get; set; }
         public DbSet<UserSecurity> UsersSecurity { get; set; }
         public DbSet<UserValidation> Usersvalidations { get; set; }
-
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<OrderShareToken> OrderShareTokens { get; set; }
+        public DbSet<IntegrationEvent> IntegrationEvents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Roles
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.ToTable("Roles");
+                entity.HasKey(e => e.RoleID);
+            });
 
             // Configuración de entidades
             modelBuilder.Entity<Doctor>(entity =>
@@ -31,6 +41,7 @@ namespace BioLIS.Data
                 entity.Property(e => e.FullName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.LicenseNumber).HasMaxLength(50);
                 entity.Property(e => e.Email).HasMaxLength(100);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(20);
 
                 entity.HasIndex(e => e.LicenseNumber)
                       .IsUnique()
@@ -41,11 +52,13 @@ namespace BioLIS.Data
             {
                 entity.ToTable("Patients");
                 entity.HasKey(e => e.PatientID);
+                entity.Property(e => e.PublicId).HasDefaultValueSql("NEWID()"); // GUID automático
                 entity.Property(e => e.FirstName).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.LastName).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Gender).IsRequired().HasMaxLength(1);
                 entity.Property(e => e.BirthDate).IsRequired();
                 entity.Property(e => e.Email).HasMaxLength(100);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(20);
                 entity.Property(e => e.PhotoFilename).HasMaxLength(200);
 
                 entity.ToTable(t => t.HasCheckConstraint("CK_Patients_Gender", "[Gender] IN ('M','F')"));
@@ -102,6 +115,7 @@ namespace BioLIS.Data
             {
                 entity.ToTable("Orders");
                 entity.HasKey(e => e.OrderID);
+                entity.Property(e => e.PublicId).HasDefaultValueSql("NEWID()"); // GUID Automático
                 entity.Property(e => e.OrderDate).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.OrderNumber).HasMaxLength(20);
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(20).HasDefaultValue("Pendiente");
@@ -175,9 +189,13 @@ namespace BioLIS.Data
                       .IsUnique()
                       .HasFilter("[Email] IS NOT NULL AND [Email] <> ''");
                 entity.Property(e => e.PasswordText).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Role).IsRequired().HasMaxLength(20);
 
-                entity.ToTable(t => t.HasCheckConstraint("CK_Users_Role", "[Role] IN ('Admin','Doctor','Laboratorio')"));
+                // NOTA IMPORTANTE: Se elimina el CK_Users_Role porque ahora usamos RoleID como ForeignKey
+
+                entity.HasOne(d => d.Role)
+                      .WithMany()
+                      .HasForeignKey(d => d.RoleID)
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(d => d.Doctor)
                       .WithMany()
@@ -185,11 +203,23 @@ namespace BioLIS.Data
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-            //es una vista sin key
+            // OrdenShareTokens
+            modelBuilder.Entity<OrderShareToken>(entity =>
+            {
+                entity.ToTable("OrderShareTokens");
+                entity.HasKey(e => e.TokenID);
+                entity.Property(e => e.TokenID).HasDefaultValueSql("NEWID()"); // GUID automático
+            });
+
+            // IntegrationEvents
+            modelBuilder.Entity<IntegrationEvent>(entity =>
+            {
+                entity.ToTable("IntegrationEvents");
+                entity.HasKey(e => e.EventID);
+            });
+
+            // Vista sin key
             modelBuilder.Entity<UserValidation>().ToView("V_UserValidation").HasNoKey();
-
         }
-
     }
-
 }

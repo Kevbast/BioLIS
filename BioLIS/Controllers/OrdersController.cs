@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeUsers] // Base: requiere autenticación
+    [AuthorizeUsers]
     public class OrdersController : Controller
     {
         private readonly OrderRepository orderRepo;
@@ -26,15 +26,11 @@ namespace BioLIS.Controllers
             this.pdfReportService = pdfReportService;
         }
 
-        // ========================================
-        // INDEX: Ver órdenes según rol
-        // ========================================
         public async Task<IActionResult> Index()
         {
             var role = HttpContext.User.FindFirstValue(ClaimTypes.Role);
             List<Order> orders;
 
-            // Si es Doctor, solo ver SUS órdenes
             if (role == "Doctor")
             {
                 var doctorIdClaim = HttpContext.User.FindFirstValue("DoctorID");
@@ -49,16 +45,12 @@ namespace BioLIS.Controllers
             }
             else
             {
-                // Admin y Laboratorio ven todas
                 orders = await orderRepo.GetAllOrdersAsync();
             }
 
             return View(orders);
         }
 
-        // ========================================
-        // CREATE: Todos pueden crear órdenes
-        // ========================================
         [AuthorizeUsers(Policy = "AllRoles")]
         public async Task<IActionResult> Create()
         {
@@ -79,7 +71,6 @@ namespace BioLIS.Controllers
             var labTests = await catalogRepo.GetLabTestsAsync();
             ViewData["LabTests"] = labTests;
 
-            // Si es Doctor, pre-seleccionar su DoctorID
             var role = HttpContext.User.FindFirstValue(ClaimTypes.Role);
             if (role == "Doctor")
             {
@@ -90,13 +81,11 @@ namespace BioLIS.Controllers
             return View();
         }
 
-        // POST: Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AuthorizeUsers(Policy = "AllRoles")]
         public async Task<IActionResult> Create(int patientId, int doctorId, List<int> selectedTests)
         {
-            // Validar que sea su propio doctorId si es Doctor
             var role = HttpContext.User.FindFirstValue(ClaimTypes.Role);
             if (role == "Doctor")
             {
@@ -123,10 +112,10 @@ namespace BioLIS.Controllers
                 return RedirectToAction("Create");
             }
 
-            var order = await orderRepo.CreateOrderAsync(patientId, doctorId);
-
             var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
             int? userId = userIdClaim != null ? int.Parse(userIdClaim) : null;
+
+            var order = await orderRepo.CreateOrderAsync(patientId, doctorId, userId);
 
             foreach (var testId in selectedTests)
             {
@@ -139,28 +128,18 @@ namespace BioLIS.Controllers
             return RedirectToAction("Details", new { orderId = order.OrderID });
         }
 
-        // ========================================
-        // DETAILS: Ver detalles (con control de acceso para Doctor)
-        // ========================================
         public async Task<IActionResult> Details(int orderId)
         {
             var order = await orderRepo.GetOrderByIdAsync(orderId);
-            if (order == null)
-            {
-                return NotFound();
-            }
+            if (order == null) return NotFound();
 
-            // Verificar permisos: Doctor solo puede ver sus órdenes
             var role = HttpContext.User.FindFirstValue(ClaimTypes.Role);
             if (role == "Doctor")
             {
                 var doctorIdClaim = HttpContext.User.FindFirstValue("DoctorID");
                 if (int.TryParse(doctorIdClaim, out int doctorId))
                 {
-                    if (order.DoctorID != doctorId)
-                    {
-                        return RedirectToAction("ErrorAcceso", "Auth");
-                    }
+                    if (order.DoctorID != doctorId) return RedirectToAction("ErrorAcceso", "Auth");
                 }
             }
 
@@ -170,17 +149,11 @@ namespace BioLIS.Controllers
             return View(order);
         }
 
-        // ========================================
-        // DELETE: Solo Admin
-        // ========================================
         [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int orderId)
         {
             var order = await orderRepo.GetOrderByIdAsync(orderId);
-            if (order == null)
-            {
-                return NotFound();
-            }
+            if (order == null) return NotFound();
 
             return View(order);
         }
@@ -208,17 +181,11 @@ namespace BioLIS.Controllers
             return RedirectToAction("Index");
         }
 
-        // ========================================
-        // ENTER RESULTS: Solo Admin y Laboratorio
-        // ========================================
         [AuthorizeUsers(Policy = "AdminOrLab")]
         public async Task<IActionResult> EnterResults(int orderId)
         {
             var order = await orderRepo.GetOrderByIdAsync(orderId);
-            if (order == null)
-            {
-                return NotFound();
-            }
+            if (order == null) return NotFound();
 
             var results = await orderRepo.GetResultsByOrderAsync(orderId);
             ViewData["Results"] = results;
@@ -235,10 +202,7 @@ namespace BioLIS.Controllers
         public async Task<IActionResult> EnterResults(int orderId, Dictionary<int, string> resultValues, Dictionary<int, string> notes)
         {
             var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(userIdClaim, out int userId))
-            {
-                return RedirectToAction("Login", "Auth");
-            }
+            if (!int.TryParse(userIdClaim, out int userId)) return RedirectToAction("Login", "Auth");
 
             int updatedCount = 0;
             int errorCount = 0;
@@ -248,8 +212,7 @@ namespace BioLIS.Controllers
                 int resultId = kvp.Key;
                 string valueStr = kvp.Value;
 
-                if (string.IsNullOrWhiteSpace(valueStr))
-                    continue;
+                if (string.IsNullOrWhiteSpace(valueStr)) continue;
 
                 if (decimal.TryParse(valueStr, out decimal resultValue))
                 {
@@ -267,16 +230,12 @@ namespace BioLIS.Controllers
                             resultValue
                         );
 
-                        string alertLevel = validation.Status;
-
                         bool success = await orderRepo.UpdateTestResultWithAuditAsync(
-                            resultId, resultValue, alertLevel, userId, note
+                            resultId, resultValue, validation.Status, userId, note
                         );
 
-                        if (success)
-                            updatedCount++;
-                        else
-                            errorCount++;
+                        if (success) updatedCount++;
+                        else errorCount++;
                     }
                 }
                 else
@@ -285,7 +244,6 @@ namespace BioLIS.Controllers
                 }
             }
 
-            // Automatización: Cambiar el estado a "EnProceso" si se actualizaron resultados y estaba en "Pendiente"
             if (updatedCount > 0)
             {
                 var currentOrder = await orderRepo.GetOrderByIdAsync(orderId);
@@ -309,18 +267,12 @@ namespace BioLIS.Controllers
             return RedirectToAction("Details", new { orderId });
         }
 
-        // ========================================
-        // CHANGE STATUS: Marcar como Completada o Aprobada
-        // ========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangeStatus(int orderId, string status)
         {
             var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(userIdClaim, out int userId))
-            {
-                return RedirectToAction("Login", "Auth");
-            }
+            if (!int.TryParse(userIdClaim, out int userId)) return RedirectToAction("Login", "Auth");
 
             var role = HttpContext.User.FindFirstValue(ClaimTypes.Role);
             var order = await orderRepo.GetOrderByIdAsync(orderId);
@@ -330,17 +282,14 @@ namespace BioLIS.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Reglas de estado por rol
             if (status == "Aprobada")
             {
-                // Solo Doctor puede aprobar
                 if (role != "Doctor")
                 {
                     TempData["ErrorMessage"] = "Solo el médico puede aprobar la orden.";
                     return RedirectToAction("Details", new { orderId });
                 }
 
-                // El doctor solo puede aprobar sus propias órdenes
                 var doctorIdClaim = HttpContext.User.FindFirstValue("DoctorID");
                 if (!int.TryParse(doctorIdClaim, out int doctorId) || order.DoctorID != doctorId)
                 {
@@ -373,35 +322,24 @@ namespace BioLIS.Controllers
             return RedirectToAction("Details", new { orderId });
         }
 
-        // ========================================
-        // PRINT: Todos pueden imprimir (con control de acceso)
-        // ========================================
         public async Task<IActionResult> Print(int orderId)
         {
             var order = await orderRepo.GetOrderByIdAsync(orderId);
-            if (order == null)
-            {
-                return NotFound();
-            }
+            if (order == null) return NotFound();
 
-            // BLOQUEO DE SEGURIDAD: Solo se imprime si está Aprobada
             if (order.Status != "Aprobada")
             {
                 TempData["ErrorMessage"] = "Acceso denegado: La orden debe estar 'Aprobada' por el médico para poder imprimirse.";
                 return RedirectToAction("Details", new { orderId = orderId });
             }
 
-            // Verificar permisos: Los doctores solo pueden imprimir sus órdenes
             var role = HttpContext.User.FindFirstValue(ClaimTypes.Role);
             if (role == "Doctor")
             {
                 var doctorIdClaim = HttpContext.User.FindFirstValue("DoctorID");
                 if (int.TryParse(doctorIdClaim, out int doctorId))
                 {
-                    if (order.DoctorID != doctorId)
-                    {
-                        return RedirectToAction("ErrorAcceso", "Auth");
-                    }
+                    if (order.DoctorID != doctorId) return RedirectToAction("ErrorAcceso", "Auth");
                 }
             }
 

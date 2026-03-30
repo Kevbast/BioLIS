@@ -148,8 +148,9 @@ async Task InitializeDefaultAdminAsync(IServiceProvider services)
                 Email = "admin@biolablis.com",
                 PhotoFilename = "default.png",
                 PasswordText = "12345",
-                Role = UserRoles.Admin,
-                DoctorID = null
+                RoleID = 1, // <-- SOLUCIÓN: 1 es el RoleID para 'Admin'
+                DoctorID = null,
+                IsActive = true
             };
 
             string salt = HelperTools.GenerateSalt();
@@ -167,8 +168,6 @@ async Task InitializeDefaultAdminAsync(IServiceProvider services)
             await context.SaveChangesAsync();
 
             Console.WriteLine("✅ Usuario admin creado");
-            Console.WriteLine("   Usuario: admin");
-            Console.WriteLine("   Contraseña: 12345");
         }
     }
     catch (Exception ex)

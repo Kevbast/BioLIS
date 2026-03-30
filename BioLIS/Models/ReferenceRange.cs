@@ -15,10 +15,10 @@ namespace BioLIS.Models
         public int TestID { get; set; }
 
         [ForeignKey("TestID")]
-        public LabTest LabTest { get; set; }
+        public LabTest LabTest { get; set; } = null!;
 
         [Column("Gender")]
-        public string Gender { get; set; }
+        public string Gender { get; set; } = null!;
 
         [Column("MinAgeYear")]
         public int MinAgeYear { get; set; }
@@ -31,5 +31,10 @@ namespace BioLIS.Models
 
         [Column("MaxVal")]
         public decimal MaxVal { get; set; }
+
+        // --- CAMPO ENTERPRISE ---
+        [Column("IsActive")]
+        public bool IsActive { get; set; } = true;
+        // ------------------------
     }
 }

@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -23,12 +22,10 @@ namespace BioLIS.Controllers
         // GET: Auth/Login
         public IActionResult Login()
         {
-            // Si ya está autenticado, redirigir al home
             if (User.Identity?.IsAuthenticated ?? false)
             {
                 return RedirectToAction("Index", "Home");
             }
-
             return View();
         }
 
@@ -45,6 +42,7 @@ namespace BioLIS.Controllers
 
             try
             {
+                // userValidation contiene la columna Role como TEXTO gracias a la Vista SQL
                 var userValidation = await this.authRepo.ValidateCredentialsAsync(username, password);
 
                 if (userValidation == null)
@@ -67,11 +65,13 @@ namespace BioLIS.Controllers
 
                 identity.AddClaim(new Claim(ClaimTypes.Name, username));
                 identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()));
-                identity.AddClaim(new Claim(ClaimTypes.Role, user.Role));
+
+                // AQUÍ ESTABA EL ERROR: Usamos userValidation.Role (que es string)
+                identity.AddClaim(new Claim(ClaimTypes.Role, userValidation.Role));
 
                 identity.AddClaim(new Claim("Username", user.Username));
                 identity.AddClaim(new Claim("UserID", user.UserID.ToString()));
-                identity.AddClaim(new Claim("Role", user.Role));
+                identity.AddClaim(new Claim("Role", userValidation.Role));
 
                 if (!string.IsNullOrEmpty(user.Email))
                 {
@@ -88,7 +88,7 @@ namespace BioLIS.Controllers
                     identity.AddClaim(new Claim("DoctorID", user.DoctorID.Value.ToString()));
                 }
 
-                if (user.Role == "Admin")
+                if (userValidation.Role == "Admin")
                 {
                     identity.AddClaim(new Claim("Admin", "Administrador del sistema"));
                 }
@@ -107,40 +107,25 @@ namespace BioLIS.Controllers
 
                 return RedirectToAction("Index", "Home");
             }
-            catch (CryptographicException ex)
+            catch (Exception ex)
             {
-                this.logger.LogWarning(ex, "Error criptográfico durante Login para el usuario {Username}", username);
-                ViewData["LoginError"] = "Credenciales incorrectas";
-                return View();
-            }
-            catch (InvalidOperationException ex)
-            {
-                this.logger.LogWarning(ex, "Error de operación durante Login para el usuario {Username}", username);
-                ViewData["LoginError"] = "Credenciales incorrectas";
-                return View();
-            }
-            catch (DbUpdateException ex)
-            {
-                this.logger.LogError(ex, "Error de base de datos durante Login para el usuario {Username}", username);
+                this.logger.LogError(ex, "Error durante Login para el usuario {Username}", username);
                 ViewData["LoginError"] = "Credenciales incorrectas";
                 return View();
             }
         }
 
-        // GET: Auth/Logout
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Auth");
         }
 
-        // GET: Auth/ErrorAcceso
         public IActionResult ErrorAcceso()
         {
             return View();
         }
 
-        // GET: Auth/AccessDenied (alias para compatibilidad)
         public IActionResult AccessDenied()
         {
             return View("ErrorAcceso");

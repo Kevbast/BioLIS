@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeUsers] // Base: requiere autenticación
+    [AuthorizeUsers]
     public class UsersController : Controller
     {
         private readonly AuthRepository authRepo;
@@ -22,7 +22,6 @@ namespace BioLIS.Controllers
             this.pathHelper = pathHelper;
         }
 
-        // GET: Users
         [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Index()
         {
@@ -43,7 +42,13 @@ namespace BioLIS.Controllers
             return View(usersWithDetails);
         }
 
-        // GET: Users/Create
+        [AuthorizeUsers(Policy = "AdminOnly")]
+        public async Task<IActionResult> Inactive()
+        {
+            var users = await this.authRepo.GetInactiveUsersAsync();
+            return View(users);
+        }
+
         [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Create()
         {
@@ -68,7 +73,6 @@ namespace BioLIS.Controllers
             return View();
         }
 
-        // POST: Users/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AuthorizeUsers(Policy = "AdminOnly")]
@@ -113,15 +117,35 @@ namespace BioLIS.Controllers
                 TempData["SwalMessage"] = result.Message;
                 return RedirectToAction("Index");
             }
-            else
-            {
-                TempData["ErrorMessage"] = result.Message;
-                await LoadCreateViewDataAsync();
-                return View();
-            }
+
+            TempData["ErrorMessage"] = result.Message;
+            await LoadCreateViewDataAsync();
+            return View();
         }
 
-        // Método auxiliar
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AuthorizeUsers(Policy = "AdminOnly")]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            var result = await this.authRepo.ReactivateUserAsync(id);
+
+            if (result.Success)
+            {
+                TempData["SwalType"] = "success";
+                TempData["SwalTitle"] = "Usuario reactivado";
+                TempData["SwalMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["SwalType"] = "error";
+                TempData["SwalTitle"] = "No se pudo reactivar";
+                TempData["SwalMessage"] = result.Message;
+            }
+
+            return RedirectToAction("Inactive");
+        }
+
         private async Task LoadCreateViewDataAsync()
         {
             var existingUsers = await this.authRepo.GetAllUsersAsync();
@@ -144,7 +168,6 @@ namespace BioLIS.Controllers
             ViewData["Roles"] = UserRoles.GetAll();
         }
 
-        // GET: Users/Delete
         [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -159,7 +182,6 @@ namespace BioLIS.Controllers
             return View(user);
         }
 
-        // POST: Users/Delete
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         [AuthorizeUsers(Policy = "AdminOnly")]
@@ -170,7 +192,7 @@ namespace BioLIS.Controllers
             if (result.Success)
             {
                 TempData["SwalType"] = "success";
-                TempData["SwalTitle"] = "Usuario eliminado";
+                TempData["SwalTitle"] = "Usuario desactivado";
                 TempData["SwalMessage"] = result.Message;
             }
             else
@@ -183,10 +205,7 @@ namespace BioLIS.Controllers
             return RedirectToAction("Index");
         }
 
-        // ========================================
-        // CHANGE PASSWORD - CUALQUIER USUARIO AUTENTICADO
-        // ========================================
-        [AuthorizeUsers] // Sobreescribe la policy de clase - permite a cualquier autenticado
+        [AuthorizeUsers]
         public async Task<IActionResult> ChangePassword()
         {
             var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -241,13 +260,17 @@ namespace BioLIS.Controllers
                 }
             }
 
+            // BUSCAR EL ROL EXACTO PARA ACTUALIZAR (Ya que ahora la tabla Users tiene RoleID)
+            var roleEntity = await this.catalogRepo.Context.Roles.FindAsync(currentUser.RoleID);
+            string currentRoleName = roleEntity?.RoleName ?? "Laboratorio";
+
             var result = await this.authRepo.UpdateUserAsync(
                 userId,
                 username,
                 email,
                 photoFilename,
                 null,
-                currentUser.Role,
+                currentRoleName,
                 currentUser.DoctorID
             );
 
@@ -269,7 +292,7 @@ namespace BioLIS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [AuthorizeUsers] // Sobreescribe la policy de clase
+        [AuthorizeUsers]
         public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
         {
             if (newPassword != confirmPassword)
@@ -287,7 +310,6 @@ namespace BioLIS.Controllers
                 return View(currentUserForError);
             }
 
-            // CAMBIADO: Usar Claims en lugar de Session
             var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
@@ -314,7 +336,6 @@ namespace BioLIS.Controllers
             }
         }
 
-        // GET: Users/Stats
         [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Stats()
         {

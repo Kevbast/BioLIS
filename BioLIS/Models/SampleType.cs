@@ -12,13 +12,17 @@ namespace BioLIS.Models
         public int SampleID { get; set; }
 
         [Column("SampleName")]
-        public string SampleName { get; set; }
+        public string SampleName { get; set; } = null!;
 
         [Column("ContainerColor")]
-        public string ContainerColor { get; set; }
+        public string? ContainerColor { get; set; }
 
-        //--------NAVEGACIÓN INVERSA (Relaciones)-----------
-        // Exámenes que usan este tipo de muestra
+        // --- CAMPOS ENTERPRISE ---
+        [Column("IsActive")]
+        public bool IsActive { get; set; } = true;
+        // -------------------------
+
+        //---------NAVEGACIÓN INVERSA (Relaciones)------------
         public virtual ICollection<LabTest> LabTests { get; set; } = new List<LabTest>();
     }
 }

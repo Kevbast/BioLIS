@@ -9,122 +9,142 @@ namespace BioLIS.Repositories
         private LaboratorioContext context;
         private HelperRepository helper;
 
-        // Exponer el contexto para acceso desde controllers
         public LaboratorioContext Context => context;
 
-        //Context y Helper
         public CatalogRepository(LaboratorioContext context, HelperRepository helper)
         {
             this.context = context;
             this.helper = helper;
         }
 
-#region PACIENTES
-        //1.Obtener todos los pacientes
+        #region PACIENTES
+
         public async Task<List<Patient>> GetPatientsAsync()
         {
-            return await this.context.Patients.ToListAsync();
+            return await this.context.Patients.Where(p => p.IsActive).ToListAsync();
         }
-        //2.Obtener paciente por ID
+
         public async Task<Patient?> GetPatientByIdAsync(int id)
         {
-            return await this.context.Patients.FindAsync(id);
+            return await this.context.Patients.FirstOrDefaultAsync(p => p.PatientID == id && p.IsActive);
         }
-        //3.Nuevo paciente(revisar si hay que cambiarlo más adelante)------
+
+        // Añadido phoneNumber y currentUserId para auditoría
         public async Task CreatePatientAsync(string nombre, string apellido,
                                              string genero, DateTime fechaNac,
-                                             string email, string foto)
+                                             string email, string foto, string? phoneNumber = null, int? currentUserId = null)
         {
-            //ID nuevo generado
             int newId = await helper.GetNextIdAsync("Patients");
 
             Patient paciente = new Patient
             {
                 PatientID = newId,
+                PublicId = Guid.NewGuid(),
                 FirstName = nombre,
                 LastName = apellido,
                 Gender = genero,
                 BirthDate = fechaNac,
                 Email = email,
-                PhotoFilename = foto
+                PhoneNumber = phoneNumber,
+                PhotoFilename = foto,
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                CreatedBy = currentUserId
             };
 
             this.context.Patients.Add(paciente);
             await this.context.SaveChangesAsync();
         }
-        //REVISAR LOS UPDATES EN GENERAL
-        // 4. ACTUALIZAR PACIENTE 
+
         public async Task<bool> UpdatePatientAsync(int patientId, string nombre, string apellido,
                                              string genero, DateTime fechaNac,
-                                             string email, string foto)
+                                             string email, string foto, string? phoneNumber = null, int? currentUserId = null)
         {
-            Patient paciente = await this.context.Patients.FindAsync(patientId);
-            if (paciente == null)
-                return false;
+            Patient paciente = await this.context.Patients.FirstOrDefaultAsync(p => p.PatientID == patientId && p.IsActive);
+            if (paciente == null) return false;
 
             paciente.FirstName = nombre;
             paciente.LastName = apellido;
             paciente.Gender = genero;
             paciente.BirthDate = fechaNac;
             paciente.Email = email;
+            paciente.PhoneNumber = phoneNumber;
             paciente.PhotoFilename = foto;
+            paciente.UpdatedAt = DateTime.Now;
+            paciente.UpdatedBy = currentUserId; // Auditoría
 
             await this.context.SaveChangesAsync();
             return true;
         }
-        // 5. ELIMINAR (Delete)
-        public async Task<(bool Success, string Message)> DeletePatientAsync(int id)
-        {
-            //Verifico si se puede borrar
-            var validation = await this.helper.CanDeleteAsync("Patients", id);
 
-            if (!validation.CanDelete)
-                return (false, validation.Message);
+        public async Task<(bool Success, string Message)> DeletePatientAsync(int id, int? currentUserId = null)
+        {
+            var validation = await this.helper.CanDeleteAsync("Patients", id);
+            if (!validation.CanDelete) return (false, validation.Message);
 
             var patient = await this.context.Patients.FindAsync(id);
-            if (patient == null)
-                return (false, "Paciente no encontrado.");
+            if (patient == null) return (false, "Paciente no encontrado.");
 
-            this.context.Patients.Remove(patient);
+            // SOFT DELETE
+            patient.IsActive = false;
+            patient.UpdatedAt = DateTime.Now;
+            patient.UpdatedBy = currentUserId;
 
             await this.context.SaveChangesAsync();
-
-            return (true, "Paciente eliminado exitosamente.");
+            return (true, "Paciente desactivado exitosamente.");
         }
 
-        // 6.Buscar pacientes por nombre o apellido
-        // Sin uso por ahora: reservado para búsqueda avanzada de pacientes en próximos filtros.
         public async Task<List<Patient>> SearchPatientsAsync(string searchTerm)
         {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return await GetPatientsAsync();
+            if (string.IsNullOrWhiteSpace(searchTerm)) return await GetPatientsAsync();
 
             searchTerm = searchTerm.ToLower();
 
             return await this.context.Patients
-                .Where(p => p.FirstName.ToLower().Contains(searchTerm) ||
-                           p.LastName.ToLower().Contains(searchTerm))
+                .Where(p => p.IsActive && (p.FirstName.ToLower().Contains(searchTerm) || p.LastName.ToLower().Contains(searchTerm)))
                 .OrderBy(p => p.LastName)
                 .ToListAsync();
         }
 
+        public async Task<List<Patient>> GetInactivePatientsAsync()
+        {
+            return await this.context.Patients
+                .Where(p => !p.IsActive)
+                .OrderByDescending(p => p.UpdatedAt ?? p.CreatedAt)
+                .ToListAsync();
+        }
 
-#endregion
+        public async Task<(bool Success, string Message)> ReactivatePatientAsync(int id, int? currentUserId = null)
+        {
+            var patient = await this.context.Patients
+                .FirstOrDefaultAsync(p => p.PatientID == id && !p.IsActive);
 
-#region DOCTORES 
-        //1.Obtener doctores
+            if (patient == null)
+                return (false, "Paciente no encontrado o ya está activo.");
+
+            patient.IsActive = true;
+            patient.UpdatedAt = DateTime.Now;
+            patient.UpdatedBy = currentUserId;
+
+            await this.context.SaveChangesAsync();
+            return (true, "Paciente reactivado exitosamente.");
+        }
+
+        #endregion
+
+        #region DOCTORES 
+
         public async Task<List<Doctor>> GetDoctorsAsync()
         {
-            return await this.context.Doctors.OrderBy(d => d.DoctorID).ToListAsync();
+            return await this.context.Doctors.Where(d => d.IsActive).OrderBy(d => d.DoctorID).ToListAsync();
         }
-        
-        //2.Obtener doctor por ID
+
         public async Task<Doctor?> GetDoctorByIdAsync(int id)
         {
-            return await this.context.Doctors.FindAsync(id);
+            return await this.context.Doctors.FirstOrDefaultAsync(d => d.DoctorID == id && d.IsActive);
         }
-        //3.Insertar Doctor
-        public async Task CreateDoctorAsync(string fullName, string license, string email)
+
+        public async Task CreateDoctorAsync(string fullName, string license, string email, string? phoneNumber = null, int? currentUserId = null)
         {
             int newId = await helper.GetNextIdAsync("Doctors");
 
@@ -133,64 +153,101 @@ namespace BioLIS.Repositories
                 DoctorID = newId,
                 FullName = fullName,
                 LicenseNumber = license,
-                Email = email
+                Email = email,
+                PhoneNumber = phoneNumber,
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                CreatedBy = currentUserId
             };
 
             this.context.Doctors.Add(doctor);
             await this.context.SaveChangesAsync();
         }
 
-        //4.Actualizar Doctor
-        public async Task<bool> UpdateDoctorAsync(Doctor doctor)
+        public async Task<bool> UpdateDoctorAsync(Doctor doctor, int? currentUserId = null)
         {
-            var existing = await this.context.Doctors.FindAsync(doctor.DoctorID);
-            if (existing == null)
-                return false;
+            var existing = await this.context.Doctors.FirstOrDefaultAsync(d => d.DoctorID == doctor.DoctorID && d.IsActive);
+            if (existing == null) return false;
 
             existing.FullName = doctor.FullName;
             existing.LicenseNumber = doctor.LicenseNumber;
             existing.Email = doctor.Email;
+            existing.PhoneNumber = doctor.PhoneNumber;
+            existing.UpdatedAt = DateTime.Now;
+            existing.UpdatedBy = currentUserId;
 
             await this.context.SaveChangesAsync();
             return true;
         }
-        //5.Eliminar Doctor
-        public async Task<(bool Success, string Message)> DeleteDoctorAsync(int id)
+
+        public async Task<(bool Success, string Message)> DeleteDoctorAsync(int id, int? currentUserId = null)
         {
             var validation = await this.helper.CanDeleteAsync("Doctors", id);
-
-            if (!validation.CanDelete)
-                return (false, validation.Message);
+            if (!validation.CanDelete) return (false, validation.Message);
 
             var doctor = await this.context.Doctors.FindAsync(id);
-            if (doctor == null)
-                return (false, "Doctor no encontrado.");
+            if (doctor == null) return (false, "Doctor no encontrado.");
 
-            this.context.Doctors.Remove(doctor);
+            // SOFT DELETE
+            doctor.IsActive = false;
+            doctor.UpdatedAt = DateTime.Now;
+            doctor.UpdatedBy = currentUserId;
+
+            var relatedUsers = await this.context.Users
+                .Where(u => u.DoctorID == id && u.IsActive)
+                .ToListAsync();
+
+            foreach (var user in relatedUsers)
+            {
+                user.IsActive = false;
+            }
+
             await this.context.SaveChangesAsync();
-
-            return (true, "Doctor eliminado exitosamente.");
+            return (true, relatedUsers.Any()
+                ? $"Doctor desactivado exitosamente. También se desactivó(aron) {relatedUsers.Count} usuario(s) vinculado(s)."
+                : "Doctor desactivado exitosamente.");
         }
 
-
-#endregion
-
-#region TIPOS DE MUESTRA (SAMPLE TYPES)
-        // 1.Obtener todas los tipos de muestra 
-        public async Task<List<SampleType>> GetSampleTypesAsync()
+        public async Task<List<Doctor>> GetInactiveDoctorsAsync()
         {
-            return await this.context.SampleTypes
-                .OrderBy(st => st.SampleID)
+            return await this.context.Doctors
+                .Where(d => !d.IsActive)
+                .OrderByDescending(d => d.UpdatedAt ?? d.CreatedAt)
                 .ToListAsync();
         }
-        //2.Obtener tipo de muestra por ID
+
+        public async Task<(bool Success, string Message)> ReactivateDoctorAsync(int doctorId, int? currentUserId = null)
+        {
+            var doctor = await this.context.Doctors
+                .FirstOrDefaultAsync(d => d.DoctorID == doctorId && !d.IsActive);
+
+            if (doctor == null)
+                return (false, "Médico no encontrado o ya está activo.");
+
+            doctor.IsActive = true;
+            doctor.UpdatedAt = DateTime.Now;
+            doctor.UpdatedBy = currentUserId;
+
+            await this.context.SaveChangesAsync();
+            return (true, "Médico reactivado exitosamente.");
+        }
+
+        #endregion
+
+        #region TIPOS DE MUESTRA (SAMPLE TYPES)
+
+        public async Task<List<SampleType>> GetSampleTypesAsync()
+        {
+            return await this.context.SampleTypes.Where(st => st.IsActive).OrderBy(st => st.SampleID).ToListAsync();
+        }
+
         public async Task<SampleType?> GetSampleTypeByIdAsync(int id)
         {
             return await this.context.SampleTypes
-                .Include(st => st.LabTests)
-                .FirstOrDefaultAsync(st => st.SampleID == id);
+                .Include(st => st.LabTests.Where(lt => lt.IsActive))
+                .FirstOrDefaultAsync(st => st.SampleID == id && st.IsActive);
         }
-        //3.Crear tipo de muestra
+
         public async Task<SampleType> CreateSampleTypeAsync(string sampleName, string? containerColor = null)
         {
             int newId = await helper.GetNextIdAsync("SampleTypes");
@@ -199,20 +256,19 @@ namespace BioLIS.Repositories
             {
                 SampleID = newId,
                 SampleName = sampleName,
-                ContainerColor = containerColor
+                ContainerColor = containerColor,
+                IsActive = true
             };
 
             this.context.SampleTypes.Add(sampleType);
             await this.context.SaveChangesAsync();
-
             return sampleType;
         }
-        //4.Actualizar tipo de muestra
+
         public async Task<bool> UpdateSampleTypeAsync(SampleType sampleType)
         {
-            var existing = await this.context.SampleTypes.FindAsync(sampleType.SampleID);
-            if (existing == null)
-                return false;
+            var existing = await this.context.SampleTypes.FirstOrDefaultAsync(s => s.SampleID == sampleType.SampleID && s.IsActive);
+            if (existing == null) return false;
 
             existing.SampleName = sampleType.SampleName;
             existing.ContainerColor = sampleType.ContainerColor;
@@ -220,69 +276,63 @@ namespace BioLIS.Repositories
             await this.context.SaveChangesAsync();
             return true;
         }
-        //5.Eliminar tipo de muestra
+
         public async Task<(bool Success, string Message)> DeleteSampleTypeAsync(int id)
         {
             var validation = await this.helper.CanDeleteAsync("SampleTypes", id);
-
-            if (!validation.CanDelete)
-                return (false, validation.Message);
+            if (!validation.CanDelete) return (false, validation.Message);
 
             var sampleType = await this.context.SampleTypes.FindAsync(id);
-            if (sampleType == null)
-                return (false, "Tipo de muestra no encontrado.");
+            if (sampleType == null) return (false, "Tipo de muestra no encontrado.");
 
-            this.context.SampleTypes.Remove(sampleType);
+            sampleType.IsActive = false; // SOFT DELETE
             await this.context.SaveChangesAsync();
 
             return (true, "Tipo de muestra eliminado exitosamente.");
         }
 
-#endregion
+        #endregion
 
+        #region LAB TESTS
 
-#region LAB TESTS
-        //1.OBTENER EXAMENES
         public async Task<List<LabTest>> GetLabTestsAsync()
         {
-            // Traemos también el color del tubo asociado
             return await this.context.LabTests
                                      .Include(t => t.SampleType)
+                                     .Where(t => t.IsActive)
                                      .OrderBy(t => t.TestID)
                                      .ToListAsync();
         }
-        //2.Obtener examen por ID
+
         public async Task<LabTest?> GetLabTestByIdAsync(int id)
         {
             return await this.context.LabTests
                 .Include(t => t.SampleType)
-                .Include(t => t.ReferenceRanges)
-                .FirstOrDefaultAsync(t => t.TestID == id);
+                .Include(t => t.ReferenceRanges.Where(rr => rr.IsActive))
+                .FirstOrDefaultAsync(t => t.TestID == id && t.IsActive);
         }
-        //3.Crear un examen
+
         public async Task<LabTest> CreateLabTestAsync(string testName, string? units, int sampleId)
         {
             int newId = await helper.GetNextIdAsync("LabTests");
-
             LabTest labTest = new LabTest
             {
                 TestID = newId,
                 TestName = testName,
                 Units = units,
-                SampleID = sampleId
+                SampleID = sampleId,
+                IsActive = true
             };
 
             this.context.LabTests.Add(labTest);
             await this.context.SaveChangesAsync();
-
             return labTest;
         }
-        //4.Actualizar un examen
+
         public async Task<bool> UpdateLabTestAsync(LabTest labTest)
         {
-            var existing = await this.context.LabTests.FindAsync(labTest.TestID);
-            if (existing == null)
-                return false;
+            var existing = await this.context.LabTests.FirstOrDefaultAsync(l => l.TestID == labTest.TestID && l.IsActive);
+            if (existing == null) return false;
 
             existing.TestName = labTest.TestName;
             existing.Units = labTest.Units;
@@ -291,75 +341,69 @@ namespace BioLIS.Repositories
             await this.context.SaveChangesAsync();
             return true;
         }
-        //5.Borrar un examen
+
         public async Task<(bool Success, string Message)> DeleteLabTestAsync(int id)
         {
             var validation = await this.helper.CanDeleteAsync("LabTests", id);
-
-            if (!validation.CanDelete)
-                return (false, validation.Message);
+            if (!validation.CanDelete) return (false, validation.Message);
 
             var labTest = await this.context.LabTests.FindAsync(id);
-            if (labTest == null)
-                return (false, "Examen no encontrado.");
+            if (labTest == null) return (false, "Examen no encontrado.");
 
-            this.context.LabTests.Remove(labTest);
+            labTest.IsActive = false; // SOFT DELETE
             await this.context.SaveChangesAsync();
 
             return (true, "Examen eliminado exitosamente.");
         }
-        //6.Obtener exámenes por tipo de muestra
+
         public async Task<List<LabTest>> GetLabTestsBySampleTypeAsync(int sampleId)
         {
             return await this.context.LabTests
-                .Where(t => t.SampleID == sampleId)
+                .Where(t => t.SampleID == sampleId && t.IsActive)
                 .OrderBy(t => t.TestName)
                 .ToListAsync();
         }
 
-#endregion
+        #endregion
 
-#region RANGOS DE REFERENCIA
-//1.Obtener todos los rangos de referencia
-public async Task<List<ReferenceRange>> GetReferenceRangesAsync()
-{
-    return await this.context.ReferenceRanges
-        .Include(rr => rr.LabTest)
-        .OrderBy(rr => rr.LabTest.TestName)
-        .ThenBy(rr => rr.Gender)
-        .ThenBy(rr => rr.MinAgeYear)
-        .ToListAsync();
-}
-        
-// Alias para compatibilidad
-public async Task<List<ReferenceRange>> GetAllReferenceRangesAsync()
-{
-    return await GetReferenceRangesAsync();
-}
-        
-//2.Obtener rango por ID
+        #region RANGOS DE REFERENCIA
+
+        public async Task<List<ReferenceRange>> GetReferenceRangesAsync()
+        {
+            return await this.context.ReferenceRanges
+                .Include(rr => rr.LabTest)
+                .Where(rr => rr.IsActive && rr.LabTest.IsActive)
+                .OrderBy(rr => rr.LabTest.TestName)
+                .ThenBy(rr => rr.Gender)
+                .ThenBy(rr => rr.MinAgeYear)
+                .ToListAsync();
+        }
+
+        public async Task<List<ReferenceRange>> GetAllReferenceRangesAsync()
+        {
+            return await GetReferenceRangesAsync();
+        }
+
         public async Task<ReferenceRange?> GetReferenceRangeByIdAsync(int id)
         {
             return await this.context.ReferenceRanges
                 .Include(rr => rr.LabTest)
-                .FirstOrDefaultAsync(rr => rr.RangeID == id);
+                .FirstOrDefaultAsync(rr => rr.RangeID == id && rr.IsActive);
         }
-        //3.Obtener rangos de referencia por examen
-        // Sin uso por ahora: reservado para consultas especializadas por examen en módulos futuros.
+
         public async Task<List<ReferenceRange>> GetReferenceRangesByTestAsync(int testId)
         {
             return await this.context.ReferenceRanges
-                .Where(rr => rr.TestID == testId)
+                .Where(rr => rr.TestID == testId && rr.IsActive)
                 .OrderBy(rr => rr.Gender)
                 .ThenBy(rr => rr.MinAgeYear)
                 .ToListAsync();
         }
-        //4.Crear rango de referencia(no se usará por ahora)
+
         public async Task<ReferenceRange> CreateReferenceRangeAsync(
             int testId, string gender, int minAge, int maxAge, decimal minVal, decimal maxVal)
         {
             int newId = await helper.GetNextIdAsync("ReferenceRanges");
-
             ReferenceRange referenceRange = new ReferenceRange
             {
                 RangeID = newId,
@@ -368,20 +412,19 @@ public async Task<List<ReferenceRange>> GetAllReferenceRangesAsync()
                 MinAgeYear = minAge,
                 MaxAgeYear = maxAge,
                 MinVal = minVal,
-                MaxVal = maxVal
+                MaxVal = maxVal,
+                IsActive = true
             };
 
             this.context.ReferenceRanges.Add(referenceRange);
             await this.context.SaveChangesAsync();
-
             return referenceRange;
         }
-        //5.Actualizar rango de renferencia
+
         public async Task<bool> UpdateReferenceRangeAsync(ReferenceRange referenceRange)
         {
-            var existing = await this.context.ReferenceRanges.FindAsync(referenceRange.RangeID);
-            if (existing == null)
-                return false;
+            var existing = await this.context.ReferenceRanges.FirstOrDefaultAsync(r => r.RangeID == referenceRange.RangeID && r.IsActive);
+            if (existing == null) return false;
 
             existing.TestID = referenceRange.TestID;
             existing.Gender = referenceRange.Gender;
@@ -393,85 +436,32 @@ public async Task<List<ReferenceRange>> GetAllReferenceRangesAsync()
             await this.context.SaveChangesAsync();
             return true;
         }
-        //6.Eliminar rango
+
         public async Task<(bool Success, string Message)> DeleteReferenceRangeAsync(int id)
         {
             var referenceRange = await this.context.ReferenceRanges.FindAsync(id);
-            if (referenceRange == null)
-                return (false, "Rango de referencia no encontrado.");
+            if (referenceRange == null) return (false, "Rango de referencia no encontrado.");
 
-            this.context.ReferenceRanges.Remove(referenceRange);
+            referenceRange.IsActive = false; // SOFT DELETE
             await this.context.SaveChangesAsync();
 
             return (true, "Rango de referencia eliminado exitosamente.");
         }
         #endregion
 
-        #region ÓRDENES - MÉTODOS BÁSICOS
-        
-        /// <summary>
-        /// Obtener todas las órdenes con información completa (Include Patient, Doctor)
-        /// </summary>
-        // Sin uso por ahora: reservado para paneles globales de órdenes desde catálogo.
-        public async Task<List<Order>> GetOrdersAsync()
-        {
-            return await this.context.Orders
-                .Include(o => o.Patient)
-                .Include(o => o.Doctor)
-                .Include(o => o.ApprovedByUser) // ✅ Nueva relación
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
-        }
-
-        /// <summary>
-        /// Obtener órdenes por estado
-        /// </summary>
-        // Sin uso por ahora: reservado para filtros por estado desde catálogo.
-        public async Task<List<Order>> GetOrdersByStatusAsync(string status)
-        {
-            return await this.context.Orders
-                .Include(o => o.Patient)
-                .Include(o => o.Doctor)
-                .Include(o => o.ApprovedByUser)
-                .Where(o => o.Status == status)
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
-        }
-
-        /// <summary>
-        /// Obtener órdenes de un doctor específico (para filtro por rol)
-        /// </summary>
-        public async Task<List<Order>> GetOrdersByDoctorAsync(int doctorId)
-        {
-            return await this.context.Orders
-                .Include(o => o.Patient)
-                .Include(o => o.Doctor)
-                .Where(o => o.DoctorID == doctorId)
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
-        }
-
-        /// <summary>
-        /// Obtener doctores que NO tienen usuario asignado
-        /// </summary>
-        // Sin uso por ahora: reservado para asistentes de alta de usuarios con vínculo médico.
+        #region DOCTORES SIN USUARIO
         public async Task<List<Doctor>> GetDoctorsWithoutUserAsync()
         {
             var doctorsWithUser = await this.context.Users
-                .Where(u => u.DoctorID != null)
+                .Where(u => u.DoctorID != null && u.IsActive)
                 .Select(u => u.DoctorID.Value)
                 .ToListAsync();
 
             return await this.context.Doctors
-                .Where(d => !doctorsWithUser.Contains(d.DoctorID))
+                .Where(d => !doctorsWithUser.Contains(d.DoctorID) && d.IsActive)
                 .OrderBy(d => d.FullName)
                 .ToListAsync();
         }
-
         #endregion
-
-
-
-
     }
 }

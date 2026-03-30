@@ -16,9 +16,17 @@
         <h2>
             <i class="fas fa-users text-info"></i> Gestión de Pacientes
         </h2>
-        <a asp-action="Create" class="btn btn-success">
-            <i class="fas fa-user-plus"></i> Registrar Paciente
-        </a>
+        <div class="d-flex gap-2">
+            @if (role == "Admin")
+            {
+                <a asp-action="Inactive" class="btn btn-outline-secondary">
+                    <i class="fas fa-user-clock"></i> Pacientes desactivados
+                </a>
+            }
+            <a asp-action="Create" class="btn btn-success">
+                <i class="fas fa-user-plus"></i> Registrar Paciente
+            </a>
+        </div>
     </div>
 
     @if (Model == null || !Model.Any())
@@ -98,6 +106,10 @@
                                                     <i class="fas fa-trash"></i>
                                                 </a>
                                             }
+                                            <a asp-action="History" asp-route-patientId="@patient.PatientID"
+                                               class="btn btn-sm btn-info text-white" title="Ver Historial Predictivo">
+                                                <i class="fas fa-chart-line"></i> Historial
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
