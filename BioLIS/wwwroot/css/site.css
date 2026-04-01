@@ -97,3 +97,43 @@ body {
     transform: scale(1.15) rotate(-3deg);
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+#notification-badge,
+#notification-badge-inline {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+    font-weight: 700;
+}
+
+.notification-dropdown {
+    border-radius: 10px;
+}
+
+.notification-preview-item {
+    white-space: normal;
+    border-left: 3px solid transparent;
+}
+
+.notification-preview-item:hover {
+    border-left-color: #0d6efd;
+    background-color: #f8faff;
+}
+
+.notification-preview-message {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.notification-filter.active {
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.18);
+}
+
+.notification-item {
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.notification-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}

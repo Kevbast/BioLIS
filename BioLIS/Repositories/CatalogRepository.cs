@@ -449,6 +449,83 @@ namespace BioLIS.Repositories
         }
         #endregion
 
+        #region NOTIFICATIONS
+        public async Task CreateNotificationAsync(int userId, string title, string message, int? orderId = null)
+        {
+            var notification = new Notification
+            {
+                UserID = userId,
+                Title = title,
+                Message = message,
+                RelatedOrderID = orderId,
+                IsRead = false,
+                CreatedAt = DateTime.Now
+            };
+            this.context.Notifications.Add(notification);
+            await this.context.SaveChangesAsync();
+        }
+
+        public async Task<List<Notification>> GetUserNotificationsAsync(int userId)
+        {
+            return await this.context.Notifications
+                .Where(n => n.UserID == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(20) // Limitamos a las últimas 20
+                .ToListAsync();
+        }
+
+        public async Task<List<Notification>> GetAllNotificationsAsync(int take = 200)
+        {
+            return await this.context.Notifications
+                .Include(n => n.User)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(take)
+                .ToListAsync();
+        }
+
+        public async Task<List<Notification>> GetLatestUnreadNotificationsAsync(int userId, int take = 5)
+        {
+            return await this.context.Notifications
+                .Where(n => n.UserID == userId && !n.IsRead)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(take)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetUnreadCountAsync(int userId)
+        {
+            return await this.context.Notifications
+                .CountAsync(n => n.UserID == userId && !n.IsRead);
+        }
+
+        public async Task MarkAsReadAsync(int notificationId)
+        {
+            var notif = await this.context.Notifications.FindAsync(notificationId);
+            if (notif != null)
+            {
+                notif.IsRead = true;
+                await this.context.SaveChangesAsync();
+            }
+        }
+
+        public async Task MarkAllAsReadByUserAsync(int userId)
+        {
+            var notRead = await this.context.Notifications
+                .Where(n => n.UserID == userId && !n.IsRead)
+                .ToListAsync();
+
+            if (!notRead.Any())
+                return;
+
+            foreach (var notification in notRead)
+            {
+                notification.IsRead = true;
+            }
+
+            await this.context.SaveChangesAsync();
+        }
+        #endregion
+
         #region DOCTORES SIN USUARIO
         public async Task<List<Doctor>> GetDoctorsWithoutUserAsync()
         {

@@ -1,0 +1,112 @@
+﻿@model BioLIS.Models.ViewModels.NotificationBellViewModel
+
+<li class="nav-item dropdown no-arrow mx-1">
+    <a class="nav-link dropdown-toggle position-relative" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notificaciones">
+        <i class="fas fa-bell fa-fw"></i>
+        <span id="notification-badge"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="display:@(Model.UnreadCount > 0 ? "inline-block" : "none")">
+            @Model.UnreadCount
+        </span>
+    </a>
+
+    <ul class="dropdown-menu dropdown-menu-end shadow notification-dropdown" aria-labelledby="alertsDropdown" style="min-width: 340px;">
+        <li class="dropdown-header d-flex justify-content-between align-items-center">
+            <span>Notificaciones</span>
+            <span class="badge bg-danger" id="notification-badge-inline" style="display:@(Model.UnreadCount > 0 ? "inline-block" : "none")">@Model.UnreadCount</span>
+        </li>
+        <li><hr class="dropdown-divider" /></li>
+
+        <li id="notification-preview-container">
+            @if (Model.LatestUnread.Any())
+            {
+                foreach (var notification in Model.LatestUnread)
+                {
+                    var marker = $"{notification.Title} {notification.Message}".ToLowerInvariant();
+                    var iconClass = "fas fa-info-circle text-info";
+
+                    if (marker.Contains("urgente") || marker.Contains("crítico") || marker.Contains("critico"))
+                    {
+                        iconClass = "fas fa-triangle-exclamation text-danger";
+                    }
+                    else if (marker.Contains("completad") || marker.Contains("resultado"))
+                    {
+                        iconClass = "fas fa-vial text-success";
+                    }
+                    else if (marker.Contains("aprobad"))
+                    {
+                        iconClass = "fas fa-circle-check text-primary";
+                    }
+
+                    <a class="dropdown-item small notification-preview-item" asp-controller="Notifications" asp-action="Index">
+                        <strong class="d-block mb-1"><i class="@iconClass me-1"></i>@notification.Title</strong>
+                        <div class="text-muted notification-preview-message">@notification.Message</div>
+                    </a>
+                }
+            }
+            else
+            {
+                <span class="dropdown-item text-muted small">No hay notificaciones nuevas.</span>
+            }
+        </li>
+
+        <li><hr class="dropdown-divider" /></li>
+        <li>
+            <a class="dropdown-item text-center" asp-controller="Notifications" asp-action="Index">Ver todas</a>
+        </li>
+    </ul>
+</li>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+<script>
+    (function () {
+        const badge = document.getElementById('notification-badge');
+        const badgeInline = document.getElementById('notification-badge-inline');
+        if (!badge || !badgeInline) return;
+
+        function paintCount(count) {
+            if (count > 0) {
+                badge.textContent = String(count);
+                badge.style.display = 'inline-block';
+                badgeInline.textContent = String(count);
+                badgeInline.style.display = 'inline-block';
+            } else {
+                badge.textContent = '0';
+                badge.style.display = 'none';
+                badgeInline.textContent = '0';
+                badgeInline.style.display = 'none';
+            }
+        }
+
+        async function refreshNotificationCount() {
+            try {
+                const response = await fetch('/Notifications/UnreadCount', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const count = Number(data?.count ?? 0);
+                paintCount(count);
+            } catch {
+                // Silencioso para no afectar UX general
+            }
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl('/hubs/notifications')
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on('NotificationUpdated', function (count) {
+            paintCount(Number(count ?? 0));
+        });
+
+        connection.start().catch(function () {
+            // fallback silencioso al polling
+        });
+
+        setInterval(refreshNotificationCount, 15000);
+    })();
+</script>

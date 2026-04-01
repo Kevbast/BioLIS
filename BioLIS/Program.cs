@@ -1,5 +1,6 @@
 ﻿
 using BioLIS.Data;
+using BioLIS.Hubs;
 using BioLIS.Helpers;
 using BioLIS.Models;
 using BioLIS.Repositories;
@@ -58,9 +59,10 @@ builder.Services.AddAuthentication(options =>
 // ========================================
 // CONTROLLERS CON TEMPDATA
 // ========================================
-builder.Services.AddControllersWithViews(options =>
-    options.EnableEndpointRouting = false)
+builder.Services.AddControllersWithViews()
     .AddSessionStateTempDataProvider();
+
+builder.Services.AddSignalR();
 
 // ========================================
 // DBCONTEXT
@@ -104,6 +106,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseRouting();
 
 // ORDEN IMPORTANTE
 app.UseAuthentication();  // 1º
@@ -113,12 +116,11 @@ app.UseSession();         // 3º
 // ========================================
 // ROUTING
 // ========================================
-app.UseMvc(routes =>
-{
-    routes.MapRoute(
-        name: "default",
-        template: "{controller=Auth}/{action=Login}/{id?}");
-});
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
+
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();
 

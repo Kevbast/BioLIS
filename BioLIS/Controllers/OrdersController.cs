@@ -1,10 +1,12 @@
 using BioLIS.Models;
 using BioLIS.Filters;
+using BioLIS.Hubs;
 using BioLIS.Repositories;
 using BioLIS.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
 namespace BioLIS.Controllers
@@ -16,14 +18,17 @@ namespace BioLIS.Controllers
         private readonly CatalogRepository catalogRepo;
         private readonly HelperRepository helperRepo;
         private readonly PdfReportService pdfReportService;
+        private readonly IHubContext<NotificationHub> hubContext;
 
         public OrdersController(OrderRepository orderRepo, CatalogRepository catalogRepo,
-                               HelperRepository helperRepo, PdfReportService pdfReportService)
+                               HelperRepository helperRepo, PdfReportService pdfReportService,
+                               IHubContext<NotificationHub> hubContext)
         {
             this.orderRepo = orderRepo;
             this.catalogRepo = catalogRepo;
             this.helperRepo = helperRepo;
             this.pdfReportService = pdfReportService;
+            this.hubContext = hubContext;
         }
 
         public async Task<IActionResult> Index()
@@ -304,10 +309,57 @@ namespace BioLIS.Controllers
                 return RedirectToAction("Details", new { orderId });
             }
 
+            var previousStatus = order.Status;
+
             var statusResult = await orderRepo.ChangeOrderStatusAsync(orderId, status, userId);
 
             if (statusResult.Success)
             {
+                // --- NUEVA LÓGICA DE NOTIFICACIÓN ---
+                if (status == "Completada" && previousStatus != "Completada")
+                {
+                    var doctorUsers = await catalogRepo.Context.Users
+                        .Where(u => u.DoctorID == order.DoctorID && u.IsActive)
+                        .ToListAsync();
+
+                    foreach (var doctorUser in doctorUsers)
+                    {
+                        await catalogRepo.CreateNotificationAsync(
+                            doctorUser.UserID,
+                            "Resultados Listos",
+                            $"La orden {order.OrderNumber} ha sido completada por el laboratorio y espera su aprobación.",
+                            order.OrderID
+                        );
+
+                        var unreadCount = await catalogRepo.GetUnreadCountAsync(doctorUser.UserID);
+                        await hubContext.Clients.User(doctorUser.UserID.ToString())
+                            .SendAsync("NotificationUpdated", unreadCount);
+                    }
+                }
+
+                if (status == "Aprobada" && previousStatus != "Aprobada")
+                {
+                    var labAndAdminUsers = await catalogRepo.Context.Users
+                        .Include(u => u.Role)
+                        .Where(u => u.IsActive && u.Role != null &&
+                                    (u.Role.RoleName == "Laboratorio" || u.Role.RoleName == "Admin"))
+                        .ToListAsync();
+
+                    foreach (var targetUser in labAndAdminUsers)
+                    {
+                        await catalogRepo.CreateNotificationAsync(
+                            targetUser.UserID,
+                            "Orden Aprobada",
+                            $"La orden {order.OrderNumber} fue aprobada por el médico y está lista para seguimiento/entrega.",
+                            order.OrderID
+                        );
+
+                        var unreadCount = await catalogRepo.GetUnreadCountAsync(targetUser.UserID);
+                        await hubContext.Clients.User(targetUser.UserID.ToString())
+                            .SendAsync("NotificationUpdated", unreadCount);
+                    }
+                }
+
                 TempData["SwalType"] = "success";
                 TempData["SwalTitle"] = "Estado actualizado";
                 TempData["SwalMessage"] = statusResult.Message;

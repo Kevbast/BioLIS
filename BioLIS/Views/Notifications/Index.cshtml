@@ -1,0 +1,158 @@
+﻿@model IEnumerable<BioLIS.Models.Notification>
+
+@{
+    ViewData["Title"] = "Notificaciones";
+    var isAdmin = (ViewData["IsAdmin"] as bool?) == true;
+    var selectedType = (ViewData["TypeFilter"] as string) ?? "all";
+    var selectedUser = (ViewData["UserFilter"] as string) ?? "all";
+    var usersForFilter = isAdmin
+        ? (ViewData["AllNotificationUsers"] as List<string> ?? new List<string>())
+        : new List<string>();
+
+    if (isAdmin && selectedUser != "all" && !usersForFilter.Contains(selectedUser))
+    {
+        usersForFilter.Add(selectedUser);
+        usersForFilter = usersForFilter.OrderBy(u => u).ToList();
+    }
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0"><i class="fas fa-bell text-warning"></i> Notificaciones</h2>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    @if (isAdmin)
+    {
+        <div class="d-flex flex-wrap gap-2 mb-3 align-items-center" id="notificationFilters">
+            <a asp-action="Index" asp-route-typeFilter="all" asp-route-userFilter="@selectedUser" class="btn btn-sm @(selectedType == "all" ? "btn-dark" : "btn-outline-dark")">Todas</a>
+            <a asp-action="Index" asp-route-typeFilter="critica" asp-route-userFilter="@selectedUser" class="btn btn-sm @(selectedType == "critica" ? "btn-danger" : "btn-outline-danger")">Críticas</a>
+            <a asp-action="Index" asp-route-typeFilter="laboratorio" asp-route-userFilter="@selectedUser" class="btn btn-sm @(selectedType == "laboratorio" ? "btn-success" : "btn-outline-success")">Laboratorio</a>
+            <a asp-action="Index" asp-route-typeFilter="medico" asp-route-userFilter="@selectedUser" class="btn btn-sm @(selectedType == "medico" ? "btn-primary" : "btn-outline-primary")">Médico</a>
+            <a asp-action="Index" asp-route-typeFilter="general" asp-route-userFilter="@selectedUser" class="btn btn-sm @(selectedType == "general" ? "btn-info text-white" : "btn-outline-info")">General</a>
+
+            <form method="get" id="notificationUserForm" class="ms-sm-2">
+                <input type="hidden" name="typeFilter" value="@selectedType" />
+                <select id="notificationUserFilter" name="userFilter" class="form-select form-select-sm" style="max-width: 220px;">
+                    @if (selectedUser == "all")
+                    {
+                        <option value="all" selected>Todos los usuarios</option>
+                    }
+                    else
+                    {
+                        <option value="all">Todos los usuarios</option>
+                    }
+
+                    @foreach (var username in usersForFilter)
+                    {
+                        if (selectedUser == username)
+                        {
+                            <option value="@username" selected>@username</option>
+                        }
+                        else
+                        {
+                            <option value="@username">@username</option>
+                        }
+                    }
+                </select>
+            </form>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center py-4">
+            <i class="fas fa-info-circle"></i> No tienes notificaciones.
+        </div>
+    }
+    else
+    {
+        <div class="list-group shadow-sm">
+            @foreach (var item in Model)
+            {
+                var marker = $"{item.Title} {item.Message}".ToLowerInvariant();
+                var iconClass = "fas fa-info-circle";
+                var colorClass = "text-info";
+                var typeBadge = "General";
+                var typeKey = "general";
+
+                if (marker.Contains("urgente") || marker.Contains("crítico") || marker.Contains("critico"))
+                {
+                    iconClass = "fas fa-triangle-exclamation";
+                    colorClass = "text-danger";
+                    typeBadge = "Crítica";
+                    typeKey = "critica";
+                }
+                else if (marker.Contains("completad") || marker.Contains("resultado"))
+                {
+                    iconClass = "fas fa-vial";
+                    colorClass = "text-success";
+                    typeBadge = "Laboratorio";
+                    typeKey = "laboratorio";
+                }
+                else if (marker.Contains("aprobad"))
+                {
+                    iconClass = "fas fa-circle-check";
+                    colorClass = "text-primary";
+                    typeBadge = "Médico";
+                    typeKey = "medico";
+                }
+
+                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start notification-item"
+                     data-type="@typeKey"
+                     data-user="@(item.User?.Username ?? string.Empty)">
+                    <div class="me-3 d-flex gap-2">
+                        <div class="pt-1">
+                            <i class="@iconClass @colorClass"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">
+                                @if (!item.IsRead)
+                                {
+                                    <span class="badge bg-danger me-2">Nuevo</span>
+                                }
+                                <span class="badge bg-light text-dark me-2">@typeBadge</span>
+                                @item.Title
+                            </h6>
+                            @if (isAdmin)
+                            {
+                                <small class="text-muted d-block mb-1">
+                                    <i class="fas fa-user me-1"></i>@(item.User?.Username ?? $"UserID: {item.UserID}")
+                                </small>
+                            }
+                            <p class="mb-1">@item.Message</p>
+                            <small class="text-muted">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                        </div>
+                    </div>
+                    <div>
+                        @if (item.RelatedOrderID.HasValue)
+                        {
+                            <a asp-controller="Orders" asp-action="Details" asp-route-orderId="@item.RelatedOrderID" class="btn btn-sm btn-outline-primary">
+                                Ver orden
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const userFilter = document.getElementById('notificationUserFilter');
+
+            if (userFilter) {
+                userFilter.addEventListener('change', function () {
+                    const form = document.getElementById('notificationUserForm');
+                    if (form) {
+                        form.submit();
+                    }
+                });
+            }
+        })();
+    </script>
+}
