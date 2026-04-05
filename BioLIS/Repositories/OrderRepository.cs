@@ -399,7 +399,46 @@ namespace BioLIS.Repositories
         }
 
         #endregion
+
+        #region INTEGRACIÓN N8N
+
+        public async Task CreateIntegrationEventAsync(string eventType, string payloadJson)
+        {
+            var integrationEvent = new IntegrationEvent
+            {
+                EventType = eventType,
+                PayloadJSON = payloadJson,
+                IsProcessed = false,
+                CreatedAt = DateTime.Now
+            };
+
+            this.context.IntegrationEvents.Add(integrationEvent);
+            await this.context.SaveChangesAsync();
+        }
+
+
+        //Creación del Token
+        public async Task<OrderShareToken> CreateOrderShareTokenAsync(int orderId)
+        {
+            var shareToken = new OrderShareToken
+            {
+                TokenID = Guid.NewGuid(),
+                OrderID = orderId,
+                PinCode = new Random().Next(1000, 9999).ToString(), // PIN de 4 dígitos
+                ExpiresAt = DateTime.Now.AddDays(30),
+                DownloadsCount = 0,
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            };
+
+            this.context.OrderShareTokens.Add(shareToken);
+            await this.context.SaveChangesAsync();
+
+            return shareToken;
+        }
+        #endregion
     }
+
 
     #region DTOs PARA STORED PROCEDURES
     public class OrderDetailDTO

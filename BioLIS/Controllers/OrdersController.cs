@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using System.Globalization;
 
 namespace BioLIS.Controllers
 {
@@ -219,7 +220,7 @@ namespace BioLIS.Controllers
 
                 if (string.IsNullOrWhiteSpace(valueStr)) continue;
 
-                if (decimal.TryParse(valueStr, out decimal resultValue))
+                if (TryParseResultValue(valueStr, out decimal resultValue))
                 {
                     string note = notes.ContainsKey(resultId) ? notes[resultId] : null;
 
@@ -315,7 +316,6 @@ namespace BioLIS.Controllers
 
             if (statusResult.Success)
             {
-                // --- NUEVA LÓGICA DE NOTIFICACIÓN ---
                 if (status == "Completada" && previousStatus != "Completada")
                 {
                     var doctorUsers = await catalogRepo.Context.Users
@@ -358,6 +358,48 @@ namespace BioLIS.Controllers
                         await hubContext.Clients.User(targetUser.UserID.ToString())
                             .SendAsync("NotificationUpdated", unreadCount);
                     }
+
+                    // ==============================================================
+                    // --- NUEVA LÓGICA PARA N8N Y PORTAL PACIENTE ---
+                    // ==============================================================
+                    var orderDetails = await orderRepo.GetOrderDetailsAsync(orderId);
+
+                    if (orderDetails.Any() && !string.IsNullOrWhiteSpace(orderDetails.First().PatientPhone))
+                    {
+                        var firstDetail = orderDetails.First();
+
+                        // 1. Generamos el Token usando TU tabla y modelo
+                        var shareToken = await orderRepo.CreateOrderShareTokenAsync(order.OrderID);
+
+                        // 2. Construimos la URL pública (usando el Guid generado)
+                        var request = HttpContext.Request;
+                        var baseUrl = $"{request.Scheme}://{request.Host}";
+                        var portalUrl = $"{baseUrl}/Portal/Descargar/{shareToken.TokenID}";
+
+                        // 3. Preparamos el Paquete para n8n
+                        var payload = new
+                        {
+                            OrderId = order.OrderID,
+                            OrderNumber = order.OrderNumber,
+                            PatientName = firstDetail.PatientName,
+                            PatientPhone = firstDetail.PatientPhone,
+                            DoctorName = firstDetail.DoctorName,
+                            PortalUrl = portalUrl,             // <-- URL lista
+                            PortalPin = shareToken.PinCode,    // <-- PIN listo
+                            Results = orderDetails.Select(r => new {
+                                Test = r.TestName,
+                                Value = r.ResultValue,
+                                Units = r.Units,
+                                Status = r.ValidationStatus
+                            }).ToList()
+                        };
+
+                        string jsonPayload = System.Text.Json.JsonSerializer.Serialize(payload);
+
+                        // Guardamos el evento en la cola para que n8n lo recoja
+                        await orderRepo.CreateIntegrationEventAsync("OrderApproved", jsonPayload);
+                    }
+                    // ==============================================================
                 }
 
                 TempData["SwalType"] = "success";
@@ -399,6 +441,35 @@ namespace BioLIS.Controllers
             var pdfBytes = pdfReportService.GenerateResultsPdf(order, results);
 
             return File(pdfBytes, "application/pdf", $"Resultados_{order.OrderNumber}.pdf");
+        }
+
+        private static bool TryParseResultValue(string input, out decimal value)
+        {
+            value = 0;
+
+            if (string.IsNullOrWhiteSpace(input))
+                return false;
+
+            var raw = input.Trim().Replace(" ", string.Empty);
+            string normalized;
+
+            if (raw.Contains(',') && raw.Contains('.'))
+            {
+                bool commaIsDecimal = raw.LastIndexOf(',') > raw.LastIndexOf('.');
+                normalized = commaIsDecimal
+                    ? raw.Replace(".", string.Empty).Replace(',', '.')
+                    : raw.Replace(",", string.Empty);
+            }
+            else if (raw.Contains(','))
+            {
+                normalized = raw.Replace(',', '.');
+            }
+            else
+            {
+                normalized = raw;
+            }
+
+            return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
         }
     }
 }

@@ -1,0 +1,36 @@
+﻿@model Guid
+@{
+    Layout = "_Layout"; // O usa un layout más limpio si lo prefieres para los pacientes
+    ViewData["Title"] = "Descargar Resultados";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <h3 class="mb-4 text-primary"><i class="bi bi-file-earmark-pdf"></i> Resultados de Laboratorio</h3>
+                    <p class="text-muted">Por seguridad, introduzca el PIN de 4 dígitos que ha recibido en su WhatsApp.</p>
+
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+                    }
+
+                    <form method="post">
+                        <input type="hidden" name="tokenId" value="@Model" />
+
+                        <div class="form-group mb-4">
+                            <input type="text" name="pinCode" class="form-control form-control-lg text-center"
+                                   placeholder="Ej: 4829" maxlength="4" required style="letter-spacing: 10px; font-size: 24px;">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-download"></i> Descargar Informe
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

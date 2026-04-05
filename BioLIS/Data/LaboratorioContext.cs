@@ -19,7 +19,7 @@ namespace BioLIS.Data
         public DbSet<UserSecurity> UsersSecurity { get; set; }
         public DbSet<UserValidation> Usersvalidations { get; set; }
         public DbSet<Notification> Notifications { get; set; }
-        public DbSet<OrderShareToken> OrderShareTokens { get; set; }
+        public DbSet<OrderShareToken> OrderShareTokens { get; set; } = null!;
         public DbSet<IntegrationEvent> IntegrationEvents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
