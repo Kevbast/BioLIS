@@ -21,6 +21,7 @@ namespace BioLIS.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<OrderShareToken> OrderShareTokens { get; set; } = null!;
         public DbSet<IntegrationEvent> IntegrationEvents { get; set; }
+        public DbSet<BlobModel> BlobModels { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
