@@ -1,0 +1,41 @@
+@model List<BioLIS.Models.Entities.ReferenceRange>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+            <tr>
+                <th class="ps-4">Examen</th>
+                <th>Género</th>
+                <th>Edad</th>
+                <th>Rango</th>
+                <th class="text-end pe-4">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model == null || !Model.Any())
+            {
+                <tr><td colspan="5" class="text-center p-4 text-muted">No hay rangos desactivados.</td></tr>
+            }
+            else
+            {
+                foreach (var range in Model)
+                {
+                    <tr>
+                        <td class="ps-4 fw-bold">@((range.LabTest?.TestName) ?? "Sin examen")</td>
+                        <td>@range.Gender</td>
+                        <td>@range.MinAgeYear - @range.MaxAgeYear</td>
+                        <td>@range.MinVal - @range.MaxVal</td>
+                        <td class="text-end pe-4">
+                            <form asp-action="ReactivateReferenceRange" asp-route-id="@range.RangeID" method="post" class="d-inline reactivate-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-success rounded-pill fw-bold">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Reactivar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

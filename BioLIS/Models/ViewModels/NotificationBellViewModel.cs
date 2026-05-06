@@ -1,3 +1,5 @@
+using BioLIS.Models.Entities;
+
 namespace BioLIS.Models.ViewModels
 {
     public class NotificationBellViewModel

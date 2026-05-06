@@ -1,11 +1,11 @@
-@model BioLIS.Models.Order
+@model BioLIS.Models.Entities.Order
 @using System.Security.Claims
 
 @{
     ViewData["Title"] = "Nueva Orden de Laboratorio";
     var patients = ViewData["Patients"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
     var doctors = ViewData["Doctors"] as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-    var labTests = ViewData["LabTests"] as List<BioLIS.Models.LabTest> ?? new List<BioLIS.Models.LabTest>();
+    var labTests = ViewData["LabTests"] as List<BioLIS.Models.Entities.LabTest> ?? new List<BioLIS.Models.Entities.LabTest>();
     var isDoctor = User.IsInRole("Doctor");
     var preselectedDoctorId = ViewData["PreselectedDoctorId"]?.ToString();
     var preselectedDoctorName = doctors.FirstOrDefault(d => d.Value == preselectedDoctorId)?.Text;
@@ -127,21 +127,28 @@
                                 }
                                 else
                                 {
-                                    <!-- Agrupar por tipo de muestra -->
-                                    var testsBySample = labTests.GroupBy(t => t.SampleType);
+                                    <!-- Agrupar por clave estable (SampleID) para evitar agrupación por referencia -->
+                                    var testsBySample = labTests
+                                        .GroupBy(t => new
+                                        {
+                                            t.SampleID,
+                                            SampleName = t.SampleType?.SampleName ?? "Sin muestra",
+                                            ContainerColor = t.SampleType?.ContainerColor ?? "Gris"
+                                        })
+                                        .OrderBy(g => g.Key.SampleName);
 
                                     @foreach (var group in testsBySample)
                                     {
                                         <div class="mb-3">
                                             <h6 class="border-bottom pb-2">
                                                 <i class="fas fa-vial"></i> 
-                                                @group.Key.SampleName 
+                                                @group.Key.SampleName
                                                 <span class="badge" style="background-color: @GetColorBadge(group.Key.ContainerColor)">
                                                     Tubo @group.Key.ContainerColor
                                                 </span>
                                             </h6>
                                             <div class="row">
-                                                @foreach (var test in group)
+                                                @foreach (var test in group.OrderBy(t => t.TestName))
                                                 {
                                                     <div class="col-md-4">
                                                         <div class="form-check">

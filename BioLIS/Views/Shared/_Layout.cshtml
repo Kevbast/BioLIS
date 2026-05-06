@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@inject IConfiguration Configuration
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,207 +7,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - BioLIS</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/BioLIS.styles.css" asp-append-version="true" />
-    <!-- FontAwesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        .app-navbar {
-            border-radius: 12px;
-            margin: 0.75rem;
-            box-shadow: 0 10px 24px rgba(13, 110, 253, 0.28);
-            background: linear-gradient(90deg, #0d6efd 0%, #0b5ed7 45%, #084298 100%);
-        }
-
-        .app-navbar .navbar-brand {
-            font-weight: 700;
-            letter-spacing: 0.2px;
-            color: #ffffff !important;
-        }
-
-        .app-navbar .nav-link {
-            position: relative;
-            border-radius: 8px;
-            padding: 0.45rem 0.8rem;
-            color: #eaf2ff !important;
-            transition: background-color 0.25s ease, color 0.25s ease, transform 0.2s ease;
-        }
-
-        .app-navbar .nav-link::after {
-            content: "";
-            position: absolute;
-            left: 0.8rem;
-            right: 0.8rem;
-            bottom: 0.2rem;
-            height: 2px;
-            background-color: #ffffff;
-            border-radius: 999px;
-            transform: scaleX(0);
-            transform-origin: center;
-            transition: transform 0.25s ease;
-        }
-
-        .app-navbar .nav-link:hover,
-        .app-navbar .nav-link:focus {
-            background-color: rgba(255, 255, 255, 0.16);
-            color: #ffffff !important;
-            transform: translateY(-1px);
-        }
-
-        .app-navbar .nav-link:hover::after,
-        .app-navbar .nav-link:focus::after {
-            transform: scaleX(0.65);
-        }
-
-        .app-navbar .nav-link.active {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: #ffffff !important;
-            font-weight: 600;
-            transform: translateY(-1px);
-        }
-
-        .app-navbar .nav-link.active::after {
-            transform: scaleX(1);
-        }
-    </style>
 </head>
-<body>
-    <header>
+<body class="bg-light">
+    <header class="position-relative">
         @{
             var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-            var isAdminSection = currentController is "Users" or "Patients" or "Doctors" or "Orders" or "LabTests" or "SampleTypes" or "ReferenceRanges";
+            var isAdminSection = currentController is "Users" or "Patients" or "Doctors" or "Orders" or "LabTests" or "SampleTypes" or "ReferenceRanges" or "Recovery";
         }
 
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border app-navbar mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-heart-pulse-fill text-primary"></i> BioLIS
+        <nav class="navbar navbar-expand-lg app-navbar-glass">
+            <div class="container-fluid px-3">
+                <a class="navbar-brand d-flex align-items-center gap-2" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-heart-pulse-fill fs-4"></i> BioLIS
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        @* Dashboard - Todos *@
+
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1 position-relative w-100">
                         <li class="nav-item">
-                            <a class="nav-link @(currentController == "Home" ? "active" : string.Empty)" asp-area="" asp-controller="Home" asp-action="Index">
-                                Dashboard
-                            </a>
+                            <a class="nav-link @(currentController == "Home" ? "active" : string.Empty)" asp-controller="Home" asp-action="Index">Dashboard</a>
                         </li>
 
-                        @* Pacientes - Admin ,doctor y Laboratorio *@
-                        @if (User.IsInRole("Admin") || User.IsInRole("Laboratorio") || User.IsInRole("Doctor"))
+                        @if (User.IsInRole(BioLIS.Models.Common.UserRoles.Admin) || User.IsInRole(BioLIS.Models.Common.UserRoles.Laboratorio) || User.IsInRole(BioLIS.Models.Common.UserRoles.Doctor))
                         {
                             <li class="nav-item">
-                                <a class="nav-link @(currentController == "Patients" ? "active" : string.Empty)" asp-area="" asp-controller="Patients" asp-action="Index">
-                                    Pacientes
-                                </a>
+                                <a class="nav-link @(currentController == "Patients" ? "active" : string.Empty)" asp-controller="Patients" asp-action="Index">Pacientes</a>
                             </li>
                         }
 
-                        @* Médicos - Todos pueden ver *@
                         <li class="nav-item">
-                            <a class="nav-link @(currentController == "Doctors" ? "active" : string.Empty)" asp-area="" asp-controller="Doctors" asp-action="Index">
-                                Médicos
-                            </a>
+                            <a class="nav-link @(currentController == "Doctors" ? "active" : string.Empty)" asp-controller="Doctors" asp-action="Index">Médicos</a>
                         </li>
 
-                        @* Órdenes - Todos pueden ver (filtrado por rol en el controller) *@
                         <li class="nav-item">
-                            <a class="nav-link @(currentController == "Orders" ? "active" : string.Empty)" asp-controller="Orders" asp-action="Index">
-                                Órdenes
-                            </a>
+                            <a class="nav-link @(currentController == "Orders" ? "active" : string.Empty)" asp-controller="Orders" asp-action="Index">Órdenes</a>
                         </li>
 
-                        @* Administración - Solo Admin *@
-                        @if (User.IsInRole("Admin"))
+                        @if (User.IsInRole(BioLIS.Models.Common.UserRoles.Admin))
                         {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle @(isAdminSection ? "active" : string.Empty)" href="#" id="adminDropdown" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
+                            <!-- Menú administración -->
+                            <li class="nav-item dropdown mega-dropdown">
+                                <a class="nav-link dropdown-toggle @(isAdminSection ? "active" : string.Empty)" href="#" data-bs-toggle="dropdown">
                                     Administración
                                 </a>
-                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Users" asp-action="Index">
-                                            Gestión de Usuarios
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Users" asp-action="Inactive">
-                                            Usuarios desactivados
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Patients" asp-action="Inactive">
-                                            Pacientes desactivados
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Doctors" asp-action="Inactive">
-                                            Médicos desactivados
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="LabTests" asp-action="Index">
-                                            Catálogo de Exámenes
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="SampleTypes" asp-action="Index">
-                                            Tipos de Muestra
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="ReferenceRanges" asp-action="Index">
-                                            Rangos de Referencia
-                                        </a>
-                                    </li>
-                                </ul>
+                                <div class="dropdown-menu mega-menu-container">
+                                    <div class="row g-4">
+                                        <div class="col-md-4 mega-menu-column border-end">
+                                            <h6><i class="bi bi-people-fill text-primary me-2"></i> Usuarios y Personal</h6>
+                                            <a class="dropdown-item" asp-controller="Users" asp-action="Index">Gestión de Usuarios</a>
+                                        </div>
+                                        <div class="col-md-4 mega-menu-column border-end">
+                                            <h6><i class="bi bi-journal-medical text-success me-2"></i> Catálogos Clínicos</h6>
+                                            <a class="dropdown-item" asp-controller="LabTests" asp-action="Index">Catálogo de Exámenes</a>
+                                            <a class="dropdown-item" asp-controller="SampleTypes" asp-action="Index">Tipos de Muestra</a>
+                                            <a class="dropdown-item" asp-controller="ReferenceRanges" asp-action="Index">Rangos de Referencia</a>
+                                        </div>
+                                        <div class="col-md-4 mega-menu-column">
+                                            <h6><i class="bi bi-gear-fill text-warning me-2"></i> Sistema</h6>
+                                            <a class="dropdown-item" asp-controller="Notifications" asp-action="Index">
+                                                Registro de Notificaciones
+                                            </a>
+                                            <a class="dropdown-item text-danger mt-2 fw-bold" asp-controller="Recovery" asp-action="Index">
+                                                <i class="bi bi-trash3-fill"></i> Centro de Recuperación
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
                             </li>
                         }
                     </ul>
 
-                    @* Información del usuario logueado *@
                     @if (User.Identity?.IsAuthenticated ?? false)
                     {
-                        <ul class="navbar-nav">
-                            @await Component.InvokeAsync("NotificationBell")
+                        <ul class="navbar-nav ms-auto align-items-center gap-2">
+                            @if (!User.IsInRole("Admin"))
+                            {
+                                @await Component.InvokeAsync("NotificationBell")
+                            }
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" id="userDropdown" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
                                     @{
                                         var photoFilename = User.FindFirstValue("Photo") ?? "default-user.png";
+                                        var photoUrl = photoFilename.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? photoFilename : Url.Content($"~/images/users/{photoFilename}");
                                     }
-                                    <img src="~/images/users/@photoFilename"
-                                         alt="User"
-                                         style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; margin-right: 8px;"
-                                         onerror="this.src='/images/users/default-user.png'" />
-                                    <strong>@User.FindFirstValue(ClaimTypes.Name)</strong>
-                                    <span class="badge bg-primary ms-1">@User.FindFirstValue(ClaimTypes.Role)</span>
+                                    <img src="@photoUrl" alt="User" class="rounded-circle shadow-sm" style="width: 35px; height: 35px; object-fit: cover;" onerror="this.src='/images/users/default-user.png'" />
+                                    <div class="d-flex flex-column text-start" style="line-height: 1.2;">
+                                        <strong class="text-dark" style="font-size: 0.9rem;">@User.FindFirstValue(ClaimTypes.Name)</strong>
+                                        <small class="text-primary fw-bold" style="font-size: 0.75rem;">@User.FindFirstValue(ClaimTypes.Role)</small>
+                                    </div>
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <li>
-                                        <a class="dropdown-item disabled">
-                                            <small class="text-muted">ID: @User.FindFirstValue(ClaimTypes.NameIdentifier)</small>
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Users" asp-action="ChangePassword">
-                                            <i class="bi bi-key"></i> Cambiar Contraseña
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Auth" asp-action="Logout">
-                                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-                                        </a>
-                                    </li>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2 rounded-3">
+                                    <li><a class="dropdown-item text-muted small disabled">ID: @User.FindFirstValue(ClaimTypes.NameIdentifier)</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Users" asp-action="ChangePassword"><i class="bi bi-person-gear me-2"></i> Mi Perfil</a></li>
+                                    <li><a class="dropdown-item py-2 text-danger" asp-controller="Auth" asp-action="Logout"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
                                 </ul>
                             </li>
                         </ul>
@@ -216,45 +117,48 @@
         </nav>
     </header>
 
-    <div class="container">
-        @* MENSAJES DE TEMPDATA *@
+    <div class="container pb-5">
+        <!-- Alertas TempData -->
         @if (TempData["SuccessMessage"] != null)
         {
-            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            <div class="alert alert-success alert-dismissible fade show animate-pop-in" role="alert">
                 <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
-
         @if (TempData["ErrorMessage"] != null)
         {
-            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            <div class="alert alert-danger alert-dismissible fade show animate-pop-in" role="alert">
                 <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
-
         @if (TempData["InfoMessage"] != null)
         {
-            <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+            <div class="alert alert-info alert-dismissible fade show animate-pop-in" role="alert">
                 <i class="bi bi-info-circle-fill"></i> @TempData["InfoMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
 
-        <main role="main" class="pb-3">
+        <main role="main">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container text-center py-3">
-            &copy; 2026 - BioLIS | Sistema de Gestión de Laboratorio
-        </div>
-    </footer>
-
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+    @if ((User.Identity?.IsAuthenticated ?? false) && !User.IsInRole("Admin"))
+    {
+        <script>
+            const apiBaseUrl = '@Html.Raw(Configuration.GetValue<string>("ApiSettings:BaseUrl")?.TrimEnd('/'))';
+            const signalRToken = '@Html.Raw(User.FindFirstValue("TOKEN"))';
+            const currentUserId = '@Html.Raw(User.FindFirstValue(ClaimTypes.NameIdentifier))';
+        </script>
+    }
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

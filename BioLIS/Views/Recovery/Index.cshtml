@@ -1,0 +1,123 @@
+@{
+    ViewData["Title"] = "Centro de Recuperación";
+    string activeTab = ViewBag.ActiveTab ?? "usuarios";
+}
+
+<div class="container-fluid mt-4 animate-fade-up">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="bi bi-trash3 text-danger me-2"></i> Centro de Recuperación
+            </h2>
+            <p class="text-muted mb-0">Restaura registros que han sido desactivados en el sistema.</p>
+        </div>
+    </div>
+
+    <ul class="nav nav-pills mb-4 gap-2 border-bottom pb-3">
+        <li class="nav-item">
+            <a class="nav-link fw-bold @(activeTab == "usuarios" ? "active shadow-sm" : "bg-white border")"
+               asp-action="Index" asp-route-tab="usuarios">
+                <i class="bi bi-people me-1"></i> Usuarios
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-bold @(activeTab == "pacientes" ? "active shadow-sm" : "bg-white border")"
+               asp-action="Index" asp-route-tab="pacientes">
+                <i class="bi bi-person-wheelchair me-1"></i> Pacientes
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-bold @(activeTab == "medicos" ? "active shadow-sm" : "bg-white border")"
+               asp-action="Index" asp-route-tab="medicos">
+                <i class="bi bi-heart-pulse me-1"></i> Médicos
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-bold @(activeTab == "examenes" ? "active shadow-sm" : "bg-white border")"
+               asp-action="Index" asp-route-tab="examenes">
+                <i class="bi bi-vial me-1"></i> Exámenes
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-bold @(activeTab == "muestras" ? "active shadow-sm" : "bg-white border")"
+               asp-action="Index" asp-route-tab="muestras">
+                <i class="bi bi-droplet-half me-1"></i> Muestras
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link fw-bold @(activeTab == "rangos" ? "active shadow-sm" : "bg-white border")"
+               asp-action="Index" asp-route-tab="rangos">
+                <i class="bi bi-clipboard-data me-1"></i> Rangos
+            </a>
+        </li>
+    </ul>
+
+    <div class="card premium-card">
+        <div class="card-body p-0">
+            @if (activeTab == "usuarios")
+            {
+                <partial name="_RecoveryUsers" model="@(ViewData["Items"])" />
+            }
+            else if (activeTab == "pacientes")
+            {
+                <partial name="_RecoveryPatients" model="@(ViewData["Items"])" />
+            }
+            else if (activeTab == "medicos")
+            {
+                <partial name="_RecoveryDoctors" model="@(ViewData["Items"])" />
+            }
+            else if (activeTab == "examenes")
+            {
+                <partial name="_RecoveryLabTests" model="@(ViewData["Items"])" />
+            }
+            else if (activeTab == "muestras")
+            {
+                <partial name="_RecoverySampleTypes" model="@(ViewData["Items"])" />
+            }
+            else if (activeTab == "rangos")
+            {
+                <partial name="_RecoveryReferenceRanges" model="@(ViewData["Items"])" />
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.querySelectorAll('.reactivate-form').forEach(form => {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: '¿Reactivar registro?',
+                    text: 'El registro volverá a estar disponible en el sistema.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#1cc88a',
+                    cancelButtonColor: '#858796',
+                    confirmButtonText: 'Sí, reactivar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.submit();
+                    }
+                });
+            });
+        });
+
+        (function () {
+            const swalType = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["SwalType"]?.ToString()));
+            const swalTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["SwalTitle"]?.ToString()));
+            const swalMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["SwalMessage"]?.ToString()));
+            const normalizedMessage = window.normalizeSwalMessage ? window.normalizeSwalMessage(swalMessage) : swalMessage;
+
+            if (swalType && swalTitle && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: swalType,
+                    title: swalTitle,
+                    text: normalizedMessage ?? '',
+                    confirmButtonColor: '#0d6efd'
+                });
+            }
+        })();
+    </script>
+}

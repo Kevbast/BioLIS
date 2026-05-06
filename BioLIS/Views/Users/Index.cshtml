@@ -1,4 +1,4 @@
-@model List<BioLIS.Models.User>
+@model List<BioLIS.Models.Entities.User>
 
 <link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
 
@@ -52,10 +52,16 @@
                         <tbody>
                             @foreach (var user in Model)
                             {
+                                var photoUrl = string.IsNullOrWhiteSpace(user.PhotoFilename)
+                                    ? Url.Content("~/images/users/default-user.png")
+                                    : user.PhotoFilename.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                        ? user.PhotoFilename
+                                        : Url.Content($"~/images/users/{user.PhotoFilename}");
+
                                 <tr>
                                     <td><strong>@user.UserID</strong></td>
                                     <td>
-                                        <img src="~/images/users/@user.PhotoFilename"
+                                        <img src="@photoUrl"
                                              alt="@user.Username"
                                              class="users-avatar"
                                              onerror="this.src='/images/users/default-user.png'" />

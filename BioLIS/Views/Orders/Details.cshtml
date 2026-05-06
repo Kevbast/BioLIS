@@ -1,11 +1,11 @@
 @using System.Security.Claims
-@model BioLIS.Models.Order
+@model BioLIS.Models.Entities.Order
 
 <link rel="stylesheet" href="~/css/orders.css" asp-append-version="true" />
 
 @{
     ViewData["Title"] = "Detalles de la Orden";
-    var results = ViewData["Results"] as List<BioLIS.Models.TestResult> ?? new List<BioLIS.Models.TestResult>();
+    var results = ViewData["Results"] as List<BioLIS.Models.Entities.TestResult> ?? new List<BioLIS.Models.Entities.TestResult>();
     var role = User.FindFirstValue(ClaimTypes.Role);
     var swalType = TempData["SwalType"]?.ToString();
     var swalTitle = TempData["SwalTitle"]?.ToString();
@@ -41,7 +41,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 text-center">
-                            <img src="~/images/pacientes/@Model.Patient.PhotoFilename"
+                            <img src="@GetPatientPhotoUrl(Model.Patient.PhotoFilename)"
                                  alt="@Model.Patient.FirstName"
                                  class="rounded-circle border border-3 border-info"
                                  style="width: 100px; height: 100px; object-fit: cover;"
@@ -196,9 +196,9 @@
                                         }
                                         else if (!string.IsNullOrEmpty(result.AlertLevel))
                                         {
-                                            <span class="@BioLIS.Models.AlertLevels.GetBadgeClass(result.AlertLevel)">
+                                            <span class="@BioLIS.Models.Entities.AlertLevels.GetBadgeClass(result.AlertLevel)">
                                                 <i class="fas @GetIconForAlertLevel(result.AlertLevel)"></i>
-                                                @BioLIS.Models.AlertLevels.GetDisplayName(result.AlertLevel)
+                                                @BioLIS.Models.Entities.AlertLevels.GetDisplayName(result.AlertLevel)
                                             </span>
                                         }
                                         else if (result.IsAbnormal)
@@ -390,6 +390,14 @@
 }
 
 @functions {
+    string GetPatientPhotoUrl(string? photoFilename)
+    {
+        if (string.IsNullOrWhiteSpace(photoFilename))
+            return Url.Content("~/images/pacientes/default.png");
+
+        return photoFilename.Trim();
+    }
+
     string GetColorBadge(string containerColor)
     {
         return containerColor?.ToLower() switch

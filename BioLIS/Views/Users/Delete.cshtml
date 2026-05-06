@@ -1,7 +1,12 @@
-@model BioLIS.Models.User
+@model BioLIS.Models.Entities.User
 
 @{
     ViewData["Title"] = "Eliminar Usuario";
+    var photoUrl = string.IsNullOrWhiteSpace(Model?.PhotoFilename)
+        ? Url.Content("~/images/users/default-user.png")
+        : Model.PhotoFilename.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? Model.PhotoFilename
+            : Url.Content($"~/images/users/{Model.PhotoFilename}");
 }
 
 <link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
@@ -27,7 +32,7 @@
 
                     <div class="row mb-3">
                         <div class="col-md-3 text-center">
-                            <img src="~/images/users/@Model.PhotoFilename" 
+                            <img src="@photoUrl" 
                                  alt="@Model.Username" 
                                  class="rounded-circle border border-3 border-danger" 
                                  style="width: 100px; height: 100px; object-fit: cover;" 

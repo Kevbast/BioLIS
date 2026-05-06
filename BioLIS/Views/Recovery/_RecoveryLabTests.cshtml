@@ -1,0 +1,39 @@
+@model List<BioLIS.Models.Entities.LabTest>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+            <tr>
+                <th class="ps-4">Examen</th>
+                <th>Unidades</th>
+                <th>Muestra</th>
+                <th class="text-end pe-4">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model == null || !Model.Any())
+            {
+                <tr><td colspan="4" class="text-center p-4 text-muted">No hay exámenes desactivados.</td></tr>
+            }
+            else
+            {
+                foreach (var test in Model)
+                {
+                    <tr>
+                        <td class="ps-4 fw-bold">@test.TestName</td>
+                        <td>@(string.IsNullOrWhiteSpace(test.Units) ? "Sin unidades" : test.Units)</td>
+                        <td>@(test.SampleType?.SampleName ?? "Sin muestra")</td>
+                        <td class="text-end pe-4">
+                            <form asp-action="ReactivateLabTest" asp-route-id="@test.TestID" method="post" class="d-inline reactivate-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-success rounded-pill fw-bold">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Reactivar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

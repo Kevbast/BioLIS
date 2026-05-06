@@ -1,168 +1,92 @@
-using BioLIS.Models;
 using BioLIS.Filters;
-using BioLIS.Repositories;
+using BioLIS.Models.Entities;
+using BioLIS.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace BioLIS.Controllers
 {
     [AuthorizeUsers(Policy = "AllRoles")]
     public class DoctorsController : Controller
     {
-        private CatalogRepository repo;
-
-        public DoctorsController(CatalogRepository repo)
-        {
-            this.repo = repo;
-        }
+        private readonly ApiService api;
+        public DoctorsController(ApiService api) => this.api = api;
 
         public async Task<IActionResult> Index()
-        {
-            List<Doctor> doctors = await this.repo.GetDoctorsAsync();
-            return View(doctors);
-        }
+            => View(await this.api.GetDoctorsAsync() ?? new());
 
         [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Inactive()
-        {
-            var doctors = await this.repo.GetInactiveDoctorsAsync();
-            return View(doctors);
-        }
+            => View(await this.api.GetInactiveDoctorsAsync() ?? new());
 
         [AuthorizeUsers(Policy = "AdminOnly")]
-        public IActionResult Create()
-        {
-            return View();
-        }
+        public IActionResult Create() => View();
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [AuthorizeUsers(Policy = "AdminOnly")]
+        [HttpPost][ValidateAntiForgeryToken][AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Create(Doctor doctor)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return View(doctor);
+            var result = await this.api.CreateDoctorAsync(
+                doctor.FullName, doctor.LicenseNumber, doctor.Email, doctor.PhoneNumber);
+            if (result.Success)
             {
-                var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
-
-                await this.repo.CreateDoctorAsync(
-                    doctor.FullName,
-                    doctor.LicenseNumber,
-                    doctor.Email,
-                    doctor.PhoneNumber, // NUEVO: Teléfono
-                    currentUserId       // NUEVO: Auditoría
-                );
-
-                TempData["SwalType"] = "success";
-                TempData["SwalTitle"] = "Médico registrado";
-                TempData["SwalMessage"] = "El médico se registró exitosamente.";
+                TempData["SwalType"] = "success"; TempData["SwalTitle"] = "MÃ©dico registrado";
+                TempData["SwalMessage"] = "El mÃ©dico se registrÃ³ exitosamente.";
                 return RedirectToAction("Index");
             }
-
+            TempData["SwalType"] = "error"; TempData["SwalTitle"] = "Error";
+            TempData["SwalMessage"] = result.Body;
             return View(doctor);
         }
 
         [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int doctorId)
         {
-            Doctor doctor = await this.repo.GetDoctorByIdAsync(doctorId);
-            if (doctor == null)
-            {
-                return NotFound();
-            }
-
-            return View(doctor);
+            var d = await this.api.GetDoctorByIdAsync(doctorId);
+            if (d == null) return NotFound();
+            return View(d);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [AuthorizeUsers(Policy = "AdminOnly")]
+        [HttpPost][ValidateAntiForgeryToken][AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(Doctor doctor)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return View(doctor);
+            var result = await this.api.UpdateDoctorAsync(
+                doctor.DoctorID, doctor.FullName, doctor.LicenseNumber, doctor.Email, doctor.PhoneNumber);
+            if (result.Success)
             {
-                var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
-
-                bool success = await this.repo.UpdateDoctorAsync(doctor, currentUserId);
-
-                if (success)
-                {
-                    TempData["SwalType"] = "success";
-                    TempData["SwalTitle"] = "Médico actualizado";
-                    TempData["SwalMessage"] = "Los datos del médico fueron actualizados correctamente.";
-                    return RedirectToAction("Index");
-                }
-                else
-                {
-                    ModelState.AddModelError("", "Error al actualizar el doctor.");
-                }
+                TempData["SwalType"] = "success"; TempData["SwalTitle"] = "MÃ©dico actualizado";
+                TempData["SwalMessage"] = "Datos del mÃ©dico actualizados correctamente.";
+                return RedirectToAction("Index");
             }
-
+            ModelState.AddModelError("", "Error al actualizar el doctor.");
             return View(doctor);
         }
 
         [AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int doctorId)
         {
-            Doctor doctor = await this.repo.GetDoctorByIdAsync(doctorId);
-            if (doctor == null)
-            {
-                return NotFound();
-            }
-
-            return View(doctor);
+            var d = await this.api.GetDoctorByIdAsync(doctorId);
+            if (d == null) return NotFound();
+            return View(d);
         }
 
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        [AuthorizeUsers(Policy = "AdminOnly")]
+        [HttpPost, ActionName("Delete")][ValidateAntiForgeryToken][AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> DeleteConfirmed(int doctorId)
         {
-            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
-
-            var result = await this.repo.DeleteDoctorAsync(doctorId, currentUserId);
-
-            if (result.Success)
-            {
-                TempData["SwalType"] = "success";
-                TempData["SwalTitle"] = "Médico desactivado";
-                TempData["SwalMessage"] = result.Message;
-            }
-            else
-            {
-                TempData["SwalType"] = "error";
-                TempData["SwalTitle"] = "No se pudo eliminar";
-                TempData["SwalMessage"] = result.Message;
-            }
-
+            var result = await this.api.DeleteDoctorAsync(doctorId);
+            TempData["SwalType"]    = result.Success ? "success" : "error";
+            TempData["SwalTitle"]   = result.Success ? "MÃ©dico desactivado" : "No se pudo eliminar";
+            TempData["SwalMessage"] = result.Body;
             return RedirectToAction("Index");
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [AuthorizeUsers(Policy = "AdminOnly")]
+        [HttpPost][ValidateAntiForgeryToken][AuthorizeUsers(Policy = "AdminOnly")]
         public async Task<IActionResult> Reactivate(int doctorId)
         {
-            var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            int? currentUserId = userIdClaim != null ? int.Parse(userIdClaim) : null;
-
-            var result = await this.repo.ReactivateDoctorAsync(doctorId, currentUserId);
-
-            if (result.Success)
-            {
-                TempData["SwalType"] = "success";
-                TempData["SwalTitle"] = "Médico reactivado";
-                TempData["SwalMessage"] = result.Message;
-            }
-            else
-            {
-                TempData["SwalType"] = "error";
-                TempData["SwalTitle"] = "No se pudo reactivar";
-                TempData["SwalMessage"] = result.Message;
-            }
-
+            var result = await this.api.ReactivateDoctorAsync(doctorId);
+            TempData["SwalType"]    = result.Success ? "success" : "error";
+            TempData["SwalTitle"]   = result.Success ? "MÃ©dico reactivado" : "No se pudo reactivar";
+            TempData["SwalMessage"] = result.Body;
             return RedirectToAction("Inactive");
         }
     }

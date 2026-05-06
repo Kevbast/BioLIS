@@ -137,3 +137,121 @@ body {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
+/* ==========================================
+   DISEÑO PREMIUM SAAS (Nuevos Estilos)
+   ========================================== */
+
+/* Navbar Glassmorphism */
+.app-navbar-glass {
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border-radius: 16px;
+    margin: 1rem auto;
+    position: sticky;
+    top: 1rem;
+    z-index: 1050;
+    max-width: 1400px;
+}
+
+    .app-navbar-glass .navbar-brand {
+        font-weight: 800;
+        color: #0d6efd !important;
+        font-size: 1.25rem;
+    }
+
+    .app-navbar-glass .nav-link {
+        color: #4a5568 !important;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.2s ease;
+    }
+
+        .app-navbar-glass .nav-link:hover,
+        .app-navbar-glass .nav-link.active {
+            background: rgba(13, 110, 253, 0.08);
+            color: #0d6efd !important;
+        }
+
+/* Mega Menú de Administración */
+.nav-item.mega-dropdown {
+    position: static !important; /* Necesario para que el dropdown ocupe todo el ancho */
+}
+
+.mega-menu-container {
+    width: 100%;
+    left: 0;
+    right: 0;
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    padding: 1.5rem;
+    margin-top: 0.5rem;
+    background: #ffffff;
+}
+
+.mega-menu-column h6 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.mega-menu-column .dropdown-item {
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    color: #4a5568;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+    .mega-menu-column .dropdown-item:hover {
+        background-color: #f8faff;
+        color: #0d6efd;
+        transform: translateX(3px);
+    }
+
+/* Tarjetas Limpias (Perfil y Dashboard) */
+.premium-card {
+    background: #ffffff;
+    border: 1px solid #edf2f7;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.premium-card-header {
+    background: transparent;
+    border-bottom: 1px solid #edf2f7;
+    padding: 1.25rem 1.5rem;
+}
+
+/* Efecto Hover Foto de Perfil */
+.profile-pic-wrapper {
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+.profile-pic-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.profile-pic-wrapper:hover .profile-pic-overlay {
+    opacity: 1;
+}

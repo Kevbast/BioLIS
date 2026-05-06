@@ -1,0 +1,211 @@
+{
+  "name": "BioLisWorkFlow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9aeafa05-6ccf-4ded-a05b-74180e87fb1f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Eres un asistente médico virtual del laboratorio BioLIS. Redacta un mensaje de WhatsApp (máximo 3 líneas) dirigido al paciente para avisarle de que sus resultados están listos. Explica de forma MUY breve y amable si hay alguna anomalía según estos datos, sin dar diagnósticos médicos definitivos.\n\nAquí están los datos del paciente y sus resultados: {{ $json.PayloadJSON }}\n\nAl final del mensaje, DEBES incluir obligatoriamente este texto tal cual:\n\"📄 Descarga tu informe oficial aquí: {{ JSON.parse($('Code').item.json.PayloadJSON).PortalUrl }}\n🔐 Tu PIN de acceso es: {{ JSON.parse($('Code').item.json.PayloadJSON).PortalPin }}\""
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b11d9f49-0089-48f2-8934-147cd20f51d6",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "X5GxcGtsJsU3SgrP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT TOP 1 * FROM IntegrationEvents \nWHERE IsProcessed = 0 AND EventType = 'OrderApproved'\nORDER BY CreatedAt ASC;"
+      },
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f9296d1b-605a-47aa-996d-0dac9a2e645b",
+      "name": "Code",
+      "credentials": {
+        "microsoftSql": {
+          "id": "LapmZR4xHN697e7G",
+          "name": "Microsoft SQL account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE Orders \nSET AISummary = '{{ $json.body }}' \nWHERE OrderID = {{ JSON.parse($('Code').item.json.PayloadJSON).OrderId }};"
+      },
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "be9a91d0-4e51-4463-b2b9-f21538f9d7aa",
+      "name": "Code2",
+      "credentials": {
+        "microsoftSql": {
+          "id": "LapmZR4xHN697e7G",
+          "name": "Microsoft SQL account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE IntegrationEvents \nSET IsProcessed = 1, ProcessedAt = GETDATE() \nWHERE EventID = {{ $('Code').item.json.EventID }};"
+      },
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1.1,
+      "position": [
+        1312,
+        0
+      ],
+      "id": "eea83771-c53d-4cbb-afac-a11ea3ed7cf1",
+      "name": "Code3",
+      "credentials": {
+        "microsoftSql": {
+          "id": "LapmZR4xHN697e7G",
+          "name": "Microsoft SQL account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "={{ JSON.parse($('Code').item.json.PayloadJSON).PatientPhone }}",
+        "toWhatsapp": true,
+        "message": "={{ $json.content.parts[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        800,
+        0
+      ],
+      "id": "113a78b6-d070-4e96-93b5-9f81c080cb7b",
+      "name": "Send an SMS/MMS/WhatsApp message",
+      "credentials": {
+        "twilioApi": {
+          "id": "p935bvyEIzod5vGD",
+          "name": "Twilio account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send an SMS/MMS/WhatsApp message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an SMS/MMS/WhatsApp message": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2fd8a1bb-6cf7-47db-b7b8-06c956b970be",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ec2a312300213de33fe549ac802faf14f79c394c012231bd58b80df8d06203a8"
+  },
+  "id": "T1cmSif79BtwSMvj",
+  "tags": []
+}

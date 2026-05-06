@@ -1,4 +1,4 @@
-@model List<BioLIS.Models.User>
+@model List<BioLIS.Models.Entities.User>
 
 <link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
 
@@ -96,12 +96,13 @@
             const swalType = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalType));
             const swalTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalTitle));
             const swalMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(swalMessage));
+            const normalizedMessage = window.normalizeSwalMessage ? window.normalizeSwalMessage(swalMessage) : swalMessage;
 
             if (swalType && swalTitle && typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: swalType,
                     title: swalTitle,
-                    text: swalMessage ?? '',
+                    text: normalizedMessage ?? '',
                     confirmButtonColor: '#4e73df'
                 });
             }

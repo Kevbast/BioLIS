@@ -1,159 +1,70 @@
-using BioLIS.Models;
 using BioLIS.Filters;
-using BioLIS.Repositories;
+using BioLIS.Models.Entities;
+using BioLIS.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeUsers(Policy = "AdminOnly")] // Solo Admin puede gestionar tipos de muestra
+    [AuthorizeUsers(Policy = "AdminOnly")]
     public class SampleTypesController : Controller
     {
-        private readonly CatalogRepository catalogRepo;
+        private readonly ApiService api;
+        public SampleTypesController(ApiService api) => this.api = api;
 
-        public SampleTypesController(CatalogRepository catalogRepo)
-        {
-            this.catalogRepo = catalogRepo;
-        }
-
-        // GET: SampleTypes
         public async Task<IActionResult> Index()
         {
-            var sampleTypes = await catalogRepo.GetSampleTypesAsync();
-            
-            // Obtener estadísticas de uso
-            var allTests = await catalogRepo.GetLabTestsAsync();
-            var usageStats = sampleTypes.Select(st => new
-            {
-                SampleType = st,
-                TestCount = allTests.Count(t => t.SampleID == st.SampleID)
-            }).ToList();
-
-            ViewData["UsageStats"] = usageStats;
-            
-            return View(sampleTypes);
+            var st    = await this.api.GetSampleTypesAsync() ?? new();
+            var tests = await this.api.GetLabTestsAsync()    ?? new();
+            ViewData["UsageStats"] = st.Select(s => new { SampleType = s, TestCount = tests.Count(t => t.SampleID == s.SampleID) }).ToList();
+            return View(st);
         }
 
-        // GET: SampleTypes/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
+        public IActionResult Create() => View();
 
-        // POST: SampleTypes/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpPost][ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string sampleName, string containerColor)
         {
             if (string.IsNullOrWhiteSpace(sampleName))
-            {
-                TempData["ErrorMessage"] = "El nombre del tipo de muestra es obligatorio.";
-                return RedirectToAction("Create");
-            }
-
-            await catalogRepo.CreateSampleTypeAsync(sampleName, containerColor);
-
-            TempData["SwalType"] = "success";
-            TempData["SwalTitle"] = "Tipo de muestra creado";
-            TempData["SwalMessage"] = $"Tipo de muestra '{sampleName}' creado exitosamente.";
+            { TempData["ErrorMessage"] = "El nombre es obligatorio."; return RedirectToAction("Create"); }
+            var r = await this.api.CreateSampleTypeAsync(sampleName, containerColor);
+            TempData["SwalType"]    = r.Success ? "success" : "error";
+            TempData["SwalTitle"]   = r.Success ? "Tipo creado" : "Error";
+            TempData["SwalMessage"] = r.Success ? $"'{sampleName}' creado." : r.Body;
             return RedirectToAction("Index");
         }
 
-        // GET: SampleTypes/Update/5
         public async Task<IActionResult> Update(int sampleId)
         {
-            var sampleType = await catalogRepo.GetSampleTypeByIdAsync(sampleId);
-            if (sampleType == null)
-            {
-                return NotFound();
-            }
-
-            return View(sampleType);
+            var st = await this.api.GetSampleTypeByIdAsync(sampleId);
+            if (st == null) return NotFound();
+            return View(st);
         }
 
-        // POST: SampleTypes/Update/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpPost][ValidateAntiForgeryToken]
         public async Task<IActionResult> Update(int sampleId, string sampleName, string? containerColor)
         {
-            if (string.IsNullOrWhiteSpace(sampleName))
-            {
-                ModelState.AddModelError(nameof(sampleName), "El nombre del tipo de muestra es obligatorio.");
-            }
-
-            if (ModelState.IsValid)
-            {
-                var sampleType = new SampleType
-                {
-                    SampleID = sampleId,
-                    SampleName = sampleName.Trim(),
-                    ContainerColor = containerColor?.Trim() ?? string.Empty
-                };
-
-                bool success = await catalogRepo.UpdateSampleTypeAsync(sampleType);
-
-                if (success)
-                {
-                    TempData["SwalType"] = "success";
-                    TempData["SwalTitle"] = "Tipo de muestra actualizado";
-                    TempData["SwalMessage"] = "Tipo de muestra actualizado exitosamente.";
-                    return RedirectToAction("Index");
-                }
-                else
-                {
-                    TempData["SwalType"] = "error";
-                    TempData["SwalTitle"] = "Error de actualización";
-                    TempData["SwalMessage"] = "Error al actualizar el tipo de muestra.";
-                }
-            }
-
-            var existingSampleType = await catalogRepo.GetSampleTypeByIdAsync(sampleId);
-            if (existingSampleType == null)
-            {
-                return NotFound();
-            }
-
-            existingSampleType.SampleName = sampleName;
-            existingSampleType.ContainerColor = containerColor ?? string.Empty;
-
-            return View(existingSampleType);
+            var r = await this.api.UpdateSampleTypeAsync(sampleId, sampleName, containerColor);
+            TempData["SwalType"]    = r.Success ? "success" : "error";
+            TempData["SwalTitle"]   = r.Success ? "Actualizado" : "Error";
+            TempData["SwalMessage"] = r.Body;
+            return RedirectToAction(r.Success ? "Index" : "Update", r.Success ? null : new { sampleId });
         }
 
-        // GET: SampleTypes/Delete/5
         public async Task<IActionResult> Delete(int sampleId)
         {
-            var sampleType = await catalogRepo.GetSampleTypeByIdAsync(sampleId);
-            if (sampleType == null)
-            {
-                return NotFound();
-            }
-
-            // Obtener exámenes que usan este tipo de muestra
-            var relatedTests = await catalogRepo.GetLabTestsBySampleTypeAsync(sampleId);
-            ViewData["RelatedTests"] = relatedTests;
-
-            return View(sampleType);
+            var st = await this.api.GetSampleTypeByIdAsync(sampleId);
+            if (st == null) return NotFound();
+            ViewData["RelatedTests"] = await this.api.GetLabTestsBySampleTypeAsync(sampleId) ?? new();
+            return View(st);
         }
 
-        // POST: SampleTypes/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [HttpPost, ActionName("Delete")][ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int sampleId)
         {
-            var result = await catalogRepo.DeleteSampleTypeAsync(sampleId);
-
-            if (result.Success)
-            {
-                TempData["SwalType"] = "success";
-                TempData["SwalTitle"] = "Tipo de muestra eliminado";
-                TempData["SwalMessage"] = result.Message;
-            }
-            else
-            {
-                TempData["SwalType"] = "error";
-                TempData["SwalTitle"] = "No se pudo eliminar";
-                TempData["SwalMessage"] = result.Message;
-            }
-
+            var r = await this.api.DeleteSampleTypeAsync(sampleId);
+            TempData["SwalType"]    = r.Success ? "success" : "error";
+            TempData["SwalTitle"]   = r.Success ? "Eliminado" : "No se pudo eliminar";
+            TempData["SwalMessage"] = r.Body;
             return RedirectToAction("Index");
         }
     }

@@ -17,7 +17,7 @@
                         <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
                     }
 
-                    <form method="post">
+                    <form asp-controller="Portal" asp-action="Descargar" method="post">
                         <input type="hidden" name="tokenId" value="@Model" />
 
                         <div class="form-group mb-4">

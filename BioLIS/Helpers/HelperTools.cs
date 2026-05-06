@@ -7,18 +7,14 @@ namespace BioLIS.Helpers
     {
         public static string GenerateSalt()
         {
-            // 1. Creamos un array de 50 bytes
             byte[] randomBytes = new byte[50];
 
-            // 2. Llenamos el array con números aleatorios criptográficamente seguros
+            // Genera un salt criptográficamente seguro y lo convierte a Base64.
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(randomBytes);
             }
 
-            // 3. Convertimos los bytes a Base64. 
-            // Esto devolverá SOLO letras, números, y los símbolos '+' , '/' y '='.
-            // ¡Jamás tendrá saltos de línea ni caracteres invisibles!
             return Convert.ToBase64String(randomBytes);
         }
 
@@ -32,7 +28,7 @@ namespace BioLIS.Helpers
             }
             else
             {
-                // COMPARAMOS BYTE A BYTE
+                // Compara byte a byte para validar igualdad.
                 for (int i = 0; i < a.Length; i++)
                 {
                     if (a[i].Equals(b[i]) == false)

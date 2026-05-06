@@ -1,7 +1,7 @@
 ﻿@using System.Text.Json
 @{
     ViewData["Title"] = "Iniciar Sesión";
-    Layout = null; // Sin layout para pantalla de login independiente
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -11,141 +11,318 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - BioLIS</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
+        :root {
+            --brand-purple: #764ba2;
+            --brand-purple-light: #9f7aea;
+            --brand-purple-dark: #3b0764; /* Morado muy oscuro y elegante */
+            --brand-purple-glow: rgba(118, 75, 162, 0.15);
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --input-border: #e5e7eb;
+        }
+
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* Fondo morado profundo */
+            background-color: var(--brand-purple-dark);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            position: relative;
+            overflow: hidden;
         }
 
-        .login-container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            padding: 40px;
-            max-width: 450px;
+        /* --- DECORACIÓN DEL FONDO (Mesh Gradient / Luces abstractas) --- */
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px); /* Esto crea el efecto de "nebulosa" o luz suave */
+            z-index: 0;
+            pointer-events: none;
+            /* Usamos ESCAPE @@ para que Razor no crea que es C# */
+            -webkit-animation: floatShape 10s infinite alternate ease-in-out;
+            animation: floatShape 10s infinite alternate ease-in-out;
+        }
+
+        .bg-shape-1 {
+            width: 500px;
+            height: 500px;
+            background: #c026d3; /* Magenta brillante */
+            top: -150px;
+            left: -100px;
+            opacity: 0.4;
+        }
+
+        .bg-shape-2 {
+            width: 600px;
+            height: 600px;
+            background: #667eea; /* Azul/Lila claro */
+            bottom: -200px;
+            right: -150px;
+            opacity: 0.35;
+            -webkit-animation-delay: -5s;
+            animation-delay: -5s;
+        }
+
+        .bg-shape-3 {
+            width: 300px;
+            height: 300px;
+            background: #d8b4fe; /* Lila pastel */
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.2;
+        }
+
+        /* ESCAPAMOS LOS KEYFRAMES CON @@ PARA RAZOR */
+        @@-webkit-keyframes floatShape {
+            0% {
+                -webkit-transform: translate(0px, 0px) scale(1);
+                transform: translate(0px, 0px) scale(1);
+            }
+
+            100% {
+                -webkit-transform: translate(30px, 50px) scale(1.1);
+                transform: translate(30px, 50px) scale(1.1);
+            }
+        }
+
+        @@keyframes floatShape {
+            0% {
+                transform: translate(0px, 0px) scale(1);
+            }
+
+            100% {
+                transform: translate(30px, 50px) scale(1.1);
+            }
+        }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .login-wrapper {
             width: 100%;
+            max-width: 430px;
+            padding: 1.5rem;
+            z-index: 1; /* Para que quede por encima de las luces */
+            position: relative;
+        }
+
+        /* Tarjeta Blanca Inmaculada para máximo contraste */
+        .login-card {
+            background: #ffffff;
+            border-radius: 24px;
+            /* Sombra profunda para que resalte sobre el fondo oscuro */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            padding: 3rem 2.5rem;
         }
 
         .login-header {
             text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .login-header h1 {
-            color: #667eea;
-            font-weight: bold;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        .login-header p {
-            color: #6c757d;
-            font-size: 0.95rem;
-        }
-
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-
-        .btn-login {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            padding: 12px;
-            font-weight: 600;
-            transition: transform 0.2s;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .alert {
-            border-radius: 10px;
+            margin-bottom: 2rem;
         }
 
         .icon-container {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin: 0 auto 20px;
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--brand-purple-light) 0%, var(--brand-purple) 100%);
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
-            color: white;
+            margin: 0 auto 1.25rem;
+            color: #ffffff;
+            font-size: 2rem;
+            box-shadow: 0 10px 20px rgba(118, 75, 162, 0.3);
         }
+
+        .login-header h1 {
+            color: var(--text-main);
+            font-weight: 800;
+            font-size: 1.75rem;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.25rem;
+        }
+
+        .login-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        /* --- INPUTS FLOTANTES --- */
+        .form-floating > .form-control {
+            border-radius: 12px;
+            border: 1.5px solid var(--input-border);
+            height: 3.8rem;
+            font-weight: 500;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+            .form-floating > .form-control:focus {
+                border-color: var(--brand-purple);
+                box-shadow: 0 0 0 4px var(--brand-purple-glow);
+            }
+
+        .form-floating > label {
+            color: var(--text-muted);
+            font-weight: 500;
+            padding-left: 1.25rem;
+        }
+
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            color: var(--brand-purple);
+            font-weight: 700;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            transition: color 0.2s;
+            z-index: 10;
+        }
+
+            .toggle-password:hover {
+                color: var(--brand-purple);
+            }
+
+        /* --- BOTÓN --- */
+        .btn-login {
+            background: var(--text-main); /* Gris muy oscuro/Negro */
+            border: none;
+            border-radius: 12px;
+            padding: 0.9rem;
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: white;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+            .btn-login:hover {
+                background: var(--brand-purple);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(118, 75, 162, 0.35);
+                color: white;
+            }
+
+        .help-text {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: color 0.2s;
+            display: inline-block;
+            margin-top: 1.5rem;
+        }
+
+            .help-text:hover {
+                color: var(--brand-purple);
+            }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-header">
-            <div class="icon-container">
-                🧬
-            </div>
-            <h1>BioLIS</h1>
-            <p>Sistema de Información de Laboratorio</p>
-        </div>
 
-        @if (TempData["Info"] != null)
-        {
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                @TempData["Info"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        }
+    <!-- Luces decorativas del fondo -->
+    <div class="bg-shape bg-shape-1"></div>
+    <div class="bg-shape bg-shape-2"></div>
+    <div class="bg-shape bg-shape-3"></div>
 
-        <form asp-controller="Auth" asp-action="Login" method="post">
-            @Html.AntiForgeryToken()
+    <div class="login-wrapper">
+        <div class="login-card">
 
-            <div class="mb-3">
-                <label for="username" class="form-label">Usuario</label>
-                <input type="text" class="form-control" id="username" name="username" 
-                       placeholder="Ingresa tu usuario" required autofocus />
+            <div class="login-header">
+                <div class="icon-container">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+                <h1>BioLIS</h1>
+                <p>Ingresa tus credenciales</p>
             </div>
 
-            <div class="mb-4">
-                <label for="password" class="form-label">Contraseña</label>
-                <input type="password" class="form-control" id="password" name="password" 
-                       placeholder="Ingresa tu contraseña" required />
-            </div>
+            @if (TempData["Info"] != null)
+            {
+                <div class="alert alert-info alert-dismissible fade show border-0 bg-info bg-opacity-10 text-info" style="border-radius: 12px; font-size: 0.9rem;" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> @TempData["Info"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
 
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-login">
+            <form asp-controller="Auth" asp-action="Login" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Usuario" required autocomplete="username" autofocus />
+                    <label for="username">Nombre de usuario</label>
+                </div>
+
+                <div class="form-floating mb-4 password-wrapper">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required autocomplete="current-password" />
+                    <label for="password">Contraseña</label>
+                    <i class="bi bi-eye toggle-password" id="togglePasswordIcon" title="Mostrar contraseña"></i>
+                </div>
+
+                <button type="submit" class="btn btn-login">
                     Iniciar Sesión
                 </button>
-            </div>
-        </form>
+            </form>
 
-        <div class="text-center mt-4">
-            <small class="text-muted">¿Problemas para acceder? Contacta al administrador</small>
+            <div class="text-center">
+                <a href="#" class="help-text">
+                    <i class="bi bi-shield-check me-1 text-success"></i> Entorno Seguro &middot; Soporte IT
+                </a>
+            </div>
+
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    @if (ViewData["LoginError"] != null)
-    {
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const loginError = @Html.Raw(JsonSerializer.Serialize(ViewData["LoginError"]?.ToString()));
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Acceso denegado',
-                    text: loginError,
-                    confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#667eea'
+    <script>
+        // Lógica para mostrar/ocultar contraseña
+        document.getElementById('togglePasswordIcon').addEventListener('click', function () {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('bi-eye');
+            this.classList.toggle('bi-eye-slash');
+        });
+
+        // Manejo de errores de Login
+        @if (ViewData["LoginError"] != null)
+        {
+                <text>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const loginError = @Html.Raw(JsonSerializer.Serialize(ViewData["LoginError"]?.ToString()));
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Acceso Denegado',
+                        text: loginError,
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#764ba2',
+                        customClass: {
+                            popup: 'rounded-4'
+                        }
+                    });
                 });
-            });
-        </script>
-    }
+                </text>
+        }
+    </script>
 </body>
 </html>

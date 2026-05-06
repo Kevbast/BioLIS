@@ -1,4 +1,5 @@
 using BioLIS.Models;
+using BioLIS.Models.DTOs.Portal;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -9,11 +10,10 @@ namespace BioLIS.Services
     {
         public PdfReportService()
         {
-            // Licencia Community para QuestPDF
             QuestPDF.Settings.License = LicenseType.Community;
         }
 
-        public byte[] GenerateResultsPdf(Order order, List<TestResult> results)
+        public byte[] GenerateResultsPdf(PortalOrderDto order, List<PortalResultDto> results)
         {
             var document = Document.Create(container =>
             {
@@ -33,7 +33,7 @@ namespace BioLIS.Services
             return document.GeneratePdf();
         }
 
-        private void ComposeHeader(IContainer container, Order order)
+        private void ComposeHeader(IContainer container, PortalOrderDto order)
         {
             container.Column(column =>
             {
@@ -56,55 +56,45 @@ namespace BioLIS.Services
             });
         }
 
-        private void ComposeContent(IContainer container, Order order, List<TestResult> results)
+        private void ComposeContent(IContainer container, PortalOrderDto order, List<PortalResultDto> results)
         {
             container.PaddingVertical(10).Column(column =>
             {
-                // Información del paciente y doctor
                 column.Item().PaddingBottom(15).Row(row =>
                 {
                     row.RelativeItem().Column(col =>
                     {
                         col.Item().Text("Paciente:").SemiBold();
-                        col.Item().Text($"{order.Patient.FirstName} {order.Patient.LastName}");
-                        var age = DateTime.Now.Year - order.Patient.BirthDate.Year;
-                        col.Item().Text($"Edad: {age} años | Sexo: {order.Patient.Gender}");
+                        col.Item().Text(order.PatientName);
+                        col.Item().Text($"Edad: {order.PatientAge} años | Sexo: {order.PatientGender}");
                     });
 
                     row.RelativeItem().Column(col =>
                     {
                         col.Item().Text("Médico Solicitante:").SemiBold();
-                        col.Item().Text(order.Doctor.FullName);
-                        col.Item().Text($"Licencia: {order.Doctor.LicenseNumber ?? "S/N"}");
+                        col.Item().Text(order.DoctorName);
+                        col.Item().Text($"Licencia: {order.DoctorLicense ?? "S/N"}");
                     });
 
-                    // 3ra columna: código de barras pequeño
                     row.ConstantItem(145).AlignRight().Column(col =>
                     {
                         col.Item().AlignRight().Text("Código").FontSize(7).FontColor(Colors.Grey.Medium);
-                        col.Item()
-                            .PaddingTop(2)
-                            .AlignRight()
-                            .Width(4.6f, Unit.Centimetre)
-                            .Height(1.2f, Unit.Centimetre)
-                            .BarcodeCode128(order.OrderNumber);
+                        col.Item().PaddingTop(2).AlignRight().Width(4.6f, Unit.Centimetre).Height(1.2f, Unit.Centimetre).BarcodeCode128(order.OrderNumber);
                     });
                 });
 
-                // Tabla de resultados
                 column.Item().Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.RelativeColumn(3); // Examen
-                        columns.RelativeColumn(2); // Resultado
-                        columns.RelativeColumn(1); // Unidades
-                        columns.RelativeColumn(2); // Rango
-                        columns.RelativeColumn(2); // Estado
-                        columns.RelativeColumn(3); // Observaciones
+                        columns.RelativeColumn(3);
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(1);
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(2);
+                        columns.RelativeColumn(3);
                     });
 
-                    // Header
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Examen").SemiBold();
@@ -115,48 +105,26 @@ namespace BioLIS.Services
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Observaciones").SemiBold();
                     });
 
-                    // Items
                     foreach (var result in results)
                     {
                         var resultColor = Colors.Black;
-                        var estado = BioLIS.Models.AlertLevels.GetDisplayName(result.AlertLevel);
-                        var referenceRange = ResolveReferenceRange(result, order.Patient);
-                        var referenceRangeText = referenceRange != null
-                            ? $"{referenceRange.MinVal:0.##}-{referenceRange.MaxVal:0.##}"
-                            : "Sin rango";
-                        
-                        if (result.AlertLevel == BioLIS.Models.AlertLevels.Anormal)
-                            resultColor = Colors.Orange.Medium;
-                        else if (result.AlertLevel == BioLIS.Models.AlertLevels.Critico)
-                            resultColor = Colors.Red.Medium;
+                        var estado = result.AlertLevel ?? "-";
 
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                             .Text(result.LabTest.TestName);
-                             
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                             .Text(result.ResultValue.HasValue ? result.ResultValue.Value.ToString("0.##") : "Pendiente")
-                             .FontColor(resultColor).SemiBold();
+                        if (estado.Contains("Anormal", StringComparison.OrdinalIgnoreCase)) resultColor = Colors.Orange.Medium;
+                        else if (estado.Contains("Critico", StringComparison.OrdinalIgnoreCase) || estado.Contains("Crítico", StringComparison.OrdinalIgnoreCase)) resultColor = Colors.Red.Medium;
 
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                             .Text(result.LabTest.Units ?? "");
-
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                             .Text(referenceRangeText)
-                             .FontColor(referenceRange == null ? Colors.Grey.Medium : Colors.Black);
-
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                             .Text(result.ResultValue.HasValue ? estado : "-")
-                             .FontColor(resultColor);
-
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                             .Text(result.Notes ?? "-");
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(result.TestName);
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(result.ResultValue.HasValue ? result.ResultValue.Value.ToString("0.##") : "Pendiente").FontColor(resultColor).SemiBold();
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(result.Units ?? "");
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(result.ReferenceRangeText).FontColor(result.ReferenceRangeText == "Sin rango" ? Colors.Grey.Medium : Colors.Black);
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(result.ResultValue.HasValue ? estado : "-").FontColor(resultColor);
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(result.Notes ?? "-");
                     }
                 });
 
-                // Resumen rápido
                 var total = results.Count;
                 var completed = results.Count(x => x.ResultValue.HasValue);
-                var abnormal = results.Count(x => x.AlertLevel == AlertLevels.Anormal || x.AlertLevel == AlertLevels.Critico);
+                var abnormal = results.Count(x => x.AlertLevel == "Anormal" || x.AlertLevel == "Crítico" || x.AlertLevel == "Critico");
 
                 column.Item().PaddingTop(10).Row(row =>
                 {
@@ -165,29 +133,10 @@ namespace BioLIS.Services
                     row.RelativeItem().Text($"Anormales/Críticos: {abnormal}").SemiBold().FontColor(abnormal > 0 ? Colors.Red.Medium : Colors.Green.Medium);
                 });
 
-                var enteredByNames = results
-                    .Where(x => x.EnteredByUser != null)
-                    .Select(x => x.EnteredByUser!.Username)
-                    .Distinct()
-                    .ToList();
-
-                var modifiedByNames = results
-                    .Where(x => x.ModifiedByUser != null)
-                    .Select(x => x.ModifiedByUser!.Username)
-                    .Distinct()
-                    .ToList();
-
-                var firstEntryDate = results
-                    .Where(x => x.EnteredBy.HasValue)
-                    .Select(x => (DateTime?)x.EnteredDate)
-                    .OrderBy(d => d)
-                    .FirstOrDefault();
-
-                var lastModifiedDate = results
-                    .Where(x => x.ModifiedDate.HasValue)
-                    .Select(x => x.ModifiedDate)
-                    .OrderByDescending(d => d)
-                    .FirstOrDefault();
+                var enteredByNames = results.Where(x => !string.IsNullOrEmpty(x.EnteredByName)).Select(x => x.EnteredByName).Distinct().ToList();
+                var modifiedByNames = results.Where(x => !string.IsNullOrEmpty(x.ModifiedByName)).Select(x => x.ModifiedByName).Distinct().ToList();
+                var firstEntryDate = results.Where(x => x.EnteredDate.HasValue).Select(x => x.EnteredDate).OrderBy(d => d).FirstOrDefault();
+                var lastModifiedDate = results.Where(x => x.ModifiedDate.HasValue).Select(x => x.ModifiedDate).OrderByDescending(d => d).FirstOrDefault();
 
                 column.Item().PaddingTop(8).Column(auditColumn =>
                 {
@@ -202,11 +151,9 @@ namespace BioLIS.Services
 
                     if (order.Status == "Aprobada")
                     {
-                        var approverName = order.ApprovedByUser?.DisplayName ?? "N/D";
-                        auditColumn.Item().Text($"Aprobada por: {approverName}").FontSize(9).SemiBold();
+                        auditColumn.Item().Text($"Aprobada por: {order.ApproverName ?? "N/D"}").FontSize(9).SemiBold();
                     }
                 });
-
             });
         }
 
@@ -215,31 +162,9 @@ namespace BioLIS.Services
             container.AlignCenter().Column(column =>
             {
                 column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                column.Item().PaddingTop(5).Text(x =>
-                {
-                    x.Span("Página ");
-                    x.CurrentPageNumber();
-                    x.Span(" de ");
-                    x.TotalPages();
-                });
+                column.Item().PaddingTop(5).Text(x => { x.Span("Página "); x.CurrentPageNumber(); x.Span(" de "); x.TotalPages(); });
                 column.Item().Text("Este reporte es generado de forma automática y los resultados son confidenciales.").FontSize(8).FontColor(Colors.Grey.Medium);
             });
         }
-
-        private static ReferenceRange? ResolveReferenceRange(TestResult result, Patient patient)
-        {
-            var age = DateTime.Today.Year - patient.BirthDate.Year;
-            if (patient.BirthDate.Date > DateTime.Today.AddYears(-age))
-                age--;
-
-            return result.LabTest.ReferenceRanges?
-                .Where(rr => (rr.Gender == patient.Gender || rr.Gender == "A")
-                             && age >= rr.MinAgeYear
-                             && age <= rr.MaxAgeYear)
-                .OrderBy(rr => rr.Gender == patient.Gender ? 0 : 1)
-                .ThenBy(rr => rr.MaxAgeYear - rr.MinAgeYear)
-                .FirstOrDefault();
-        }
-
     }
 }

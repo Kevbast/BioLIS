@@ -1,31 +1,34 @@
-﻿using BioLIS.Repositories;
+using BioLIS.Models.Entities;
 using BioLIS.Models.ViewModels;
+using BioLIS.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace BioLIS.ViewComponents
 {
-    public class NotificationBellViewComponent:ViewComponent
+    public class NotificationBellViewComponent : ViewComponent
     {
-        private CatalogRepository catalogrepo;
+        private readonly ApiService api;
 
-        public NotificationBellViewComponent(CatalogRepository catalogrepo)
+        public NotificationBellViewComponent(ApiService api)
         {
-            this.catalogrepo = catalogrepo;
+            this.api = api;
         }
+
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            var userIdClaim = ((ClaimsPrincipal)User).FindFirstValue(ClaimTypes.NameIdentifier);
-            var model = new NotificationBellViewModel();
+            if (UserClaimsPrincipal?.Identity?.IsAuthenticated != true)
+                return View(new NotificationBellViewModel { UnreadCount = 0, LatestUnread = new() });
 
-            if (int.TryParse(userIdClaim, out int userId))
+            // Hacemos SOLO UNA llamada a la API
+            var recentPage = await this.api.GetMyNotificationsPagedAsync(1, 5, false);
+
+            return View(new NotificationBellViewModel
             {
-                model.UnreadCount = await catalogrepo.GetUnreadCountAsync(userId);
-                model.LatestUnread = await catalogrepo.GetLatestUnreadNotificationsAsync(userId, 5);
-            }
-
-            return View(model);
+                // El TotalItems del PagedResult es nuestro UnreadCount
+                UnreadCount = recentPage?.TotalItems ?? 0,
+                LatestUnread = recentPage?.Items ?? new List<Notification>()
+            });
         }
-
     }
 }

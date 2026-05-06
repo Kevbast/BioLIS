@@ -14,7 +14,8 @@ namespace BioLIS.Helpers
             byte[] salida = Encoding.UTF8.GetBytes(contenido);
 
             for (int i = 0; i < 7; i++)
-            {//si lo hacemos async hay que pasarle string y luego convertirlo a byte y eso
+            {
+                // Repite el hash varias veces para reforzar la derivación.
                 salida = managed.ComputeHash(salida);
             }
             managed.Clear();

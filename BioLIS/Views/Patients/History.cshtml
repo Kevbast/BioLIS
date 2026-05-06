@@ -1,7 +1,10 @@
-﻿@model BioLIS.Models.Patient
+﻿@model BioLIS.Models.Entities.Patient
 @{
     ViewData["Title"] = "Historial Clínico";
     var availableTests = ViewData["AvailableTests"] as List<string> ?? new List<string>();
+    var photoUrl = string.IsNullOrWhiteSpace(Model.PhotoFilename)
+        ? Url.Content("~/images/pacientes/default.png")
+        : Model.PhotoFilename.Trim();
 }
 
 <div class="container mt-4">
@@ -12,7 +15,7 @@
 
     <div class="card shadow-sm mb-4 border-left-primary">
         <div class="card-body d-flex align-items-center">
-            <img src="~/images/pacientes/@(Model.PhotoFilename ?? "default.png")" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;" onerror="this.src='/images/pacientes/default.png'" />
+            <img src="@photoUrl" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;" onerror="this.src='/images/pacientes/default.png'" />
             <div>
                 <h5 class="mb-0">@Model.FullName</h5>
                 <small class="text-muted">ID: @Model.PatientID | Edad: @Model.Age años | Género: @Model.Gender</small>
@@ -44,7 +47,7 @@
                 </div>
 
                 <div id="aiAlertPanel" class="alert alert-info" style="display:none;">
-                    <h5><i class="fas fa-robot"></i> Análisis IA</h5>
+                    <h5><i class="fas fa-robot"></i> Análisis predictivo</h5>
                     <p id="aiAlertText" class="mb-0 small"></p>
                 </div>
             </div>
@@ -150,7 +153,7 @@
                             tension: 0.3
                         },
                         {
-                            label: 'Línea de Tendencia (IA)',
+                            label: 'Línea de Tendencia',
                             data: trendline,
                             borderColor: '#e74a3b',
                             borderDash: [5, 5], // Línea punteada

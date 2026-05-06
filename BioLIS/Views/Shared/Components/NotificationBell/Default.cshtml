@@ -1,5 +1,12 @@
-﻿@model BioLIS.Models.ViewModels.NotificationBellViewModel
+﻿@using System.Security.Claims
+@inject IConfiguration Configuration
+@model BioLIS.Models.ViewModels.NotificationBellViewModel
 
+@{
+    // Rescatamos el Token JWT de los claims y la URL de la API del appsettings.json[cite: 26, 28]
+    var jwtToken = User.FindFirstValue("TOKEN");
+    var apiUrl = Configuration.GetValue<string>("ApiSettings:BaseUrl")?.TrimEnd('/');
+}
 <li class="nav-item dropdown no-arrow mx-1">
     <a class="nav-link dropdown-toggle position-relative" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notificaciones">
         <i class="fas fa-bell fa-fw"></i>
@@ -62,7 +69,12 @@
     (function () {
         const badge = document.getElementById('notification-badge');
         const badgeInline = document.getElementById('notification-badge-inline');
-        if (!badge || !badgeInline) return;
+        const previewContainer = document.getElementById('notification-preview-container');
+        const notificationsUrl = '@Url.Action("Index", "Notifications")';
+        const unreadCountUrl = '@Url.Action("UnreadCount", "Notifications")';
+        const latestUnreadUrl = '@Url.Action("LatestUnread", "Notifications")';
+
+        if (!badge || !badgeInline || !previewContainer) return;
 
         function paintCount(count) {
             if (count > 0) {
@@ -78,9 +90,73 @@
             }
         }
 
+        function buildPreviewItem(notification) {
+            const title = String(notification?.title ?? '');
+            const message = String(notification?.message ?? '');
+            const marker = `${title} ${message}`.toLowerCase();
+            let iconClass = 'fas fa-info-circle text-info';
+
+            if (marker.includes('urgente') || marker.includes('crítico') || marker.includes('critico')) {
+                iconClass = 'fas fa-triangle-exclamation text-danger';
+            } else if (marker.includes('completad') || marker.includes('resultado')) {
+                iconClass = 'fas fa-vial text-success';
+            } else if (marker.includes('aprobad')) {
+                iconClass = 'fas fa-circle-check text-primary';
+            }
+
+            const item = document.createElement('a');
+            item.className = 'dropdown-item small notification-preview-item';
+            item.href = notificationsUrl;
+
+            const strong = document.createElement('strong');
+            strong.className = 'd-block mb-1';
+
+            const icon = document.createElement('i');
+            icon.className = `${iconClass} me-1`;
+            strong.appendChild(icon);
+            strong.appendChild(document.createTextNode(title));
+
+            const messageNode = document.createElement('div');
+            messageNode.className = 'text-muted notification-preview-message';
+            messageNode.textContent = message;
+
+            item.appendChild(strong);
+            item.appendChild(messageNode);
+            return item;
+        }
+
+        // Definimos la función antes de llamarla
+        async function refreshNotificationPreview() {
+            try {
+                const response = await fetch(latestUnreadUrl, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+
+                previewContainer.innerHTML = '';
+                if (notifications.length === 0) {
+                    const emptyItem = document.createElement('span');
+                    emptyItem.className = 'dropdown-item text-muted small';
+                    emptyItem.textContent = 'No hay notificaciones nuevas.';
+                    previewContainer.appendChild(emptyItem);
+                    return;
+                }
+
+                notifications.forEach(notification => {
+                    previewContainer.appendChild(buildPreviewItem(notification));
+                });
+            } catch (err) {
+                console.error("Error cargando preview:", err);
+            }
+        }
+
         async function refreshNotificationCount() {
             try {
-                const response = await fetch('/Notifications/UnreadCount', {
+                const response = await fetch(unreadCountUrl, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
 
@@ -89,24 +165,35 @@
                 const data = await response.json();
                 const count = Number(data?.count ?? 0);
                 paintCount(count);
-            } catch {
-                // Silencioso para no afectar UX general
+                await refreshNotificationPreview();
+            } catch (err) {
+                console.error("Error cargando count:", err);
             }
         }
 
+        // CONEXIÓN A SIGNALR DE LA API
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl('/hubs/notifications')
+            .withUrl('@apiUrl/notificationHub', {
+                accessTokenFactory: () => @Html.Raw(Json.Serialize(jwtToken))
+            })
             .withAutomaticReconnect()
             .build();
 
-        connection.on('NotificationUpdated', function (count) {
-            paintCount(Number(count ?? 0));
+        connection.on('ReceiveNotification', function (notification) {
+            console.log("Notificación recibida por SignalR!", notification);
+            let currentCount = parseInt(badge.innerText) || 0;
+            paintCount(currentCount + 1);
+            refreshNotificationPreview();
         });
 
-        connection.start().catch(function () {
-            // fallback silencioso al polling
+        connection.start().then(() => {
+            console.log("Conectado a SignalR con éxito");
+        }).catch(function (err) {
+            console.error("Error conectando a SignalR: ", err);
         });
 
-        setInterval(refreshNotificationCount, 15000);
+        // Llamadas iniciales
+        refreshNotificationPreview();
+        setInterval(refreshNotificationCount, 60000); // Respaldo cada 60s
     })();
 </script>

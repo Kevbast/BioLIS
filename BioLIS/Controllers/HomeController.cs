@@ -1,118 +1,92 @@
-using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using BioLIS.Models;
 using BioLIS.Filters;
-using BioLIS.Repositories;
+using BioLIS.Models.Entities;
+using BioLIS.Models.Common;
+using BioLIS.Services;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Text.Json;
+using BioLIS.Models;
 
 namespace BioLIS.Controllers
 {
-    [AuthorizeUsers] // CAMBIADO de [AuthorizeSession]
+    [AuthorizeUsers]
     public class HomeController : Controller
     {
-        private readonly CatalogRepository _catalogRepo;
-        private readonly OrderRepository _orderRepo;
-
-        // Constructor con repositorios para obtener estadísticas
-        public HomeController(CatalogRepository catalogRepo, OrderRepository orderRepo)
-        {
-            _catalogRepo = catalogRepo;
-            _orderRepo = orderRepo;
-        }
+        private readonly ApiService api;
+        public HomeController(ApiService api) => this.api = api;
 
         public async Task<IActionResult> Index()
         {
             try
             {
-                // Obtener datos del usuario desde Claims
-                var username = HttpContext.User.FindFirstValue(ClaimTypes.Name);
-                var role = HttpContext.User.FindFirstValue(ClaimTypes.Role);
-
-                ViewBag.Username = username;
+                ViewBag.Username = HttpContext.User.FindFirstValue(ClaimTypes.Name);
+                var role = HttpContext.User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
                 ViewBag.Role = role;
 
-                // Estadísticas generales
-                var patients = await _catalogRepo.GetPatientsAsync();
-                var doctors = await _catalogRepo.GetDoctorsAsync();
-                var labTests = await _catalogRepo.GetLabTestsAsync();
-                var allOrders = await _orderRepo.GetAllOrdersAsync();
+                int? doctorId = null;
+                if (role == BioLIS.Models.Common.UserRoles.Doctor)
+                {
+                    var doctorIdClaim = HttpContext.User.FindFirstValue("DoctorID");
+                    if (int.TryParse(doctorIdClaim, out int parsedDoctorId))
+                        doctorId = parsedDoctorId;
+                }
 
-                // Órdenes de hoy
-                var todayOrders = allOrders.Where(o => o.OrderDate.Date == DateTime.Today).ToList();
+                var patientsTask = this.api.GetPatientsAsync();
+                var doctorsTask = this.api.GetDoctorsAsync();
+                var labTestsTask = this.api.GetLabTestsAsync();
+                Task<List<Order>?> ordersTask = role == BioLIS.Models.Common.UserRoles.Doctor && doctorId.HasValue
+                    ? this.api.GetOrdersByDoctorAsync(doctorId.Value)
+                    : this.api.GetAllOrdersAsync();
 
-                ViewBag.TodayOrders = todayOrders.Count;
+                await Task.WhenAll(patientsTask, doctorsTask, labTestsTask, ordersTask);
+
+                var patients = patientsTask.Result ?? new();
+                var doctors = doctorsTask.Result ?? new();
+                var labTests = labTestsTask.Result ?? new();
+                var orders = ordersTask.Result ?? new();
+
+                ViewBag.TodayOrders = orders.Count(o => o.OrderDate.Date == DateTime.Today);
                 ViewBag.TotalPatients = patients.Count;
                 ViewBag.TotalDoctors = doctors.Count;
                 ViewBag.TotalTests = labTests.Count;
 
-                // Si es Doctor, mostrar solo SUS órdenes recientes
-                List<BioLIS.Models.Order> chartOrders;
-                if (role == "Doctor")
+                List<Order> chartOrders;
+                if (role == BioLIS.Models.Common.UserRoles.Doctor)
                 {
-                    var doctorIdClaim = HttpContext.User.FindFirstValue("DoctorID");
-                    if (int.TryParse(doctorIdClaim, out int doctorId))
-                    {
-                        var myOrders = await _orderRepo.GetOrdersByDoctorAsync(doctorId);
-                        ViewBag.RecentOrders = myOrders.OrderByDescending(o => o.OrderDate).Take(5).ToList();
-                        ViewBag.MyTodayOrders = myOrders.Count(o => o.OrderDate.Date == DateTime.Today);
-                        chartOrders = myOrders;
-                    }
-                    else
-                    {
-                        chartOrders = new List<BioLIS.Models.Order>();
-                    }
+                    ViewBag.RecentOrders = orders.OrderByDescending(o => o.OrderDate).Take(5).ToList();
+                    ViewBag.MyTodayOrders = orders.Count(o => o.OrderDate.Date == DateTime.Today);
+                    chartOrders = orders;
                 }
                 else
                 {
-                    // Admin y Laboratorio ven las últimas 5 órdenes de todos
-                    ViewBag.RecentOrders = allOrders.OrderByDescending(o => o.OrderDate).Take(5).ToList();
-                    chartOrders = allOrders;
+                    ViewBag.RecentOrders = orders.OrderByDescending(o => o.OrderDate).Take(5).ToList();
+                    chartOrders = orders;
                 }
 
-                // Datos para gráficos (Chart.js)
                 var statusCounts = chartOrders
                     .GroupBy(o => string.IsNullOrWhiteSpace(o.Status) ? "Pendiente" : o.Status)
                     .Select(g => new { Label = g.Key, Count = g.Count() })
-                    .OrderBy(x => x.Label)
-                    .ToList();
+                    .OrderBy(x => x.Label).ToList();
 
-                var last7Days = Enumerable.Range(0, 7)
-                    .Select(offset => DateTime.Today.AddDays(-6 + offset))
-                    .ToList();
-
-                var dailyCounts = last7Days
-                    .Select(day => chartOrders.Count(o => o.OrderDate.Date == day))
-                    .ToList();
+                var last7Days   = Enumerable.Range(0, 7).Select(i => DateTime.Today.AddDays(-6 + i)).ToList();
+                var dailyCounts = last7Days.Select(d => chartOrders.Count(o => o.OrderDate.Date == d)).ToList();
 
                 ViewData["ChartStatusLabels"] = JsonSerializer.Serialize(statusCounts.Select(x => x.Label));
                 ViewData["ChartStatusValues"] = JsonSerializer.Serialize(statusCounts.Select(x => x.Count));
-                ViewData["ChartDayLabels"] = JsonSerializer.Serialize(last7Days.Select(d => d.ToString("dd/MM")));
-                ViewData["ChartDayValues"] = JsonSerializer.Serialize(dailyCounts);
-
-                return View();
+                ViewData["ChartDayLabels"]    = JsonSerializer.Serialize(last7Days.Select(d => d.ToString("dd/MM")));
+                ViewData["ChartDayValues"]    = JsonSerializer.Serialize(dailyCounts);
             }
             catch
             {
-                // En caso de error, mostrar valores por defecto
-                ViewBag.TodayOrders = 0;
-                ViewBag.TotalPatients = 0;
-                ViewBag.TotalDoctors = 0;
-                ViewBag.TotalTests = 0;
-                ViewBag.RecentOrders = new List<BioLIS.Models.Order>();
-                return View();
+                ViewBag.TodayOrders  = 0; ViewBag.TotalPatients = 0;
+                ViewBag.TotalDoctors = 0; ViewBag.TotalTests    = 0;
+                ViewBag.RecentOrders = new List<Order>();
             }
-        }
-
-        public IActionResult Privacy()
-        {
             return View();
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        public IActionResult Privacy() => View();
+        public IActionResult Error() =>
+            View(new ErrorViewModel { RequestId = System.Diagnostics.Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }

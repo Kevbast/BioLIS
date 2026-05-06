@@ -1,8 +1,8 @@
-@model BioLIS.Models.SampleType
+@model BioLIS.Models.Entities.SampleType
 
 @{
     ViewData["Title"] = "Eliminar Tipo de Muestra";
-    var relatedTests = ViewData["RelatedTests"] as List<BioLIS.Models.LabTest> ?? new List<BioLIS.Models.LabTest>();
+    var relatedTests = ViewData["RelatedTests"] as List<BioLIS.Models.Entities.LabTest> ?? new List<BioLIS.Models.Entities.LabTest>();
 }
 
 <link rel="stylesheet" href="~/css/catalog-modules.css" asp-append-version="true" />
